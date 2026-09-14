@@ -7,19 +7,20 @@
    ============================================================ */
 window.EWO_CONFIG = {
 
-  /* Azure portal > App registrations > your app > Overview >
-     Application (client) ID. Required.
-     The app you registered earlier had the ID below; reuse it, or paste
-     the ID of a new one. */
-  CLIENT_ID: "f52fc87b-2ce5-404d-aab3-acb90675308c",
+  /* Azure portal > App registrations > "Dashboard" > Overview >
+     Application (client) ID. Required. Paste the ID of the app named
+     "Dashboard" that you registered in the Epyllion directory. */
+  CLIENT_ID: "",
 
   /* Epyllion Group's Directory (tenant) ID. With this set, only Epyllion
      accounts can sign in. */
   TENANT_ID: "09438fa4-a67e-4666-a9c2-fcc1c2252472",
 
-  /* Must match a Redirect URI on the app registration EXACTLY, including
-     the trailing slash. Leave empty to use this page's own address. */
-  REDIRECT_URI: "",
+  /* Must match a Redirect URI on the app registration EXACTLY. The one
+     registered on the "Dashboard" app ends in /index.html, so it is set
+     here in full rather than left to the page's own address, which would
+     differ if the page is opened without the file name. */
+  REDIRECT_URI: "https://epyrazib.github.io/lockplan/index.html",
 
   /* What the app asks for. Read-only, delegated: each person still only
      sees what SharePoint already lets them see. */
