@@ -1,0 +1,2518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EWO Life Cycle Dashboard | Epyllion Group</title>
+<!-- Microsoft sign-in edition: reads the workbooks straight from OneDrive with
+     the viewer's own account through Microsoft Graph. No GitHub Action, no
+     public sharing link, no data.json. Needs an Azure app registration. -->
+<link rel="icon" href="data:image/png;base64,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" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"></script>
+<!-- Your own settings live in config.js, which future dashboard updates never
+     touch. Keep the worker address and any overrides there. -->
+<script src="config.js"></script>
+<style>
+  /* Brand colours sampled straight from the Epyllion Group logo:
+     the wordmark green and the swoosh gold. */
+  :root{
+    --green:#006040;
+    --green-mid:#0A7A54;
+    --green-light:#3FA566;
+    --green-soft:#E6F0EB;
+    --gold:#F8B000;
+    --gold-mid:#D99700;
+    --gold-soft:#FFF4DC;
+    --paper:#FAFAF7;
+    --ink:#1C1F22;
+    --ink-soft:#6B7280;
+    --line:#E3E1D9;
+    --line-soft:#F0EEE7;
+    --rust:#C7511F;
+    --rust-soft:#F7E9E2;
+    --blue:#3B6FA8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:"IBM Plex Mono","SFMono-Regular",Consolas,monospace;
+    font-size:14px;line-height:1.5;
+  }
+  h1,h2,h3{font-family:Georgia,"Source Serif 4",serif;font-weight:600;margin:0;}
+
+  /* ---------- header ---------- */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 24px;background:#fff;border-bottom:3px solid var(--green);
+    flex-wrap:wrap;gap:14px;
+  }
+  .brand{display:flex;align-items:center;gap:14px;}
+  .brand img{height:34px;width:auto;display:block;}
+  .brand .rule{width:1px;height:32px;background:var(--line);}
+  .brand h1{font-size:18px;letter-spacing:-0.01em;color:var(--green);}
+  .brand .sub{color:var(--ink-soft);font-size:11px;margin-top:2px;}
+  .status{display:flex;align-items:center;gap:9px;font-size:11.5px;color:var(--ink-soft);flex-wrap:wrap;}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-soft);flex:none;}
+  .dot.live{background:var(--green-light);box-shadow:0 0 0 3px rgba(63,165,102,0.18);}
+  .dot.err{background:var(--rust);}
+  .dot.busy{background:var(--gold);}
+  .acct{font-size:11px;color:var(--ink-soft);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .signin-box{max-width:560px;margin:0 auto;text-align:left;background:#fff;border:1px solid var(--line);
+              border-top:3px solid var(--gold);padding:22px 26px;font-size:12.5px;color:var(--ink-soft);}
+  .signin-box h2{text-align:left;}
+  .signin-box p{margin:8px 0 16px;}
+
+  button{
+    font-family:inherit;font-size:12.5px;padding:8px 14px;
+    border:1px solid var(--green);background:var(--green);color:#fff;
+    cursor:pointer;border-radius:3px;
+  }
+  button.secondary{background:transparent;color:var(--green);}
+  button.secondary:hover{background:var(--green-soft);}
+  button.tiny{padding:5px 11px;font-size:11.5px;}
+  button:disabled{opacity:0.4;cursor:default;}
+
+  /* ---------- tabs ---------- */
+  .tabbar{
+    display:flex;gap:2px;padding:0 24px;background:#fff;
+    border-bottom:1px solid var(--line);flex-wrap:wrap;
+    position:sticky;top:0;z-index:30;
+  }
+  .tab{
+    border:none;background:transparent;color:var(--ink-soft);
+    padding:12px 18px;font-size:12.5px;border-radius:0;
+    border-bottom:3px solid transparent;margin-bottom:-1px;
+  }
+  .tab:hover{color:var(--green);background:var(--green-soft);}
+  .tab.on{color:var(--green);border-bottom-color:var(--gold);font-weight:600;background:transparent;}
+  .tab .count{
+    display:inline-block;margin-left:7px;background:var(--gold);color:#4A3400;
+    border-radius:9px;padding:0 7px;font-size:10.5px;font-weight:600;
+  }
+  .tab.on .count{background:var(--gold);}
+
+  main{max-width:1500px;margin:0 auto;padding:18px 24px 80px;}
+
+  /* ---------- filters ---------- */
+  .filters{background:#fff;border:1px solid var(--line);border-top:2px solid var(--gold);padding:14px 16px;margin-bottom:18px;}
+  .filter-grid{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
+  .fld{display:flex;flex-direction:column;gap:3px;}
+  .fld label{font-size:10px;color:var(--ink-soft);letter-spacing:0.04em;text-transform:uppercase;}
+  input[type="text"],input[type="date"],select{
+    font-family:inherit;font-size:12.5px;padding:6px 8px;
+    border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:3px;
+  }
+  input[type="text"]:focus,select:focus,input[type="date"]:focus{outline:2px solid var(--green-soft);border-color:var(--green-mid);}
+  input[type="text"].wide{min-width:230px;}
+  select{max-width:190px;}
+  .filter-note{font-size:11.5px;color:var(--ink-soft);margin-top:10px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+  .chip{background:var(--green-soft);color:var(--green);padding:2px 9px;border-radius:11px;font-size:11px;}
+  .chip.alert{background:var(--gold-soft);color:var(--gold-mid);}
+
+  /* ---------- kpi ---------- */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:18px;}
+  .kpi{background:#fff;padding:14px 16px;border-top:2px solid transparent;}
+  /* ten tiles sit in two clean rows of five, six in one row, so no grey gaps show */
+  .kpis.ten{grid-template-columns:repeat(5,1fr);}
+  .kpis.six{grid-template-columns:repeat(6,1fr);}
+  @media(max-width:1100px){.kpis.ten{grid-template-columns:repeat(3,1fr);}.kpis.six{grid-template-columns:repeat(3,1fr);}}
+  @media(max-width:700px){.kpis.ten,.kpis.six{grid-template-columns:repeat(2,1fr);}}
+  .kpi:nth-child(odd){border-top-color:var(--green);}
+  .kpi:nth-child(even){border-top-color:var(--gold);}
+  .kpi .label{color:var(--ink-soft);font-size:10.5px;margin-bottom:5px;letter-spacing:0.02em;}
+  .kpi .value{font-family:Georgia,serif;font-size:23px;color:var(--green);line-height:1.15;}
+  .kpi .foot{font-size:10.5px;color:var(--ink-soft);margin-top:3px;}
+
+  /* ---------- alerts ---------- */
+  .alerts{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:10px;margin-bottom:18px;}
+  .alert{
+    background:#fff;border:1px solid var(--line);border-left:4px solid var(--ink-soft);
+    padding:12px 14px;cursor:pointer;text-align:left;font-family:inherit;color:inherit;
+    border-radius:0;display:block;width:100%;
+  }
+  .alert:hover{background:var(--line-soft);}
+  .alert.on{border-color:var(--green);background:var(--green-soft);box-shadow:inset 0 0 0 1px var(--green);}
+  .alert.sev-high{border-left-color:var(--rust);}
+  .alert.sev-mid{border-left-color:var(--gold);}
+  .alert.sev-low{border-left-color:var(--green-light);}
+  .alert .n{font-family:Georgia,serif;font-size:21px;display:block;}
+  .alert.sev-high .n{color:var(--rust);}
+  .alert.sev-mid .n{color:var(--gold-mid);}
+  .alert.sev-low .n{color:var(--green-mid);}
+  .alert .t{font-size:11.5px;margin-top:2px;display:block;font-weight:600;}
+  .alert .d{font-size:10.5px;color:var(--ink-soft);margin-top:3px;display:block;}
+
+  /* ---------- panels ---------- */
+  .panel{border:1px solid var(--line);padding:18px;margin-bottom:18px;background:#fff;}
+  .panel h3{font-size:15px;margin-bottom:3px;color:var(--green);}
+  .panel .hint{font-size:11px;color:var(--ink-soft);margin-bottom:14px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+  @media(max-width:1100px){.grid3{grid-template-columns:1fr 1fr;}}
+  @media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr;}}
+  .chart-box{position:relative;height:265px;}
+  .chart-box.tall{height:320px;}
+  .section-head{font-size:15px;margin-bottom:3px;color:var(--green);}
+  .section-hint{font-size:11px;color:var(--ink-soft);margin-bottom:12px;}
+
+  /* ---------- tables ---------- */
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th,td{text-align:left;padding:6px 9px;border-bottom:1px solid var(--line-soft);white-space:nowrap;}
+  th{
+    color:#fff;font-weight:normal;background:var(--green);
+    position:sticky;top:0;cursor:pointer;user-select:none;z-index:2;border-bottom:none;
+  }
+  th:hover{background:var(--green-mid);}
+  th .arrow{opacity:0.85;font-size:10px;}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;}
+  tbody tr:nth-child(even) td{background:#FCFCFA;}
+  tbody tr:hover td{background:var(--green-soft);}
+  tfoot td{
+    border-top:2px solid var(--gold);border-bottom:none;background:var(--gold-soft);
+    font-weight:600;position:sticky;bottom:0;
+  }
+  .table-wrap{overflow:auto;max-height:560px;border:1px solid var(--line);}
+  .table-wrap.short{max-height:430px;}
+
+  .badge{display:inline-block;padding:1px 8px;border-radius:10px;font-size:10.5px;}
+  .badge.locked{background:var(--green-soft);color:var(--green);}
+  .badge.hold{background:var(--rust-soft);color:var(--rust);}
+  .badge.tbc{background:var(--gold-soft);color:var(--gold-mid);}
+  .badge.cancel{background:#EDEDED;color:var(--ink-soft);}
+
+  .pager{display:flex;gap:10px;align-items:center;margin-top:10px;font-size:11.5px;color:var(--ink-soft);flex-wrap:wrap;}
+  details.cols{margin-top:10px;}
+  details.cols summary{font-size:11.5px;color:var(--green);cursor:pointer;}
+  .colgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:2px 14px;margin-top:10px;
+           border:1px solid var(--line);padding:12px;background:var(--paper);}
+  .colgrid label{font-size:11.5px;display:flex;gap:6px;align-items:center;cursor:pointer;}
+  .colgrid label.empty span{color:var(--ink-soft);font-style:italic;}
+
+  .error{background:var(--rust-soft);color:var(--rust);border:1px solid var(--rust);padding:16px 18px;margin-bottom:18px;font-size:13px;}
+  .error code{background:#fff;padding:1px 5px;border:1px solid var(--rust);}
+  .loading{text-align:center;padding:110px 20px;color:var(--ink-soft);}
+  .loading h2{color:var(--green);font-size:20px;margin-bottom:8px;}
+  .spinner{width:24px;height:24px;margin:0 auto 22px;border:3px solid var(--gold-soft);
+           border-top-color:var(--green);border-radius:50%;animation:spin 0.8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .empty-note{padding:40px 20px;text-align:center;color:var(--ink-soft);font-size:12.5px;}
+  .flash{animation:flash 1.6s ease-out;}
+  @keyframes flash{0%{background:var(--gold-soft);}100%{background:transparent;}}
+  .granbar{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+  .granlabel{font-size:11.5px;color:var(--ink-soft);}
+  .granhint{font-size:11px;color:var(--ink-soft);}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:3px;overflow:hidden;background:#fff;}
+  .segbtn{
+    border:none;background:#fff;color:var(--ink-soft);padding:6px 16px;
+    font-size:12px;border-radius:0;border-right:1px solid var(--line);
+  }
+  .segbtn:last-child{border-right:none;}
+  .segbtn:hover{background:var(--green-soft);color:var(--green);}
+  .segbtn.on{background:var(--green);color:#fff;font-weight:600;}
+  table.report td:first-child{color:var(--ink-soft);}
+  table.report td.num{font-weight:600;}
+  table.report tr.hl td{background:var(--gold-soft);}
+  .neg{color:var(--rust);} .pos{color:var(--green-mid);}
+  .pct{font-size:11px;color:var(--ink-soft);margin-left:6px;}
+  .tabpage{display:none;}
+  .tabpage.on{display:block;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <img src="data:image/png;base64,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" alt="Epyllion Group" />
+    <div class="rule"></div>
+    <div>
+      <h1>EWO Life Cycle Dashboard</h1>
+    </div>
+  </div>
+  <div class="status">
+    <span class="dot busy" id="statusDot"></span>
+    <span id="statusText">Loading</span>
+    <span id="freshness"></span>
+    <span id="accountLabel" class="acct"></span>
+    <button class="secondary tiny" id="csvBtn" hidden>Export CSV</button>
+    <button class="secondary tiny" id="signOutBtn" hidden>Sign out</button>
+    <button class="tiny" id="signInBtn">Sign in with Microsoft</button>
+    <button class="tiny" id="refreshBtn" disabled hidden>Refresh</button>
+  </div>
+</div>
+
+<div class="tabbar" id="tabBar">
+  <button class="tab on" data-tab="overview">Overview</button>
+  <button class="tab" data-tab="attention">Needs attention <span class="count" id="attnCount">0</span></button>
+  <button class="tab" data-tab="timeline">Timeline</button>
+  <button class="tab" data-tab="capacity">Capacity</button>
+  <button class="tab" data-tab="delivery">Fabric delivery</button>
+  <button class="tab" data-tab="summary">Summary</button>
+  <button class="tab" data-tab="orders">Orders</button>
+</div>
+
+<main>
+  <div id="errorBox"></div>
+
+  <div id="loadingState" class="loading">
+    <div class="spinner" id="spinner"></div>
+    <div class="signin-box" id="signinBox" style="display:none;">
+      <h2>Sign in to open the dashboard</h2>
+      <p>The workbooks are read straight from OneDrive with your Microsoft account, so only people
+         who already have access to the files can see this. Nothing is stored anywhere else.</p>
+      <button id="signInBtn2">Sign in with Microsoft</button>
+    </div>
+    <h2 id="loadingTitle">Starting</h2>
+    <p id="loadingText">Checking your sign-in.</p>
+  </div>
+
+  <div id="dashboard" style="display:none;">
+
+    <div class="filters">
+      <div class="filter-grid" id="filterGrid">
+        <div class="fld">
+          <label for="searchInput">Search</label>
+          <input type="text" id="searchInput" class="wide" placeholder="EWO, buyer, dept, note..." />
+        </div>
+        <div class="fld" id="dateFieldWrap">
+          <label for="dateField">Date field</label>
+          <select id="dateField"></select>
+        </div>
+        <div class="fld">
+          <label for="yearFilter">Year</label>
+          <select id="yearFilter"><option value="">All years</option></select>
+        </div>
+        <div class="fld">
+          <label for="monthFilter">Month</label>
+          <select id="monthFilter"><option value="">All months</option></select>
+        </div>
+        <div class="fld">
+          <label for="dateFrom">From</label>
+          <input type="date" id="dateFrom" />
+        </div>
+        <div class="fld">
+          <label for="dateTo">To</label>
+          <input type="date" id="dateTo" />
+        </div>
+        <div class="fld">
+          <label>Charts by</label>
+          <div class="seg" id="granSwitch">
+            <button class="segbtn on" data-gran="day">Day</button>
+            <button class="segbtn" data-gran="week">Week</button>
+            <button class="segbtn" data-gran="month">Month</button>
+          </div>
+        </div>
+        <div class="fld">
+          <label>&nbsp;</label>
+          <button class="secondary tiny" id="resetBtn">Reset all</button>
+        </div>
+      </div>
+      <div class="filter-note">
+        <span id="filterSummary"></span>
+        <span id="activeChips"></span>
+      </div>
+    </div>
+
+    <!-- ============ OVERVIEW ============ -->
+    <div class="tabpage on" id="page-overview">
+      <div class="kpis" id="kpiRow"></div>
+      <div class="grid3">
+        <div class="panel">
+          <h3>Status</h3>
+          <div class="hint">Orders by planning state</div>
+          <div class="chart-box"><canvas id="statusChart"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3>Execution Unit</h3>
+          <div class="hint">Order quantity by factory</div>
+          <div class="chart-box"><canvas id="execChart"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3>Team</h3>
+          <div class="hint">Order quantity by merchandising team</div>
+          <div class="chart-box"><canvas id="teamChart"></canvas></div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="panel">
+          <h3>Top buyers</h3>
+          <div class="hint">By order quantity, largest twelve</div>
+          <div class="chart-box tall"><canvas id="buyerChart"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3>Fabric sourcing split</h3>
+          <div class="hint">In-house knitting against outside purchase</div>
+          <div class="chart-box tall"><canvas id="sourceChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ ATTENTION ============ -->
+    <div class="tabpage" id="page-attention">
+      <h3 class="section-head">Needs attention</h3>
+      <div class="section-hint">
+        Click a card to filter the whole dashboard to just those orders. Click it again to clear.
+        These rules were chosen by measuring the real workbook, so each one points at a genuine problem.
+      </div>
+      <div class="alerts" id="alertRow"></div>
+      <div class="panel">
+        <h3 id="attnTableTitle">Flagged orders</h3>
+        <div class="hint" id="attnTableHint"></div>
+        <div class="table-wrap short"><table id="attnTable"></table></div>
+      </div>
+    </div>
+
+    <!-- ============ TIMELINE ============ -->
+    <div class="tabpage" id="page-timeline">
+      <div class="granbar"><span class="granhint" id="granHint"></span></div>
+      <div class="grid3">
+        <div class="panel">
+          <h3 data-grantitle="Order quantity by PCD {g}">Order quantity by PCD month</h3>
+          <div class="hint">Cutting load ahead, from Adjusted PCD</div>
+          <div class="chart-box"><canvas id="pcdChart"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3 data-grantitle="Fabric quantity by fabric start {g}">Fabric quantity by fabric start</h3>
+          <div class="hint">From Adjusted Fabric Start</div>
+          <div class="chart-box"><canvas id="fabMonthChart"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3 data-grantitle="Sewing hours by sew start {g}">Sewing hours by sew start</h3>
+          <div class="hint">FR hour, from Adjusted sew start</div>
+          <div class="chart-box"><canvas id="sewMonthChart"></canvas></div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="panel">
+          <h3>Fabric flow by month</h3>
+          <div class="hint">Straight from the Fsum sheet, so filters do not change it</div>
+          <div class="chart-box"><canvas id="fabricChart"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3>Sewing hours by month</h3>
+          <div class="hint">Straight from the Ssum sheet, so filters do not change it</div>
+          <div class="chart-box"><canvas id="sewChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ CAPACITY ============ -->
+    <div class="tabpage" id="page-capacity">
+      <div class="kpis six" id="capKpis"></div>
+      <div class="granbar"><span class="granhint">Each order's quantity is spread evenly across its planned window, exactly as the fab and Sew sheets do. Filters and the Day / Week / Month switch apply.</span></div>
+      <div class="grid2">
+        <div class="panel">
+          <h3 data-grantitle2="In-house fabric load per {g}">In-house fabric load per month</h3>
+          <div class="hint">Textile mill knitting load: InHouse kg across Adjusted Fabric Start to End, as the fab sheet builds it</div>
+          <div class="chart-box tall"><canvas id="fabLoadChart"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3 data-grantitle2="Sewing load per {g}">Sewing load per month</h3>
+          <div class="hint">FR hour across Adjusted sew start to end, locked orders against the rest</div>
+          <div class="chart-box tall"><canvas id="sewLoadChart"></canvas></div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="panel">
+          <h3>In-house fabric load by unit</h3>
+          <div class="hint">Same spread, split by Execution Unit, monthly</div>
+          <div class="chart-box tall"><canvas id="fabUnitChart"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3>Sewing load by unit</h3>
+          <div class="hint">Same spread, split by Execution Unit, monthly</div>
+          <div class="chart-box tall"><canvas id="sewUnitChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ DELIVERY ============ -->
+    <div class="tabpage" id="page-delivery">
+      <div id="deliveryEmpty" class="empty-note" style="display:none;">
+        The fabric delivery workbook has not been published yet. Add the
+        <code>ONEDRIVE_SHARE_URL_2</code> secret and run the Action once.
+      </div>
+      <div id="deliveryBody">
+        <div class="granbar">
+          <span class="granlabel">Report as of</span>
+          <input type="date" id="asOfDate" />
+          <button class="secondary tiny" id="asOfReset">Report date</button>
+          <span class="granhint" id="asOfHint"></span>
+        </div>
+        <div class="kpis ten" id="delKpis"></div>
+
+        <!-- ---- the weekly KPI meeting layout, as the planning team sees it ---- -->
+        <h3 class="section-head">Weekly KPI meeting with textile cluster</h3>
+        <div class="section-hint">The same two blocks, trend, tables and gauge as the LockRepo sheet, rebuilt from the rows and answering to the filters</div>
+        <div class="grid2">
+          <div class="panel">
+            <h3>Fabric delivery status</h3>
+            <div class="hint">Against the month target</div>
+            <div class="table-wrap"><table id="statusTable" class="report"></table></div>
+          </div>
+          <div class="panel">
+            <h3>Fabric lock T&amp;A plan performance</h3>
+            <div class="hint">Against the lock plan</div>
+            <div class="table-wrap"><table id="lockTable" class="report"></table></div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="panel" style="grid-column:span 1;">
+            <h3 data-grantitle3="Delivery trend per {g}">Delivery trend per day</h3>
+            <div class="hint">Delivery to lock-plan bookings due by the report date, against all fresh delivery</div>
+            <div class="chart-box tall"><canvas id="trendChart"></canvas></div>
+          </div>
+          <div class="panel">
+            <h3>Plan against actual, cumulative</h3>
+            <div class="hint">Lock plan required by day, against fresh delivery to those orders</div>
+            <div class="chart-box tall"><canvas id="cumChart"></canvas></div>
+          </div>
+        </div>
+
+        <div class="grid3">
+          <div class="panel">
+            <h3>Achieved</h3>
+            <div class="hint">Till-date actual as a share of till-date planned</div>
+            <div class="chart-box"><canvas id="achievedChart"></canvas></div>
+          </div>
+          <div class="panel">
+            <h3 data-grantitle4="Fabric delivery plan per {g}">Fabric delivery plan per day</h3>
+            <div class="hint">InHouse kg across the fabric window, locked orders against unlocked, as the fab sheet builds it</div>
+            <div class="chart-box"><canvas id="planLockChart"></canvas></div>
+          </div>
+          <div class="panel">
+            <h3 data-grantitle5="Fabric delivery actual per {g}">Fabric delivery actual per day</h3>
+            <div class="hint">Fresh delivery kg, split by whether the order is locked</div>
+            <div class="chart-box"><canvas id="actualLockChart"></canvas></div>
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="panel">
+            <h3 data-grantitle6="Fabric delivered per {g}">Fabric delivered per day</h3>
+            <div class="hint">Fresh delivery, re-delivery and returns, from the Delivery sheet</div>
+            <div class="chart-box tall"><canvas id="delDailyChart"></canvas></div>
+          </div>
+          <div class="panel">
+            <h3>Plan against actual by unit</h3>
+            <div class="hint">Required till the report date, against delivered, as the weekly KPI defines it</div>
+            <div class="chart-box tall"><canvas id="unitPvaChart"></canvas></div>
+          </div>
+        </div>
+
+        <div class="grid3">
+          <div class="panel">
+            <h3>Plan against actual by buyer</h3>
+            <div class="hint">Largest twelve by requirement</div>
+            <div class="chart-box tall"><canvas id="buyerPvaChart"></canvas></div>
+          </div>
+          <div class="panel">
+            <h3>Delivery by fabric type</h3>
+            <div class="hint">Net kilograms in the report window</div>
+            <div class="chart-box tall"><canvas id="fabTypeChart"></canvas></div>
+          </div>
+          <div class="panel">
+            <h3>Delivery by receiving unit</h3>
+            <div class="hint">Net kilograms in the report window</div>
+            <div class="chart-box tall"><canvas id="delUnitChart"></canvas></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Weekly KPI, by buyer</h3>
+          <div class="hint" id="kpiBuyerHint">Same columns and rules as the LockRepo sheet, so the totals match the published report</div>
+          <div class="table-wrap short"><table id="kpiBuyerTable"></table></div>
+        </div>
+        <div class="panel">
+          <h3>Weekly KPI, by garments unit</h3>
+          <div class="hint">Same rules, grouped by unit</div>
+          <div class="table-wrap short"><table id="kpiUnitTable"></table></div>
+        </div>
+        <div class="panel">
+          <h3>Bookings behind plan</h3>
+          <div class="hint" id="deficitHint">Largest shortfalls first. Click a heading to sort.</div>
+          <div class="table-wrap short"><table id="deficitTable"></table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ SUMMARY ============ -->
+    <div class="tabpage" id="page-summary">
+      <div class="panel">
+        <h3>Summary</h3>
+        <div class="hint">
+          Totals grouped by
+          <select id="groupBy" style="margin:0 4px;"></select>
+          Click a column heading to sort. The bottom row totals every group shown.
+        </div>
+        <div class="table-wrap"><table id="pivotTable"></table></div>
+      </div>
+    </div>
+
+    <!-- ============ ORDERS ============ -->
+    <div class="tabpage" id="page-orders">
+      <div class="panel">
+        <h3>Orders</h3>
+        <div class="hint" id="detailHint"></div>
+        <div class="table-wrap"><table id="dataTable"></table></div>
+        <div class="pager">
+          <button class="secondary tiny" id="prevPage">Previous</button>
+          <span id="pageInfo"></span>
+          <button class="secondary tiny" id="nextPage">Next</button>
+          <span style="margin-left:auto;">
+            Rows per page
+            <select id="pageSize" style="margin-left:4px;">
+              <option>50</option><option selected>100</option><option>250</option><option>500</option>
+            </select>
+          </span>
+        </div>
+        <details class="cols">
+          <summary>Choose columns</summary>
+          <div class="colgrid" id="colChooser"></div>
+        </details>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   CONFIGURATION
+
+   Do not edit these here. Put your values in config.js instead, which
+   sits next to this file and is never overwritten by a dashboard update.
+   Anything missing from config.js falls back to the defaults below.
+   ============================================================ */
+var CFG = (typeof window !== "undefined" && window.EWO_CONFIG) ? window.EWO_CONFIG : {};
+function cfg(name, fallback){ return (CFG[name] !== undefined && CFG[name] !== null) ? CFG[name] : fallback; }
+
+var CLIENT_ID = cfg("CLIENT_ID", "");
+var TENANT_ID = cfg("TENANT_ID", "common");
+var REDIRECT_URI = cfg("REDIRECT_URI", window.location.origin + window.location.pathname);
+var GRAPH_SCOPES = cfg("GRAPH_SCOPES", ["Files.Read.All", "User.Read"]);
+var ONEDRIVE_FOLDER_PATH = cfg("ONEDRIVE_FOLDER_PATH", "Dashboard");
+var ONEDRIVE_SHARE_URL = cfg("ONEDRIVE_SHARE_URL", "");
+var EWO_FILE_PATTERN = cfg("EWO_FILE_PATTERN", "EWO.*Life.*Cycle");
+var DELIVERY_FILE_PATTERN = cfg("DELIVERY_FILE_PATTERN", "Fabric.*Delivery");
+var POLL_SECONDS = cfg("POLL_SECONDS", 300);
+var SHEET_MAIN = "EWO", SHEET_FABRIC = "Fsum", SHEET_SEW = "Ssum";
+
+var ID_COLUMNS = ["EWO"];
+var AVERAGE_COLUMNS = ["fab st to pcd", "fab dur", "sew dur", "pcd to sew st", "Per Day InHouse"];
+var FILTER_DIMENSIONS = ["Status", "Latest note", "Team", "Buyer", "Execution Unit", "Dept", "OrderDate duration"];
+var DEFAULT_TABLE_COLUMNS = ["EWO", "Status", "Buyer", "Team", "Execution Unit", "Dept",
+  "Order Qty", "Fab Qty", "InHouse", "OutSide", "Order Bank Date", "Adjusted Fabric Start",
+  "Adjusted Fabric End", "Adjusted PCD", "Adjusted sew start", "Adjusted sew end",
+  "fab dur", "sew dur", "Latest note"];
+/* ============================================================ */
+
+var charts = {};
+var HEADERS = [], COLTYPE = {}, COLEMPTY = {}, IDX = {};
+var ROWS = [], FSUM = [], SSUM = [];
+var DELIV = [], DIDX = {}, LOCK = [], LIDX = {}, RFDROWS = [], LOCKMETA = {};
+var asOf = null;
+var visibleCols = [], filtered = [], baseFiltered = [];
+var activeAlert = null, activeTab = "overview", granularity = "day";
+var sortCol = null, sortDir = 1;
+var pivotSort = "Order Qty", pivotDir = -1;
+var page = 0;
+var generatedAt = null, lastSignature = null;
+/* While a rebuild is running it owns the status line, so the ordinary data
+   checks it makes along the way must not overwrite the progress message. */
+var pollTimer = null, freshTimer = null, sourceLabel = "";
+
+var els = {};
+["statusDot","statusText","freshness","refreshBtn","csvBtn","loadingState","dashboard",
+ "signInBtn","signInBtn2","signOutBtn","accountLabel","signinBox","spinner","loadingTitle","loadingText",
+ "errorBox","filterGrid","searchInput","dateField","dateFieldWrap","dateFrom","dateTo","resetBtn",
+ "yearFilter","monthFilter","granSwitch","granHint",
+ "filterSummary","activeChips","kpiRow","alertRow","attnTable","attnTableTitle","attnTableHint",
+ "pivotTable","dataTable","groupBy","colChooser","prevPage","nextPage","pageInfo","pageSize",
+ "detailHint","tabBar","attnCount","capKpis","delKpis","asOfDate","asOfReset",
+ "asOfHint","kpiBuyerTable","kpiUnitTable","deficitTable","deficitHint","deliveryEmpty",
+ "deliveryBody","kpiBuyerHint","statusTable","lockTable","trendChart","achievedChart"
+].forEach(function(id){ els[id] = document.getElementById(id); });
+
+/* ---------- helpers ---------- */
+function esc(v){
+  return String(v == null ? "" : v)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function showError(html){ els.errorBox.innerHTML = '<div class="error">' + html + '</div>'; }
+function clearError(){ els.errorBox.innerHTML = ""; }
+function setStatus(t, c){ els.statusText.textContent = t; els.statusDot.className = "dot" + (c ? " " + c : ""); }
+function fmtInt(n){ return Math.round(n || 0).toLocaleString(); }
+function fmt1(n){ return (Math.round((n || 0) * 10) / 10).toLocaleString(undefined, {minimumFractionDigits:1, maximumFractionDigits:1}); }
+
+var MONTH_ABBR = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+var MONTH_FULL = ["January","February","March","April","May","June",
+                  "July","August","September","October","November","December"];
+
+function parseDate(v){
+  if(typeof v !== "string") return null;
+  var m = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(!m) return null;
+  return Date.UTC(+m[1], +m[2] - 1, +m[3]);
+}
+function fmtDate(ms){
+  if(ms == null) return "";
+  var d = new Date(ms);
+  return d.getUTCDate() + " " + MONTH_ABBR[d.getUTCMonth()] + " " + String(d.getUTCFullYear()).slice(2);
+}
+function monthKey(ms){
+  var d = new Date(ms);
+  return d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0");
+}
+function monthLabel(key){
+  var p = key.split("-");
+  return MONTH_ABBR[+p[1] - 1] + " " + p[0].slice(2);
+}
+function toNum(v){
+  if(typeof v === "number") return isFinite(v) ? v : null;
+  if(typeof v === "string" && v.trim() !== "" && !isNaN(v)) return parseFloat(v);
+  return null;
+}
+var TODAY = (function(){ var n = new Date(); return Date.UTC(n.getFullYear(), n.getMonth(), n.getDate()); })();
+var DAY = 86400000;
+
+function raw(row, name){ var i = IDX[name]; return i == null ? null : row[i]; }
+function num(row, name){ return toNum(raw(row, name)); }
+function dat(row, name){ return parseDate(raw(row, name)); }
+function txt(row, name){ var v = raw(row, name); return v == null ? "" : String(v).trim(); }
+
+/* Plain English for how old the published data is. */
+function ago(iso){
+  if(!iso) return "";
+  var t = Date.parse(iso);
+  if(isNaN(t)) return "";
+  var mins = Math.floor((Date.now() - t) / 60000);
+  if(mins < 1) return "just now";
+  if(mins === 1) return "1 minute ago";
+  if(mins < 60) return mins + " minutes ago";
+  var hrs = Math.floor(mins / 60);
+  if(hrs === 1) return "1 hour ago";
+  if(hrs < 24) return hrs + " hours ago";
+  var days = Math.floor(hrs / 24);
+  return days === 1 ? "1 day ago" : days + " days ago";
+}
+function paintFreshness(){
+  els.freshness.textContent = generatedAt ? "· file saved " + ago(generatedAt) : "";
+}
+
+/* ============================================================
+   Sign-in and Microsoft Graph
+   ============================================================ */
+var msalApp = null;
+
+function loadingScreen(title, text, showSignIn){
+  els.loadingState.style.display = "block";
+  els.dashboard.style.display = "none";
+  els.loadingTitle.textContent = title || "";
+  els.loadingText.textContent = text || "";
+  els.loadingTitle.style.display = showSignIn ? "none" : "";
+  els.loadingText.style.display = showSignIn ? "none" : "";
+  els.signinBox.style.display = showSignIn ? "block" : "none";
+  els.spinner.style.display = showSignIn ? "none" : "";
+}
+
+function initMsal(){
+  if(!CLIENT_ID){
+    loadingScreen("", "", false);
+    showError("<strong>No CLIENT_ID is set.</strong><br/>Open <code>config.js</code> and paste the "
+      + "Application (client) ID from your Azure app registration.");
+    setStatus("Not configured", "err");
+    return false;
+  }
+  if(typeof msal === "undefined"){
+    showError("<strong>The Microsoft sign-in library did not load.</strong><br/>This is nearly always an "
+      + "ad-blocker or a network filter blocking cdn.jsdelivr.net. Try another network or a private window.");
+    setStatus("Library blocked", "err");
+    return false;
+  }
+  msalApp = new msal.PublicClientApplication({
+    auth: { clientId: CLIENT_ID, authority: "https://login.microsoftonline.com/" + TENANT_ID, redirectUri: REDIRECT_URI },
+    cache: { cacheLocation: "localStorage" }
+  });
+  return true;
+}
+
+async function getToken(interactive){
+  var account = msalApp.getActiveAccount() || msalApp.getAllAccounts()[0];
+  if(account){
+    msalApp.setActiveAccount(account);
+    try{
+      var r = await msalApp.acquireTokenSilent({ scopes: GRAPH_SCOPES, account: account });
+      return r.accessToken;
+    }catch(e){ if(!interactive) throw e; }
+  }else if(!interactive){
+    throw new Error("not signed in");
+  }
+  var res = await msalApp.acquireTokenPopup({ scopes: GRAPH_SCOPES });
+  msalApp.setActiveAccount(res.account);
+  return res.accessToken;
+}
+
+async function graph(path, token, init){
+  init = init || {};
+  var res = await fetch("https://graph.microsoft.com/v1.0" + path, Object.assign({}, init, {
+    headers: Object.assign({ Authorization: "Bearer " + token }, init.headers || {})
+  }));
+  if(!res.ok){
+    var body = "";
+    try{ body = (await res.text()).slice(0, 300); }catch(e){}
+    var msg = "Graph answered " + res.status;
+    if(res.status === 401) msg = "Your sign-in has expired. Press Refresh to sign in again.";
+    else if(res.status === 403) msg = "Your account does not have access to these files, or the app has not been granted the Files.Read.All permission.";
+    else if(res.status === 404) msg = "The folder or file was not found. Check ONEDRIVE_FOLDER_PATH or ONEDRIVE_SHARE_URL in config.js.";
+    throw new Error(msg + (body ? " " + body : ""));
+  }
+  return res;
+}
+
+function encodeShareUrl(url){
+  var b64 = btoa(unescape(encodeURIComponent(url)));
+  return "u!" + b64.replace(/=+$/, "").replace(/\//g, "_").replace(/\+/g, "-");
+}
+
+/* Lists the folder's files, returning the two workbooks by name pattern. */
+async function locateWorkbooks(token){
+  var listPath;
+  if(ONEDRIVE_SHARE_URL){
+    listPath = "/shares/" + encodeShareUrl(ONEDRIVE_SHARE_URL) + "/driveItem/children";
+  }else{
+    var p = String(ONEDRIVE_FOLDER_PATH || "").replace(/^\/+|\/+$/g, "");
+    listPath = p ? "/me/drive/root:/" + encodeURI(p) + ":/children" : "/me/drive/root/children";
+  }
+  var res = await graph(listPath + (listPath.indexOf("?") === -1 ? "?" : "&")
+    + "$select=id,name,size,eTag,lastModifiedDateTime,parentReference,@microsoft.graph.downloadUrl&$top=200", token);
+  var items = (await res.json()).value || [];
+  var books = items.filter(function(f){ return /\.(xlsx|xlsm)$/i.test(f.name); });
+
+  function pick(pattern){
+    var hits = books.filter(function(f){ return new RegExp(pattern, "i").test(f.name); });
+    hits.sort(function(a, b){ return String(b.lastModifiedDateTime).localeCompare(String(a.lastModifiedDateTime)); });
+    return hits[0] || null;
+  }
+  var ewo = pick(EWO_FILE_PATTERN), dlv = pick(DELIVERY_FILE_PATTERN);
+  if(!ewo){
+    throw new Error("No workbook matching \"" + EWO_FILE_PATTERN + "\" was found in the folder. Files there: "
+      + (books.map(function(f){ return f.name; }).join(", ") || "none"));
+  }
+  return { ewo: ewo, delivery: dlv };
+}
+
+async function downloadItem(item, token, label){
+  // The pre-authenticated download address is served with CORS headers and
+  // needs no token, which is what lets a browser page pull a 10 MB file.
+  var url = item["@microsoft.graph.downloadUrl"];
+  if(!url){
+    var meta = await graph("/drives/" + item.parentReference.driveId + "/items/" + item.id
+      + "?$select=id,@microsoft.graph.downloadUrl", token);
+    url = (await meta.json())["@microsoft.graph.downloadUrl"];
+  }
+  var res = await fetch(url);
+  if(!res.ok) throw new Error("Could not download " + label + " (" + res.status + ").");
+  return await res.arrayBuffer();
+}
+
+/* ============================================================
+   Turning the workbooks into the same shapes data.json carried
+   (ported from export_ewo_data.py, rule for rule)
+   ============================================================ */
+function cellValue(v){
+  if(v == null) return null;
+  if(v instanceof Date){
+    if(isNaN(v.getTime())) return null;
+    // SheetJS can land a date a few seconds short of midnight, so round to the
+    // nearest wall-clock day. A bare time (Excel's empty date) sits in 1899.
+    var wallDays = Math.round((v.getTime() - v.getTimezoneOffset() * 60000) / 86400000);
+    var d = new Date(wallDays * 86400000);
+    if(d.getUTCFullYear() < 1950) return null;
+    return d.toISOString().slice(0, 10);
+  }
+  if(typeof v === "number") return isFinite(v) ? v : null;
+  if(typeof v === "string") return v;
+  if(typeof v === "boolean") return v;
+  return String(v);
+}
+function normName(h){ return h == null ? "" : String(h).replace(/\s+/g, " ").trim().toLowerCase(); }
+function sheetRows(ws){ return XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null, blankrows: false }); }
+function sheetByName(wb, name){
+  var key = wb.SheetNames.find(function(n){ return n.toLowerCase() === name.toLowerCase(); });
+  return key ? wb.Sheets[key] : null;
+}
+
+function extractMain(ws){
+  var rows = sheetRows(ws);
+  var hi = -1;
+  for(var i = 0; i < Math.min(rows.length, 10); i++){
+    var low = rows[i].map(normName);
+    if(low.indexOf("status") !== -1 && low.indexOf("buyer") !== -1 && low.indexOf("ewo") !== -1){ hi = i; break; }
+  }
+  if(hi === -1) throw new Error('No header row containing "EWO", "Status" and "Buyer" was found in the EWO sheet.');
+  var header = rows[hi], keep = [], out = [], seen = {};
+  header.forEach(function(h, i){
+    if(h == null) return;
+    var label = String(h).trim(); if(!label) return;
+    var k = label.toLowerCase(); if(seen[k]) return;
+    seen[k] = true; keep.push(i); out.push(label);
+  });
+  var result = [out];
+  var idPos = out.findIndex(function(h){ return h.toLowerCase() === "ewo"; });
+  for(var r = hi + 1; r < rows.length; r++){
+    var row = rows[r] || [];
+    var picked = keep.map(function(i){ return cellValue(row[i]); });
+    if(picked[idPos] == null || picked[idPos] === "") continue;
+    result.push(picked);
+  }
+  return result;
+}
+
+function extractMonthly(ws){
+  var out = [];
+  sheetRows(ws).forEach(function(r){
+    var a = cellValue(r[0]), b = cellValue(r[1]);
+    if(a == null && b == null) return;
+    out.push([a, b]);
+  });
+  return out;
+}
+
+var DELIVERY_COLUMNS = ["DeliveryDate", "ExportOrderNo", "BookingNo", "Buyer", "DeliveryType",
+                        "BeneficieryUnit", "ExecutionUnit", "FabricType", "DeliveryQtyKg"];
+function extractDelivery(ws){
+  var rows = sheetRows(ws);
+  var hi = rows.slice(0, 10).findIndex(function(r){
+    var low = r.map(normName); return low.indexOf("deliverydate") !== -1 && low.indexOf("exportorderno") !== -1; });
+  if(hi === -1) return [];
+  var lookup = {}; rows[hi].forEach(function(c, i){ if(c != null) lookup[normName(c)] = i; });
+  var keep = DELIVERY_COLUMNS.filter(function(n){ return lookup[normName(n)] != null; });
+  var out = [keep], di = lookup["deliverydate"];
+  for(var r = hi + 1; r < rows.length; r++){
+    var row = rows[r] || [];
+    if(!(row[di] instanceof Date)) continue;
+    out.push(keep.map(function(n){ var v = cellValue(row[lookup[normName(n)]]); return typeof v === "number" ? Math.round(v * 10) / 10 : v; }));
+  }
+  return out;
+}
+
+function extractLockPlan(ws){
+  var rows = sheetRows(ws);
+  var hi = rows.slice(0, 10).findIndex(function(r){
+    var low = r.map(normName); return low.indexOf("ewo") !== -1 && low.indexOf("booking number") !== -1; });
+  if(hi === -1) return [];
+  var L = {}; rows[hi].forEach(function(c, i){ if(c != null) L[normName(c)] = i; });
+  function col(){ for(var i = 0; i < arguments.length; i++){ if(L[normName(arguments[i])] != null) return L[normName(arguments[i])]; } return null; }
+  var spec = [["Booking", col("Booking Number")], ["EWO", col("EWO")], ["MMTeam", col("MM Team")],
+              ["Buyer", col("Buyer Name")], ["BuyerTeam", col("Buyer Team")], ["Unit", col("Unit")],
+              ["PlanKg", col("Fabric Delivery Balance")], ["LockStart", col("Adjusted Lock Fabric Start")],
+              ["LockEnd", col("Adjusted Lock Fabric End")], ["ReqTillDate", col("Required Till Date")],
+              ["Delivered", col("Delivered")], ["RFD", col("RFD")]].filter(function(x){ return x[1] != null; });
+  var out = [spec.map(function(x){ return x[0]; })], ei = col("EWO");
+  for(var r = hi + 1; r < rows.length; r++){
+    var row = rows[r] || [], e = row[ei];
+    if(!(typeof e === "number" && e > 100000 && e < 999999)) continue;
+    out.push(spec.map(function(x){ return cellValue(row[x[1]]); }));
+  }
+  return out;
+}
+
+function extractRfd(ws){
+  var rows = sheetRows(ws);
+  var hi = rows.slice(0, 6).findIndex(function(r){
+    var low = r.map(normName); return low.indexOf("ewo") !== -1 && low.indexOf("booking number") !== -1; });
+  if(hi === -1) return [];
+  var L = {}; rows[hi].forEach(function(c, i){ if(c != null) L[normName(c)] = i; });
+  function col(prefix){ var p = normName(prefix); for(var k in L){ if(k.indexOf(p) === 0) return L[k]; } return null; }
+  var spec = [["EWO", col("EWO")], ["Booking", col("Booking Number")], ["Buyer", col("Buyer")],
+              ["FRStart", col("FR Started")], ["ActualStart", col("Actual Start")], ["PIStatus", col("Fabric PI")],
+              ["Unit", col("Received Unit")], ["Kg", col("Total Qty")]].filter(function(x){ return x[1] != null; });
+  var out = [spec.map(function(x){ return x[0]; })], ei = col("EWO");
+  for(var r = hi + 1; r < rows.length; r++){
+    var row = rows[r] || [], e = row[ei];
+    if(!(typeof e === "number" && e > 100000 && e < 999999)) continue;
+    out.push(spec.map(function(x){ return cellValue(row[x[1]]); }));
+  }
+  return out;
+}
+
+function extractLockMeta(ws){
+  var rows = sheetRows(ws).slice(0, 12), meta = {};
+  rows.forEach(function(r){
+    r.forEach(function(c, i){
+      var t = normName(c);
+      var nxt = null;
+      for(var j = i + 1; j < Math.min(i + 4, r.length); j++){ if(typeof r[j] === "number"){ nxt = r[j]; break; } }
+      if(t.indexOf("monthly target") === 0 && nxt != null) meta.monthTarget = nxt;
+      if(t === "day" && nxt != null) meta.daysInMonth = nxt;
+      if(t === "actual" && nxt != null && meta.daysDone == null) meta.daysDone = nxt;
+      if(t === "remain" && nxt != null) meta.daysRemain = nxt;
+      if(t === "fabric start %" && nxt != null) meta.fabricStartPct = nxt;
+      if(t === "fabric end %" && nxt != null) meta.fabricEndPct = nxt;
+    });
+  });
+  var dates = [];
+  rows.slice(0, 2).forEach(function(r){ r.forEach(function(c){ if(c instanceof Date) dates.push(cellValue(c)); }); });
+  if(dates.length >= 2){ meta.reportFrom = dates[0]; meta.reportTo = dates[1]; }
+  return meta;
+}
+
+function bundleFromWorkbooks(ewoBuf, dlvBuf){
+  // Only the sheets that are needed are parsed: the fab and Sew grids are huge
+  // and the dashboard rebuilds them itself from the EWO rows.
+  var wb = XLSX.read(new Uint8Array(ewoBuf), { type: "array", cellDates: true, sheets: ["EWO", "Fsum", "Ssum"] });
+  var main = sheetByName(wb, "EWO");
+  if(!main) throw new Error('The EWO workbook has no sheet named "EWO".');
+  var bundle = {
+    EWO: extractMain(main),
+    Fsum: sheetByName(wb, "Fsum") ? extractMonthly(sheetByName(wb, "Fsum")) : [],
+    Ssum: sheetByName(wb, "Ssum") ? extractMonthly(sheetByName(wb, "Ssum")) : [],
+    Delivery: [], LockPlan: [], RFD: [], LockMeta: {}
+  };
+  if(dlvBuf){
+    var wb2 = XLSX.read(new Uint8Array(dlvBuf), { type: "array", cellDates: true, sheets: ["Delivery", "Locked Fabric", "RFD", "LockRepo"] });
+    var d = sheetByName(wb2, "Delivery"), l = sheetByName(wb2, "Locked Fabric"), r = sheetByName(wb2, "RFD"), m = sheetByName(wb2, "LockRepo");
+    bundle.Delivery = d ? extractDelivery(d) : [];
+    bundle.LockPlan = l ? extractLockPlan(l) : [];
+    bundle.RFD = r ? extractRfd(r) : [];
+    bundle.LockMeta = m ? extractLockMeta(m) : {};
+  }
+  return bundle;
+}
+
+/* ============================================================
+   Loading: sign in, find the files, download, parse, and keep a
+   local copy so a revisit is instant when nothing has changed
+   ============================================================ */
+var lastSignature = null, generatedAt = null, pollTimer = null, freshTimer = null, sourceLabel = "";
+var CACHE_KEY = "ewo-dashboard-cache-v1";
+
+function readCache(){
+  try{ var raw = localStorage.getItem(CACHE_KEY); return raw ? JSON.parse(raw) : null; }catch(e){ return null; }
+}
+function writeCache(sig, bundle){
+  try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ sig: sig, at: new Date().toISOString(), bundle: bundle })); }
+  catch(e){ /* quota exceeded on a small browser profile: fine, we just re-download next time */ }
+}
+
+async function load(opts){
+  opts = opts || {};
+  var interactive = !!opts.interactive;
+  els.refreshBtn.disabled = true;
+  try{
+    if(!opts.quiet){ clearError(); loadingScreen("Signing in", "Checking your Microsoft sign-in.", false); setStatus("Signing in...", "busy"); }
+    var token;
+    try{ token = await getToken(interactive); }
+    catch(e){
+      if(interactive) throw e;
+      loadingScreen("", "", true);              // ask for a click; popups need a gesture
+      setStatus("Signed out");
+      els.signInBtn.hidden = false; els.signOutBtn.hidden = true; els.refreshBtn.hidden = true; els.csvBtn.hidden = true;
+      els.refreshBtn.disabled = false;
+      return false;
+    }
+    var acct = msalApp.getActiveAccount();
+    els.accountLabel.textContent = acct ? (acct.username || acct.name || "") : "";
+    els.signInBtn.hidden = true; els.signOutBtn.hidden = false; els.refreshBtn.hidden = false; els.csvBtn.hidden = false;
+
+    if(!opts.quiet){ loadingScreen("Finding the workbooks", "Looking in the OneDrive folder.", false); setStatus("Finding files...", "busy"); }
+    var found = await locateWorkbooks(token);
+    var sig = found.ewo.eTag + "|" + (found.delivery ? found.delivery.eTag : "-");
+
+    if(sig === lastSignature && ROWS.length){
+      setStatus(opts.quiet ? "Up to date" : "Checked, the files have not changed", "live");
+      els.refreshBtn.disabled = false;
+      return true;
+    }
+
+    var bundle = null, cached = readCache();
+    if(cached && cached.sig === sig && cached.bundle && cached.bundle.EWO){
+      bundle = cached.bundle;
+      generatedAt = cached.at;
+    }else{
+      if(!opts.quiet){
+        loadingScreen("Downloading " + found.ewo.name, Math.round(found.ewo.size / 1048576) + " MB from OneDrive.", false);
+        setStatus("Downloading...", "busy");
+      }
+      var ewoBuf = await downloadItem(found.ewo, token, found.ewo.name);
+      var dlvBuf = null;
+      if(found.delivery){
+        if(!opts.quiet) loadingScreen("Downloading " + found.delivery.name, Math.round(found.delivery.size / 1048576) + " MB from OneDrive.", false);
+        dlvBuf = await downloadItem(found.delivery, token, found.delivery.name);
+      }
+      if(!opts.quiet){ loadingScreen("Reading the sheets", "This takes a few seconds for a workbook this size.", false); setStatus("Reading...", "busy"); }
+      await new Promise(function(r){ setTimeout(r, 30); });   // let the screen paint before the heavy parse
+      bundle = bundleFromWorkbooks(ewoBuf, dlvBuf);
+      generatedAt = found.ewo.lastModifiedDateTime || new Date().toISOString();
+      writeCache(sig, bundle);
+    }
+
+    var isUpdate = lastSignature !== null;
+    lastSignature = sig;
+    ingest(bundle);
+    sourceLabel = found.ewo.name + (found.delivery ? " + " + found.delivery.name : "");
+    els.loadingState.style.display = "none";
+    els.dashboard.style.display = "block";
+    clearError();
+    setStatus(isUpdate ? "New data loaded" : "Up to date", "live");
+    paintFreshness();
+    if(isUpdate){ els.dashboard.classList.remove("flash"); void els.dashboard.offsetWidth; els.dashboard.classList.add("flash"); }
+    els.refreshBtn.disabled = false;
+    return true;
+  }catch(e){
+    if(opts.quiet && ROWS.length){
+      setStatus("Check failed, showing last good data", "err");
+    }else{
+      loadingScreen("", "", false);
+      els.loadingTitle.style.display = "none"; els.loadingText.style.display = "none"; els.spinner.style.display = "none";
+      showError("<strong>Couldn't load the workbooks.</strong><br/>" + esc(e.message));
+      setStatus("Not loaded", "err");
+    }
+    els.refreshBtn.disabled = false;
+    return false;
+  }
+}
+
+function paintFreshnessOverride(){
+  els.freshness.textContent = generatedAt ? "· file saved " + ago(generatedAt) : "";
+}
+
+function startPolling(){
+  if(pollTimer) clearInterval(pollTimer);
+  if(freshTimer) clearInterval(freshTimer);
+  if(POLL_SECONDS > 0){
+    pollTimer = setInterval(function(){ if(!document.hidden) load({ quiet: true }); }, POLL_SECONDS * 1000);
+  }
+  freshTimer = setInterval(paintFreshnessOverride, 30000);
+  document.addEventListener("visibilitychange", function(){ if(!document.hidden) load({ quiet: true }); });
+}
+
+/* ============================================================
+   Ingest
+   ============================================================ */
+function ingest(bundle){
+  var rows = bundle.EWO;
+  var headerIdx = findHeaderRow(rows);
+  HEADERS = rows[headerIdx].map(function(h, i){
+    return (h == null || String(h).trim() === "") ? "Column " + (i + 1) : String(h).trim();
+  });
+  IDX = {};
+  HEADERS.forEach(function(h, i){ if(IDX[h] == null) IDX[h] = i; });
+
+  var idIdx = IDX["EWO"];
+  ROWS = rows.slice(headerIdx + 1).filter(function(r){
+    return r && idIdx != null && r[idIdx] != null && r[idIdx] !== "";
+  });
+
+  classifyColumns();
+  FSUM = bundle.Fsum || [];
+  SSUM = bundle.Ssum || [];
+
+  function table(m){
+    var hdr = (m && m.length) ? m[0].map(function(h){ return String(h == null ? "" : h).trim(); }) : [];
+    var idx = {}; hdr.forEach(function(h, i){ if(idx[h] == null) idx[h] = i; });
+    return { rows: (m || []).slice(1), idx: idx };
+  }
+  var t = table(bundle.Delivery); DELIV = t.rows; DIDX = t.idx;
+  t = table(bundle.LockPlan);     LOCK = t.rows;  LIDX = t.idx;
+  var rt = table(bundle.RFD);
+  RFDROWS = rt.rows;
+  RFDROWS.idxKg = rt.idx["Kg"] != null ? rt.idx["Kg"] : 0;
+  LOCKMETA = bundle.LockMeta || {};
+  if(asOf == null){
+    asOf = parseDate(LOCKMETA.reportTo) || TODAY;
+    els.asOfDate.value = new Date(asOf).toISOString().slice(0, 10);
+  }
+
+  var keptFilters = snapshotFilters();
+  buildFilters();
+  restoreFilters(keptFilters);
+  buildColumnChooser();
+  buildGroupBy();
+  applyFilters();
+}
+
+/* A background refresh must not throw away what the reader had selected. */
+function snapshotFilters(){
+  var s = { dims: {}, q: els.searchInput.value, df: els.dateField.value,
+            from: els.dateFrom.value, to: els.dateTo.value,
+            year: els.yearFilter.value, month: els.monthFilter.value };
+  Object.keys(dimSelects).forEach(function(k){ s.dims[k] = dimSelects[k].value; });
+  return s;
+}
+function restoreFilters(s){
+  els.searchInput.value = s.q || "";
+  if(s.df){ els.dateField.value = s.df; }
+  els.dateFrom.value = s.from || "";
+  els.dateTo.value = s.to || "";
+  if(s.year){
+    var hasYear = Array.prototype.some.call(els.yearFilter.options, function(o){ return o.value === s.year; });
+    if(hasYear) els.yearFilter.value = s.year;
+  }
+  els.monthFilter.value = s.month || "";
+  Object.keys(s.dims).forEach(function(k){
+    if(dimSelects[k] && s.dims[k]){
+      var has = Array.prototype.some.call(dimSelects[k].options, function(o){ return o.value === s.dims[k]; });
+      if(has) dimSelects[k].value = s.dims[k];
+    }
+  });
+}
+
+function findHeaderRow(rows){
+  for(var i = 0; i < Math.min(rows.length, 10); i++){
+    var low = (rows[i] || []).map(function(v){ return (v == null ? "" : String(v)).trim().toLowerCase(); });
+    if(low.indexOf("status") !== -1 && low.indexOf("buyer") !== -1 && low.indexOf("ewo") !== -1) return i;
+  }
+  throw new Error('No header row containing "EWO", "Status" and "Buyer" was found.');
+}
+
+function classifyColumns(){
+  HEADERS.forEach(function(name, i){
+    var filled = 0, dates = 0, nums = 0;
+    for(var r = 0; r < ROWS.length; r++){
+      var v = ROWS[r][i];
+      if(v == null || v === "") continue;
+      filled++;
+      if(parseDate(v) != null) dates++;
+      else if(toNum(v) != null) nums++;
+    }
+    COLEMPTY[name] = (filled === 0);
+    if(filled === 0) COLTYPE[name] = "text";
+    else if(dates / filled >= 0.6) COLTYPE[name] = "date";
+    else if(nums / filled >= 0.6) COLTYPE[name] = "number";
+    else COLTYPE[name] = "text";
+  });
+  ID_COLUMNS.forEach(function(n){ if(COLTYPE[n]) COLTYPE[n] = "text"; });
+}
+
+function isSummable(name){
+  return COLTYPE[name] === "number" && ID_COLUMNS.indexOf(name) === -1
+    && AVERAGE_COLUMNS.indexOf(name) === -1;
+}
+function isAveraged(name){
+  return COLTYPE[name] === "number" && AVERAGE_COLUMNS.indexOf(name) !== -1;
+}
+
+/* ============================================================
+   Filters
+   ============================================================ */
+var dimSelects = {};
+
+function buildFilters(){
+  Object.keys(dimSelects).forEach(function(k){
+    var wrap = dimSelects[k].parentNode;
+    if(wrap && wrap.parentNode) wrap.parentNode.removeChild(wrap);
+  });
+  dimSelects = {};
+
+  FILTER_DIMENSIONS.forEach(function(name){
+    if(IDX[name] == null || COLEMPTY[name]) return;
+    var values = Array.from(new Set(ROWS.map(function(r){ return txt(r, name); })
+      .filter(function(v){ return v !== ""; }))).sort();
+    if(values.length < 2) return;
+
+    var wrap = document.createElement("div");
+    wrap.className = "fld";
+    var id = "f_" + name.replace(/\W+/g, "_");
+    wrap.innerHTML = '<label for="' + id + '">' + esc(name) + '</label>'
+      + '<select id="' + id + '"><option value="">All</option>'
+      + values.map(function(v){ return '<option value="' + esc(v) + '">' + esc(v) + '</option>'; }).join("")
+      + '</select>';
+    els.filterGrid.insertBefore(wrap, els.dateFieldWrap);
+    var sel = wrap.querySelector("select");
+    sel.addEventListener("change", function(){ page = 0; applyFilters(); });
+    dimSelects[name] = sel;
+  });
+
+  var dateCols = HEADERS.filter(function(h){ return COLTYPE[h] === "date" && !COLEMPTY[h]; });
+  els.dateField.innerHTML = '<option value="">No date filter</option>'
+    + dateCols.map(function(h){ return '<option value="' + esc(h) + '">' + esc(h) + '</option>'; }).join("");
+
+  // Years actually present anywhere in the workbook's dates, so the list never
+  // offers a year with nothing behind it.
+  var years = {};
+  ROWS.forEach(function(r){
+    dateCols.forEach(function(h){
+      var d = dat(r, h);
+      if(d != null) years[new Date(d).getUTCFullYear()] = true;
+    });
+  });
+  var yearList = Object.keys(years).map(Number).sort();
+  els.yearFilter.innerHTML = '<option value="">All years</option>'
+    + yearList.map(function(y){ return '<option value="' + y + '">' + y + '</option>'; }).join("");
+  els.monthFilter.innerHTML = '<option value="">All months</option>'
+    + MONTH_FULL.map(function(name, i){
+        return '<option value="' + (i + 1) + '">' + name + '</option>';
+      }).join("");
+}
+
+function currentFilters(){
+  var f = { q: els.searchInput.value.trim().toLowerCase(), dims: {},
+            dateField: els.dateField.value, from: null, to: null,
+            year: els.yearFilter.value ? parseInt(els.yearFilter.value, 10) : null,
+            month: els.monthFilter.value ? parseInt(els.monthFilter.value, 10) : null };
+  Object.keys(dimSelects).forEach(function(k){ if(dimSelects[k].value) f.dims[k] = dimSelects[k].value; });
+  if(els.dateFrom.value) f.from = parseDate(els.dateFrom.value);
+  if(els.dateTo.value) f.to = parseDate(els.dateTo.value);
+  return f;
+}
+
+function passesBaseFilters(r, f, dimKeys){
+  for(var i = 0; i < dimKeys.length; i++){
+    if(txt(r, dimKeys[i]) !== f.dims[dimKeys[i]]) return false;
+  }
+  var wantsDate = f.from != null || f.to != null || f.year != null || f.month != null;
+  if(f.dateField && wantsDate){
+    var d = dat(r, f.dateField);
+    if(d == null) return false;                       // no date means it cannot match a date filter
+    if(f.from != null && d < f.from) return false;
+    if(f.to != null && d > f.to) return false;
+    var dd = new Date(d);
+    if(f.year != null && dd.getUTCFullYear() !== f.year) return false;
+    if(f.month != null && dd.getUTCMonth() + 1 !== f.month) return false;
+  }
+  if(f.q){
+    var hay = "";
+    for(var c = 0; c < r.length; c++){ var v = r[c]; if(v != null) hay += String(v) + " "; }
+    if(hay.toLowerCase().indexOf(f.q) === -1) return false;
+  }
+  return true;
+}
+
+function applyFilters(){
+  var f = currentFilters();
+  var dimKeys = Object.keys(f.dims);
+  baseFiltered = ROWS.filter(function(r){ return passesBaseFilters(r, f, dimKeys); });
+  filtered = activeAlert ? baseFiltered.filter(ALERTS_BY_KEY[activeAlert].test) : baseFiltered.slice();
+  if(sortCol) sortFiltered();
+  renderAll();
+}
+
+function sortFiltered(){
+  var name = sortCol, type = COLTYPE[name];
+  filtered.sort(function(a, b){
+    var x, y;
+    if(type === "date"){ x = dat(a, name); y = dat(b, name); }
+    else if(type === "number"){ x = num(a, name); y = num(b, name); }
+    else { x = txt(a, name).toLowerCase(); y = txt(b, name).toLowerCase(); }
+    var xe = (x == null || x === ""), ye = (y == null || y === "");
+    if(xe && ye) return 0;
+    if(xe) return 1;
+    if(ye) return -1;
+    if(x < y) return -sortDir;
+    if(x > y) return sortDir;
+    return 0;
+  });
+}
+
+function resetAll(){
+  els.searchInput.value = "";
+  Object.keys(dimSelects).forEach(function(k){ dimSelects[k].value = ""; });
+  els.dateField.value = ""; els.dateFrom.value = ""; els.dateTo.value = "";
+  els.yearFilter.value = ""; els.monthFilter.value = "";
+  activeAlert = null; sortCol = null; page = 0;
+  applyFilters();
+}
+
+/* ============================================================
+   Alerts
+   Chosen by measuring the real workbook. A rule that fires on a third
+   of all orders is noise, not a warning, so fabric ending after PCD is
+   deliberately absent: fabric arrives in batches and cutting normally
+   starts partway through the delivery window.
+   ============================================================ */
+var ALERTS = [
+  { key: "fabAfterFrd", sev: "high", title: "Fabric past Max FRD",
+    detail: "Fabric ends after the latest agreed requirement date",
+    test: function(r){ var a = dat(r,"Adjusted Fabric End"), b = dat(r,"Max FRD");
+                       return a != null && b != null && a > b; } },
+  { key: "sequenceError", sev: "high", title: "Impossible date order",
+    detail: "Milestones contradict each other, so the plan cannot be right",
+    test: function(r){
+      var ob = dat(r,"Order Bank Date"), pcd = dat(r,"Adjusted PCD"),
+          fs = dat(r,"Adjusted Fabric Start"), ss = dat(r,"Adjusted sew start"),
+          se = dat(r,"Adjusted sew end");
+      if(pcd != null && ob != null && pcd < ob) return true;
+      if(ss != null && pcd != null && ss < pcd) return true;
+      if(fs != null && pcd != null && fs > pcd) return true;
+      if(se != null && ss != null && se < ss) return true;
+      return false; } },
+  { key: "fabAfterSew", sev: "mid", title: "Fabric still arriving at sew start",
+    detail: "Adjusted Fabric End is later than Adjusted sew start",
+    test: function(r){ var a = dat(r,"Adjusted Fabric End"), b = dat(r,"Adjusted sew start");
+                       return a != null && b != null && a > b; } },
+  { key: "fabAfterMinFrd", sev: "mid", title: "Fabric starts after Min FRD",
+    detail: "Fabric begins later than the earliest date it was needed",
+    test: function(r){ var a = dat(r,"Adjusted Fabric Start"), b = dat(r,"Min FRD");
+                       return a != null && b != null && a > b; } },
+  { key: "unlockedSoon", sev: "mid", title: "Unlocked, fabric within 30 days",
+    detail: "Fabric starts soon but the order is not confirmed",
+    test: function(r){ if(txt(r,"Status").toLowerCase().indexOf("locked") === 0) return false;
+                       var d = dat(r,"Adjusted Fabric Start");
+                       return d != null && d >= TODAY && d <= TODAY + 30 * DAY; } },
+  { key: "onHold", sev: "mid", title: "On hold or blocked",
+    detail: "Needs a decision before planning can move",
+    test: function(r){ var s = txt(r,"Status").toLowerCase();
+                       return s.indexOf("hold") !== -1 || s.indexOf("block") !== -1; } },
+  { key: "noPcd", sev: "mid", title: "No PCD set",
+    detail: "Adjusted PCD is blank, so the order cannot be scheduled",
+    test: function(r){ return dat(r,"Adjusted PCD") == null
+                          && txt(r,"Status").toLowerCase().indexOf("cancel") === -1; } },
+  { key: "pcdSoon", sev: "low", title: "PCD within 30 days",
+    detail: "Cutting is due to start inside the next month",
+    test: function(r){ var d = dat(r,"Adjusted PCD");
+                       return d != null && d >= TODAY && d <= TODAY + 30 * DAY; } },
+  { key: "longFab", sev: "low", title: "Fabric window over 45 days",
+    detail: "Unusually long fabric lead time, worth a second look",
+    test: function(r){ var v = num(r,"fab dur"); return v != null && v > 45; } }
+];
+var ALERTS_BY_KEY = {};
+ALERTS.forEach(function(a){ ALERTS_BY_KEY[a.key] = a; });
+
+function renderAlerts(){
+  els.alertRow.innerHTML = "";
+  var highTotal = 0;
+  ALERTS.forEach(function(a){
+    var hits = baseFiltered.filter(a.test);
+    if(a.sev === "high") highTotal += hits.length;
+    var qty = hits.reduce(function(s, r){ return s + (num(r, "Order Qty") || 0); }, 0);
+    var btn = document.createElement("button");
+    btn.className = "alert sev-" + a.sev + (activeAlert === a.key ? " on" : "");
+    btn.innerHTML = '<span class="n">' + fmtInt(hits.length) + '</span>'
+      + '<span class="t">' + esc(a.title) + '</span>'
+      + '<span class="d">' + esc(a.detail) + '<br/>' + fmtInt(qty) + ' pcs</span>';
+    btn.addEventListener("click", function(){
+      activeAlert = (activeAlert === a.key) ? null : a.key;
+      page = 0;
+      applyFilters();
+    });
+    els.alertRow.appendChild(btn);
+  });
+  els.attnCount.textContent = fmtInt(highTotal);
+  els.attnCount.style.display = highTotal ? "" : "none";
+}
+
+/* Compact table of whatever the alert selection currently is. */
+var ATTN_COLUMNS = ["EWO","Status","Buyer","Team","Execution Unit","Order Qty",
+  "Adjusted Fabric Start","Adjusted Fabric End","Adjusted PCD","Adjusted sew start","Max FRD"];
+
+function renderAttnTable(){
+  var cols = ATTN_COLUMNS.filter(function(c){ return IDX[c] != null; });
+  els.attnTableTitle.textContent = activeAlert ? ALERTS_BY_KEY[activeAlert].title : "All shown orders";
+  els.attnTableHint.textContent = activeAlert
+    ? ALERTS_BY_KEY[activeAlert].detail + ". " + fmtInt(filtered.length) + " orders."
+    : "Pick a card above to narrow this to one problem. Showing the first 200 of "
+      + fmtInt(filtered.length) + " orders.";
+
+  var head = '<thead><tr>' + cols.map(function(h){
+    return '<th' + (isSummable(h) ? ' class="num"' : "") + '>' + esc(h) + '</th>';
+  }).join("") + '</tr></thead>';
+  var body = '<tbody>' + filtered.slice(0, 200).map(function(r){
+    return '<tr>' + cols.map(function(h){
+      return '<td' + (isSummable(h) ? ' class="num"' : "") + '>' + cellHtml(r, h) + '</td>';
+    }).join("") + '</tr>';
+  }).join("") + '</tbody>';
+  var foot = '<tfoot><tr>' + cols.map(function(h, i){
+    if(i === 0) return '<td>' + fmtInt(filtered.length) + ' orders</td>';
+    if(isSummable(h)) return '<td class="num">' + fmtInt(sum(filtered, h)) + '</td>';
+    return '<td></td>';
+  }).join("") + '</tr></tfoot>';
+
+  els.attnTable.innerHTML = filtered.length
+    ? head + body + foot
+    : '<tbody><tr><td class="empty-note">Nothing matches. Good news, or the filters are too tight.</td></tr></tbody>';
+}
+
+/* ============================================================
+   Rendering
+   ============================================================ */
+function sum(rowsIn, name){
+  var t = 0;
+  for(var i = 0; i < rowsIn.length; i++){ var v = num(rowsIn[i], name); if(v != null) t += v; }
+  return t;
+}
+function avg(rowsIn, name){
+  var t = 0, n = 0;
+  for(var i = 0; i < rowsIn.length; i++){ var v = num(rowsIn[i], name); if(v != null){ t += v; n++; } }
+  return n ? t / n : 0;
+}
+
+/* Only the visible tab is drawn. Chart.js cannot size a canvas inside a hidden
+   container, so each tab renders when it is opened. */
+function renderAll(){
+  renderFilterSummary();
+  renderKpis();
+  renderAlerts();
+  renderTab(activeTab);
+}
+function renderTab(name){
+  if(name === "overview") renderDimensionCharts();
+  else if(name === "attention") renderAttnTable();
+  else if(name === "timeline"){ renderMonthCharts(); renderWorkbookMonthly(); }
+  else if(name === "capacity") renderCapacity();
+  else if(name === "delivery") renderDelivery();
+  else if(name === "summary") renderPivot();
+  else if(name === "orders") renderTable();
+}
+
+function renderFilterSummary(){
+  var pct = ROWS.length ? Math.round(1000 * filtered.length / ROWS.length) / 10 : 0;
+  els.filterSummary.textContent = "Showing " + filtered.length.toLocaleString()
+    + " of " + ROWS.length.toLocaleString() + " orders (" + pct + "%)";
+
+  var chips = [];
+  Object.keys(dimSelects).forEach(function(k){
+    if(dimSelects[k].value) chips.push(['', k + ": " + dimSelects[k].value]);
+  });
+  if(els.searchInput.value.trim()) chips.push(['', 'search "' + els.searchInput.value.trim() + '"']);
+  if(els.dateField.value && (els.yearFilter.value || els.monthFilter.value)){
+    var part = [];
+    if(els.monthFilter.value) part.push(MONTH_FULL[parseInt(els.monthFilter.value, 10) - 1]);
+    if(els.yearFilter.value) part.push(els.yearFilter.value);
+    chips.push(['', els.dateField.value + ": " + part.join(" ")]);
+  }
+  if(els.dateField.value && (els.dateFrom.value || els.dateTo.value)){
+    chips.push(['', els.dateField.value + " " + (els.dateFrom.value || "any") + " to " + (els.dateTo.value || "any")]);
+  }
+  if(activeAlert) chips.push(['alert', ALERTS_BY_KEY[activeAlert].title]);
+  els.activeChips.innerHTML = chips.map(function(c){
+    return '<span class="chip ' + c[0] + '">' + esc(c[1]) + '</span>';
+  }).join(" ");
+}
+
+function renderKpis(){
+  var orderQty = sum(filtered, "Order Qty");
+  var fabQty = sum(filtered, "Fab Qty");
+  var inHouse = sum(filtered, "InHouse");
+  var outSide = sum(filtered, "OutSide");
+  var frHour = sum(filtered, "FR hour");
+  var locked = filtered.filter(function(r){ return txt(r,"Status").toLowerCase().indexOf("locked") === 0; }).length;
+  var buyers = new Set(filtered.map(function(r){ return txt(r,"Buyer"); })).size;
+  var sourced = inHouse + outSide;
+  var inPct = sourced ? Math.round(100 * inHouse / sourced) : 0;
+
+  var tiles = [
+    ["Orders", fmtInt(filtered.length), buyers + " buyers"],
+    ["Order Qty", fmtInt(orderQty), "pieces"],
+    ["Fab Qty", fmtInt(fabQty), "fabric units"],
+    ["In-house share", sourced ? inPct + "%" : "n/a", sourced ? fmtInt(inHouse) + " of " + fmtInt(sourced) : "no split recorded"],
+    ["Locked", fmtInt(locked), filtered.length ? Math.round(100 * locked / filtered.length) + "% of shown" : ""],
+    ["Sewing hours", fmtInt(frHour), "FR hour total"],
+    ["Avg fabric days", fmt1(avg(filtered, "fab dur")), "Adjusted fabric window"],
+    ["Avg sewing days", fmt1(avg(filtered, "sew dur")), "Adjusted sew window"]
+  ];
+  els.kpiRow.innerHTML = tiles.map(function(t){
+    return '<div class="kpi"><div class="label">' + esc(t[0]) + '</div><div class="value">'
+      + esc(t[1]) + '</div><div class="foot">' + esc(t[2]) + '</div></div>';
+  }).join("");
+}
+
+/* Brand green and gold lead, with muted supporting tones behind them. */
+var PALETTE = ["#006040","#F8B000","#0A7A54","#D99700","#3FA566","#C7511F",
+               "#3B6FA8","#8A6D1F","#6B7280","#A85CC1"];
+var MONO = { family: "IBM Plex Mono", size: 11 };
+var GRID = { color: "#F0EEE7" };
+function destroyChart(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
+
+function groupSum(rowsIn, dim, measure){
+  if(IDX[dim] == null) return [];
+  var m = {};
+  rowsIn.forEach(function(r){
+    var k = txt(r, dim) || "(blank)";
+    m[k] = (m[k] || 0) + (measure ? (num(r, measure) || 0) : 1);
+  });
+  return Object.keys(m).map(function(k){ return [k, m[k]]; }).sort(function(a, b){ return b[1] - a[1]; });
+}
+
+function barChart(canvasId, entries, label){
+  destroyChart(canvasId);
+  var el = document.getElementById(canvasId);
+  if(!el || entries.length === 0) return;
+  charts[canvasId] = new Chart(el, {
+    type: "bar",
+    data: { labels: entries.map(function(e){ return e[0]; }),
+            datasets: [{ label: label, data: entries.map(function(e){ return e[1]; }),
+                         backgroundColor: entries.map(function(_, i){ return PALETTE[i % PALETTE.length]; }),
+                         borderRadius: 2 }] },
+    options: {
+      indexAxis: "y", responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+                 tooltip: { callbacks: { label: function(c){ return label + ": " + fmtInt(c.parsed.x); } } } },
+      scales: { x: { ticks: { font: MONO }, grid: GRID }, y: { ticks: { font: MONO }, grid: { display: false } } }
+    }
+  });
+}
+
+function renderDimensionCharts(){
+  barChart("statusChart", groupSum(filtered, "Status", null), "Orders");
+  barChart("execChart", groupSum(filtered, "Execution Unit", "Order Qty"), "Order Qty");
+  barChart("teamChart", groupSum(filtered, "Team", "Order Qty"), "Order Qty");
+  barChart("buyerChart", groupSum(filtered, "Buyer", "Order Qty").slice(0, 12), "Order Qty");
+
+  var inHouse = sum(filtered, "InHouse"), outSide = sum(filtered, "OutSide");
+  destroyChart("sourceChart");
+  var el = document.getElementById("sourceChart");
+  if(el && inHouse + outSide > 0){
+    charts.sourceChart = new Chart(el, {
+      type: "doughnut",
+      data: { labels: ["In-house", "Outside"],
+              datasets: [{ data: [inHouse, outSide], backgroundColor: ["#006040", "#F8B000"],
+                           borderColor: "#fff", borderWidth: 2 }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: "58%",
+        plugins: { legend: { position: "bottom", labels: { font: MONO, boxWidth: 12 } },
+          tooltip: { callbacks: { label: function(c){
+            var tot = inHouse + outSide;
+            return c.label + ": " + fmtInt(c.parsed) + " (" + Math.round(100 * c.parsed / tot) + "%)"; } } } } }
+    });
+  }
+}
+
+/* Buckets are keyed by the millisecond value of the period's first day, so a
+   single numeric sort orders every granularity correctly. */
+function weekStart(ms){
+  var dow = new Date(ms).getUTCDay();        // 0 is Sunday
+  return ms - (dow === 0 ? 6 : dow - 1) * DAY;
+}
+function bucketKey(ms, gran){
+  if(gran === "day") return ms;
+  if(gran === "week") return weekStart(ms);
+  var d = new Date(ms);
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1);
+}
+function bucketLabel(ms, gran){
+  if(gran === "month"){
+    var d = new Date(ms);
+    return MONTH_ABBR[d.getUTCMonth()] + " " + String(d.getUTCFullYear()).slice(2);
+  }
+  return fmtDate(ms);                        // day, and the Monday for a week
+}
+
+function bucketSeries(dateCol, measure, gran){
+  if(IDX[dateCol] == null) return { labels: [], values: [] };
+  var m = {};
+  filtered.forEach(function(r){
+    var d = dat(r, dateCol);
+    if(d == null) return;
+    var k = bucketKey(d, gran);
+    m[k] = (m[k] || 0) + (measure ? (num(r, measure) || 0) : 1);
+  });
+  var keys = Object.keys(m).map(Number).sort(function(a, b){ return a - b; });
+  return { labels: keys.map(function(k){ return bucketLabel(k, gran); }),
+           values: keys.map(function(k){ return m[k]; }) };
+}
+
+function lineChart(canvasId, series, label, colour, fill, gran){
+  destroyChart(canvasId);
+  var el = document.getElementById(canvasId);
+  if(!el || series.labels.length === 0) return;
+  charts[canvasId] = new Chart(el, {
+    type: "line",
+    data: { labels: series.labels,
+            datasets: [{ label: label, data: series.values, borderColor: colour,
+                         backgroundColor: fill, fill: true, tension: 0.25,
+                         pointRadius: series.labels.length > 60 ? 0 : 3,
+                         pointBackgroundColor: colour, borderWidth: 2 }] },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+                 tooltip: { callbacks: { label: function(c){ return label + ": " + fmtInt(c.parsed.y); } } } },
+      scales: {
+        x: { ticks: { font: MONO, maxRotation: gran === "day" ? 60 : 0,
+                      autoSkip: true, maxTicksLimit: gran === "day" ? 12 : 16 },
+             grid: { display: false } },
+        y: { ticks: { font: MONO }, grid: GRID } } }
+  });
+}
+
+function renderMonthCharts(){
+  var g = granularity;
+  var pcd = bucketSeries("Adjusted PCD", "Order Qty", g);
+  lineChart("pcdChart", pcd, "Order Qty", "#006040", "rgba(0,96,64,0.10)", g);
+  lineChart("fabMonthChart", bucketSeries("Adjusted Fabric Start", "Fab Qty", g),
+            "Fab Qty", "#F8B000", "rgba(248,176,0,0.14)", g);
+  lineChart("sewMonthChart", bucketSeries("Adjusted sew start", "FR hour", g),
+            "FR hour", "#0A7A54", "rgba(10,122,84,0.10)", g);
+
+  var word = g === "day" ? "day" : (g === "week" ? "week" : "month");
+  els.granHint.textContent = pcd.labels.length
+    ? pcd.labels.length + " " + word + (pcd.labels.length === 1 ? "" : "s") + " with orders"
+      + (g === "week" ? ". Each point is the Monday of that week." : "")
+    : "";
+  document.querySelectorAll("[data-grantitle]").forEach(function(h){
+    h.textContent = h.getAttribute("data-grantitle").replace("{g}", word);
+  });
+}
+
+function renderWorkbookMonthly(){
+  [["fabricChart", FSUM, "Fabric qty", "#F8B000", "rgba(248,176,0,0.14)"],
+   ["sewChart", SSUM, "Sewing hours", "#006040", "rgba(0,96,64,0.10)"]].forEach(function(spec){
+    destroyChart(spec[0]);
+    var rows = spec[1] || [];
+    var monthRe = /^[A-Za-z]+\s?\d{2}$/;
+    var seen = new Map();
+    rows.forEach(function(r){
+      if(!r) return;
+      var m = r[0], v = r[1];
+      if(typeof v === "string" && v.trim() !== "" && !isNaN(v)) v = parseFloat(v);
+      if(typeof m === "string" && monthRe.test(m.trim()) && typeof v === "number" && !seen.has(m.trim())){
+        seen.set(m.trim(), v);
+      }
+    });
+    if(seen.size === 0) return;
+    lineChart(spec[0], { labels: Array.from(seen.keys()), values: Array.from(seen.values()) },
+              spec[2], spec[3], spec[4]);
+  });
+}
+
+/* ---------- summary grid ---------- */
+var PIVOT_MEASURES = [
+  { name: "Orders",      get: function(g){ return g.length; },            fmt: fmtInt },
+  { name: "Order Qty",   get: function(g){ return sum(g, "Order Qty"); }, fmt: fmtInt },
+  { name: "Fab Qty",     get: function(g){ return sum(g, "Fab Qty"); },   fmt: fmtInt },
+  { name: "In-house",    get: function(g){ return sum(g, "InHouse"); },   fmt: fmtInt },
+  { name: "Outside",     get: function(g){ return sum(g, "OutSide"); },   fmt: fmtInt },
+  { name: "FR hour",     get: function(g){ return sum(g, "FR hour"); },   fmt: fmtInt },
+  { name: "Avg fab dur", get: function(g){ return avg(g, "fab dur"); },   fmt: fmt1 },
+  { name: "Avg sew dur", get: function(g){ return avg(g, "sew dur"); },   fmt: fmt1 }
+];
+
+function buildGroupBy(){
+  var dims = FILTER_DIMENSIONS.filter(function(d){ return IDX[d] != null && !COLEMPTY[d]; });
+  if(dims.length === 0) dims = ["Buyer"];
+  var keep = els.groupBy.value;
+  els.groupBy.innerHTML = dims.map(function(d){
+    return '<option value="' + esc(d) + '"' + (d === "Buyer" ? " selected" : "") + '>' + esc(d) + '</option>';
+  }).join("");
+  if(keep && dims.indexOf(keep) !== -1) els.groupBy.value = keep;
+}
+
+function renderPivot(){
+  var dim = els.groupBy.value || "Buyer";
+  var groups = {};
+  filtered.forEach(function(r){
+    var k = txt(r, dim) || "(blank)";
+    (groups[k] = groups[k] || []).push(r);
+  });
+
+  var out = Object.keys(groups).map(function(k){
+    return { key: k, cells: PIVOT_MEASURES.map(function(m){ return m.get(groups[k]); }) };
+  });
+
+  if(pivotSort === "__key"){
+    out.sort(function(a, b){ return a.key.localeCompare(b.key) * pivotDir; });
+  }else{
+    var si = PIVOT_MEASURES.findIndex(function(m){ return m.name === pivotSort; });
+    if(si === -1) si = 1;
+    out.sort(function(a, b){ return (a.cells[si] - b.cells[si]) * pivotDir; });
+  }
+
+  function arrow(name){
+    return pivotSort === name ? ' <span class="arrow">' + (pivotDir < 0 ? "▼" : "▲") + '</span>' : "";
+  }
+
+  var head = '<thead><tr><th data-p="__key">' + esc(dim) + arrow("__key") + '</th>'
+    + PIVOT_MEASURES.map(function(m){
+        return '<th class="num" data-p="' + esc(m.name) + '">' + esc(m.name) + arrow(m.name) + '</th>';
+      }).join("") + '</tr></thead>';
+
+  var body = '<tbody>' + out.map(function(r){
+    return '<tr><td>' + esc(r.key) + '</td>'
+      + r.cells.map(function(v, i){ return '<td class="num">' + PIVOT_MEASURES[i].fmt(v) + '</td>'; }).join("")
+      + '</tr>';
+  }).join("") + '</tbody>';
+
+  var foot = '<tfoot><tr><td>Total, ' + out.length + ' groups</td>'
+    + PIVOT_MEASURES.map(function(m){ return '<td class="num">' + m.fmt(m.get(filtered)) + '</td>'; }).join("")
+    + '</tr></tfoot>';
+
+  els.pivotTable.innerHTML = out.length
+    ? head + body + foot
+    : '<tbody><tr><td class="empty-note">No orders match these filters.</td></tr></tbody>';
+
+  Array.prototype.forEach.call(els.pivotTable.querySelectorAll("th[data-p]"), function(th){
+    th.addEventListener("click", function(){
+      var p = th.getAttribute("data-p");
+      if(pivotSort === p){ pivotDir = -pivotDir; }
+      else { pivotSort = p; pivotDir = (p === "__key") ? 1 : -1; }
+      renderPivot();
+    });
+  });
+}
+
+/* ---------- detail table ---------- */
+function buildColumnChooser(){
+  var previous = visibleCols.slice();
+  visibleCols = HEADERS.filter(function(h){
+    return !COLEMPTY[h] && (previous.length ? previous.indexOf(h) !== -1 : DEFAULT_TABLE_COLUMNS.indexOf(h) !== -1);
+  });
+  if(visibleCols.length === 0){
+    visibleCols = HEADERS.filter(function(h){ return !COLEMPTY[h]; }).slice(0, 12);
+  }
+
+  var emptyCount = HEADERS.filter(function(h){ return COLEMPTY[h]; }).length;
+  els.colChooser.innerHTML = HEADERS.map(function(h){
+    var checked = visibleCols.indexOf(h) !== -1 ? " checked" : "";
+    var cls = COLEMPTY[h] ? ' class="empty"' : "";
+    var note = COLEMPTY[h] ? " (empty)" : "";
+    return '<label' + cls + '><input type="checkbox" data-col="' + esc(h) + '"' + checked + ' />'
+      + '<span>' + esc(h) + esc(note) + '</span></label>';
+  }).join("");
+
+  Array.prototype.forEach.call(els.colChooser.querySelectorAll("input"), function(cb){
+    cb.addEventListener("change", function(){
+      var name = cb.getAttribute("data-col");
+      if(cb.checked){
+        var wanted = visibleCols.concat([name]);
+        visibleCols = HEADERS.filter(function(h){ return wanted.indexOf(h) !== -1; });
+      }else{
+        visibleCols = visibleCols.filter(function(h){ return h !== name; });
+      }
+      renderTable();
+    });
+  });
+
+  els.detailHint.textContent = "Click a heading to sort. The bottom row totals every filtered order, not "
+    + "only this page." + (emptyCount ? " " + emptyCount + " columns are empty in the workbook and start hidden." : "");
+}
+
+function statusBadge(status){
+  var s = String(status).toLowerCase(), cls = "";
+  if(s.indexOf("locked") === 0) cls = "locked";
+  else if(s.indexOf("hold") !== -1 || s.indexOf("block") !== -1) cls = "hold";
+  else if(s.indexOf("tbc") !== -1 || s.indexOf("later") !== -1 || s.indexOf("pending") !== -1) cls = "tbc";
+  else if(s.indexOf("cancel") !== -1) cls = "cancel";
+  return '<span class="badge ' + cls + '">' + esc(status) + '</span>';
+}
+
+function cellHtml(r, name){
+  if(name === "Status") return statusBadge(txt(r, name));
+  var t = COLTYPE[name];
+  if(t === "date"){ var d = dat(r, name); return d == null ? esc(txt(r, name)) : esc(fmtDate(d)); }
+  if(t === "number"){ var v = num(r, name); return v == null ? "" : esc(fmtInt(v)); }
+  return esc(txt(r, name));
+}
+
+function renderTable(){
+  var size = parseInt(els.pageSize.value, 10) || 100;
+  var pages = Math.max(1, Math.ceil(filtered.length / size));
+  if(page >= pages) page = pages - 1;
+  if(page < 0) page = 0;
+  var slice = filtered.slice(page * size, page * size + size);
+
+  function numCls(h){
+    return (COLTYPE[h] === "number" && ID_COLUMNS.indexOf(h) === -1) ? ' class="num"' : "";
+  }
+
+  var head = '<thead><tr>' + visibleCols.map(function(h){
+    var arrow = (sortCol === h) ? ' <span class="arrow">' + (sortDir > 0 ? "▲" : "▼") + '</span>' : "";
+    return '<th' + numCls(h) + ' data-col="' + esc(h) + '">' + esc(h) + arrow + '</th>';
+  }).join("") + '</tr></thead>';
+
+  var body = '<tbody>' + slice.map(function(r){
+    return '<tr>' + visibleCols.map(function(h){
+      return '<td' + numCls(h) + '>' + cellHtml(r, h) + '</td>';
+    }).join("") + '</tr>';
+  }).join("") + '</tbody>';
+
+  var foot = '<tfoot><tr>' + visibleCols.map(function(h, i){
+    if(i === 0) return '<td>' + fmtInt(filtered.length) + ' orders</td>';
+    if(isSummable(h)) return '<td class="num">' + fmtInt(sum(filtered, h)) + '</td>';
+    if(isAveraged(h)) return '<td class="num">avg ' + fmt1(avg(filtered, h)) + '</td>';
+    return '<td></td>';
+  }).join("") + '</tr></tfoot>';
+
+  els.dataTable.innerHTML = filtered.length
+    ? head + body + foot
+    : '<tbody><tr><td class="empty-note">No orders match these filters.</td></tr></tbody>';
+
+  Array.prototype.forEach.call(els.dataTable.querySelectorAll("th[data-col]"), function(th){
+    th.addEventListener("click", function(){
+      var name = th.getAttribute("data-col");
+      if(sortCol === name){
+        sortDir = -sortDir;
+      }else{
+        sortCol = name;
+        sortDir = (COLTYPE[name] === "text") ? 1 : -1;
+      }
+      sortFiltered();
+      renderTable();
+    });
+  });
+
+  els.pageInfo.textContent = "Page " + (page + 1) + " of " + pages
+    + "  ·  rows " + (filtered.length ? page * size + 1 : 0)
+    + " to " + Math.min(filtered.length, page * size + size);
+  els.prevPage.disabled = (page === 0);
+  els.nextPage.disabled = (page >= pages - 1);
+}
+
+/* ---------- CSV ---------- */
+function csvCell(v){
+  var s = String(v == null ? "" : v);
+  return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function exportCsv(){
+  var cols = visibleCols;
+  var lines = [cols.map(csvCell).join(",")];
+  filtered.forEach(function(r){
+    lines.push(cols.map(function(h){
+      var t = COLTYPE[h];
+      if(t === "date"){
+        var d = dat(r, h);
+        return csvCell(d == null ? txt(r, h) : new Date(d).toISOString().slice(0, 10));
+      }
+      if(t === "number"){ var v = num(r, h); return v == null ? "" : v; }
+      return csvCell(txt(r, h));
+    }).join(","));
+  });
+  // The byte order mark keeps Excel happy with non-ASCII buyer names.
+  var blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "ewo-export-" + new Date().toISOString().slice(0, 10) + ".csv";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+/* ============================================================
+   Capacity: daily load from the planned windows
+
+   The fab and Sew sheets spread each order's quantity evenly across its
+   window. Checked against every one of the 2,128 rows: not one deviates.
+   So the same curve is rebuilt here from start, end and quantity, which
+   means it also answers to every filter, which the sheets cannot.
+   ============================================================ */
+function spreadSeries(rowsIn, startCol, endCol, qtyCol, gran, splitFn){
+  /* returns { keys:[ms...], series:{ label:[values] } } */
+  var buckets = {}, labels = {};
+  rowsIn.forEach(function(r){
+    var s = dat(r, startCol), e = dat(r, endCol), q = num(r, qtyCol);
+    if(s == null || e == null || q == null || q <= 0 || e < s) return;
+    var days = Math.round((e - s) / DAY) + 1;
+    var per = q / days;
+    var lab = splitFn ? splitFn(r) : "All";
+    labels[lab] = true;
+    for(var d = s; d <= e; d += DAY){
+      var k = bucketKey(d, gran);
+      var b = buckets[k] || (buckets[k] = {});
+      b[lab] = (b[lab] || 0) + per;
+    }
+  });
+  var keys = Object.keys(buckets).map(Number).sort(function(a, b){ return a - b; });
+  var series = {};
+  Object.keys(labels).forEach(function(lab){
+    series[lab] = keys.map(function(k){ return buckets[k][lab] || 0; });
+  });
+  return { keys: keys, series: series };
+}
+
+function stackedChart(canvasId, keys, series, gran, unitLabel, colours){
+  destroyChart(canvasId);
+  var el = document.getElementById(canvasId);
+  if(!el || keys.length === 0) return;
+  var names = Object.keys(series);
+  charts[canvasId] = new Chart(el, {
+    type: "bar",
+    data: {
+      labels: keys.map(function(k){ return bucketLabel(k, gran); }),
+      datasets: names.map(function(n, i){
+        return { label: n, data: series[n], backgroundColor: colours[i % colours.length], borderWidth: 0 };
+      })
+    },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: "bottom", labels: { font: MONO, boxWidth: 12 } },
+                 tooltip: { callbacks: { label: function(c){ return c.dataset.label + ": " + fmtInt(c.parsed.y) + " " + unitLabel; } } } },
+      scales: { x: { stacked: true, ticks: { font: MONO, autoSkip: true, maxTicksLimit: gran === "day" ? 14 : 18,
+                                              maxRotation: gran === "day" ? 60 : 0 }, grid: { display: false } },
+                y: { stacked: true, ticks: { font: MONO }, grid: GRID } } }
+  });
+}
+
+function lockedSplit(r){
+  return txt(r, "Status").toLowerCase().indexOf("locked") === 0 ? "Locked" : "Not locked";
+}
+
+function renderCapacity(){
+  var g = granularity;
+  // The fab sheet spreads InHouse, not Fab Qty: it is the textile mill's own
+  // knitting load, and fabric bought outside is not part of it. Verified on
+  // all 2,128 rows.
+  var fab = spreadSeries(filtered, "Adjusted Fabric Start", "Adjusted Fabric End", "InHouse", g, lockedSplit);
+  var sew = spreadSeries(filtered, "Adjusted sew start", "Adjusted sew end", "FR hour", g, lockedSplit);
+  stackedChart("fabLoadChart", fab.keys, fab.series, g, "kg", ["#006040", "#F8B000"]);
+  stackedChart("sewLoadChart", sew.keys, sew.series, g, "hours", ["#006040", "#F8B000"]);
+
+  var fabU = spreadSeries(filtered, "Adjusted Fabric Start", "Adjusted Fabric End", "InHouse", "month",
+                          function(r){ return txt(r, "Execution Unit") || "(blank)"; });
+  var sewU = spreadSeries(filtered, "Adjusted sew start", "Adjusted sew end", "FR hour", "month",
+                          function(r){ return txt(r, "Execution Unit") || "(blank)"; });
+  stackedChart("fabUnitChart", fabU.keys, fabU.series, "month", "kg", PALETTE);
+  stackedChart("sewUnitChart", sewU.keys, sewU.series, "month", "hours", PALETTE);
+
+  // KPI tiles
+  var fabDaily = spreadSeries(filtered, "Adjusted Fabric Start", "Adjusted Fabric End", "InHouse", "day", null);
+  var sewDaily = spreadSeries(filtered, "Adjusted sew start", "Adjusted sew end", "FR hour", "day", null);
+  function peak(sr){ var v = sr.series.All || []; var m = 0, at = null;
+    v.forEach(function(x, i){ if(x > m){ m = x; at = sr.keys[i]; } }); return { max: m, at: at }; }
+  var fp = peak(fabDaily), sp = peak(sewDaily);
+  var planned = filtered.filter(function(r){ return dat(r, "Adjusted Fabric Start") != null && dat(r, "Adjusted Fabric End") != null; });
+  var sewPlanned = filtered.filter(function(r){ return dat(r, "Adjusted sew start") != null && dat(r, "Adjusted sew end") != null; });
+  var notPlannedHours = sum(filtered, "FR hour") - sum(sewPlanned, "FR hour");
+  var tiles = [
+    ["In-house fabric in plan", fmtInt(sum(planned, "InHouse")), planned.length + " orders with a window"],
+    ["Peak knitting day", fmtInt(fp.max), fp.at ? fmtDate(fp.at) : ""],
+    ["In-house not windowed", fmtInt(sum(filtered, "InHouse") - sum(planned, "InHouse")), (filtered.length - planned.length) + " orders, InStock or blank"],
+    ["Sewing hours in plan", fmtInt(sum(sewPlanned, "FR hour")), sewPlanned.length + " orders with a window"],
+    ["Peak sewing day", fmtInt(sp.max), sp.at ? fmtDate(sp.at) : ""],
+    ["Sewing not planned", fmtInt(notPlannedHours), (filtered.length - sewPlanned.length) + " orders without a window"]
+  ];
+  els.capKpis.innerHTML = tiles.map(function(t){
+    return '<div class="kpi"><div class="label">' + esc(t[0]) + '</div><div class="value">' + esc(t[1])
+      + '</div><div class="foot">' + esc(t[2]) + '</div></div>'; }).join("");
+
+  var word = g === "day" ? "day" : (g === "week" ? "week" : "month");
+  document.querySelectorAll("[data-grantitle2]").forEach(function(h){
+    h.textContent = h.getAttribute("data-grantitle2").replace("{g}", word);
+  });
+}
+
+/* ============================================================
+   Fabric delivery: the weekly KPI, rebuilt live
+
+   Every rule below was checked against the LockRepo sheet until each
+   figure matched to the kilogram: required till date, deficit and
+   surplus with their order counts, actual, and RFD on planned orders.
+   ============================================================ */
+function lv(r, n){ var i = LIDX[n]; return i == null ? null : r[i]; }
+function ln(r, n){ return toNum(lv(r, n)) || 0; }
+function ld(r, n){ return parseDate(lv(r, n)); }
+function lt(r, n){ var v = lv(r, n); return v == null ? "" : String(v).trim(); }
+function dv(r, n){ var i = DIDX[n]; return i == null ? null : r[i]; }
+function dn(r, n){ return toNum(dv(r, n)) || 0; }
+function dd(r, n){ return parseDate(dv(r, n)); }
+function dt_(r, n){ var v = dv(r, n); return v == null ? "" : String(v).trim(); }
+
+/* Global filters describe orders. The delivery tab shows the deliveries and
+   lock-plan lines belonging to those orders. With no filter active, it
+   shows everything, including deliveries to orders outside the EWO sheet. */
+/* Returns null when nothing is filtered, otherwise a predicate taking
+   (ewoNumber, buyerText, unitText). An order the EWO sheet knows is judged by
+   whether it survived the filters. A booking or delivery whose order is not in
+   the EWO sheet at all cannot be judged that way, so it is judged directly by
+   its own buyer and unit, but only when those are the sole filters in play.
+   That keeps a plain "Buyer = M&S" in step with the published report, which
+   includes a few M&S bookings the EWO sheet no longer lists. */
+function orderJoin(){
+  if(filtered.length === ROWS.length) return null;
+  var set = {}, known = {};
+  filtered.forEach(function(r){ set[String(num(r, "EWO"))] = true; });
+  ROWS.forEach(function(r){ known[String(num(r, "EWO"))] = true; });
+
+  var f = currentFilters();
+  var buyerF = f.dims["Buyer"] || "", unitF = f.dims["Execution Unit"] || "";
+  var otherDims = Object.keys(f.dims).filter(function(k){ return k !== "Buyer" && k !== "Execution Unit"; });
+  var onlyDirect = !f.q && !activeAlert && otherDims.length === 0
+    && !(f.dateField && (f.from != null || f.to != null || f.year != null || f.month != null));
+
+  return function(ewo, buyer, unit){
+    var key = String(ewo);
+    if(known[key]) return !!set[key];
+    if(!onlyDirect) return false;
+    if(buyerF && String(buyer || "").trim() !== buyerF) return false;
+    if(unitF && String(unit || "").trim() !== unitF) return false;
+    return true;
+  };
+}
+
+function requiredTill(r, asOfMs){
+  var s = ld(r, "LockStart"), e = ld(r, "LockEnd"), q = ln(r, "PlanKg");
+  if(s == null || e == null || e < s || q <= 0) return 0;
+  var days = Math.round((e - s) / DAY) + 1;
+  var upto = Math.min(e, asOfMs);
+  if(upto < s) return 0;
+  var ov = Math.round((upto - s) / DAY) + 1;
+  return q * ov / days;
+}
+
+/* One booking, scored the way the weekly KPI scores it. */
+function scoreBooking(r, asOfMs){
+  var req = requiredTill(r, asOfMs);
+  var del = ln(r, "Delivered");
+  var diff = del - req;
+  var out = { req: req, del: del, plan: ln(r, "PlanKg"), rfd: 0, deficit: 0, surplus: 0, nDef: 0, nSur: 0 };
+  if(diff < -0.5){ out.deficit = diff; out.nDef = 1; }
+  if(req > 0.5){
+    out.rfd = ln(r, "RFD");
+    if(diff > 0.5){ out.surplus = diff; out.nSur = 1; }
+  }
+  out.actual = req + out.deficit + out.surplus;
+  return out;
+}
+
+function kpiGroup(rowsIn, keyFn, asOfMs){
+  var g = {};
+  rowsIn.forEach(function(r){
+    var k = keyFn(r) || "(blank)";
+    var sc = scoreBooking(r, asOfMs);
+    var a = g[k] || (g[k] = { key: k, plan: 0, req: 0, actual: 0, rfd: 0, deficit: 0, surplus: 0, nDef: 0, nSur: 0, n: 0 });
+    a.plan += sc.plan; a.req += sc.req; a.actual += sc.actual; a.rfd += sc.rfd;
+    a.deficit += sc.deficit; a.surplus += sc.surplus; a.nDef += sc.nDef; a.nSur += sc.nSur; a.n++;
+  });
+  return Object.keys(g).map(function(k){ return g[k]; }).sort(function(a, b){ return b.req - a.req; });
+}
+
+function kpiTable(tableEl, rowsOut, firstHeader){
+  var cols = ["Till day planned", "Till day actual", "Net", "Achieved %", "RFD on planned",
+              "Deficit kg", "Deficit orders", "Surplus kg", "Surplus orders"];
+  function tone(v, cls){ return '<span class="' + cls + '">' + fmtInt(v) + '</span>'; }
+  function cells(a){
+    var pct = a.req > 0 ? Math.round(100 * a.actual / a.req) : 0;
+    var net = a.actual - a.req;
+    return [fmtInt(a.req), fmtInt(a.actual), tone(net, net < 0 ? "neg" : "pos"),
+            '<span class="' + (pct >= 100 ? "pos" : (pct >= 80 ? "" : "neg")) + '">' + pct + "%</span>", fmtInt(a.rfd),
+            a.deficit ? tone(a.deficit, "neg") : "0", a.nDef ? tone(a.nDef, "neg") : "0",
+            a.surplus ? tone(a.surplus, "pos") : "0", a.nSur ? tone(a.nSur, "pos") : "0"];
+  }
+  var tot = rowsOut.reduce(function(t, a){
+    t.req += a.req; t.actual += a.actual; t.rfd += a.rfd; t.deficit += a.deficit; t.surplus += a.surplus;
+    t.nDef += a.nDef; t.nSur += a.nSur; return t; },
+    { req: 0, actual: 0, rfd: 0, deficit: 0, surplus: 0, nDef: 0, nSur: 0 });
+  var head = '<thead><tr><th>' + esc(firstHeader) + '</th>' + cols.map(function(c){ return '<th class="num">' + esc(c) + '</th>'; }).join("") + '</tr></thead>';
+  var body = '<tbody>' + rowsOut.map(function(a){
+    return '<tr><td>' + esc(a.key) + '</td>' + cells(a).map(function(v){ return '<td class="num">' + v + '</td>'; }).join("") + '</tr>';
+  }).join("") + '</tbody>';
+  var foot = '<tfoot><tr><td>Total</td>' + cells(tot).map(function(v){ return '<td class="num">' + v + '</td>'; }).join("") + '</tr></tfoot>';
+  tableEl.innerHTML = rowsOut.length ? head + body + foot
+    : '<tbody><tr><td class="empty-note">No lock plan lines match these filters.</td></tr></tbody>';
+  return tot;
+}
+
+function pvaChart(canvasId, rowsOut, limit){
+  destroyChart(canvasId);
+  var el = document.getElementById(canvasId);
+  var rows = limit ? rowsOut.slice(0, limit) : rowsOut;
+  if(!el || rows.length === 0) return;
+  charts[canvasId] = new Chart(el, {
+    type: "bar",
+    data: { labels: rows.map(function(a){ return a.key; }),
+            datasets: [
+              { label: "Required till date", data: rows.map(function(a){ return Math.round(a.req); }), backgroundColor: "#F8B000" },
+              { label: "Actual", data: rows.map(function(a){ return Math.round(a.actual); }), backgroundColor: "#006040" } ] },
+    options: { indexAxis: "y", responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: "bottom", labels: { font: MONO, boxWidth: 12 } },
+                 tooltip: { callbacks: { label: function(c){ return c.dataset.label + ": " + fmtInt(c.parsed.x) + " kg"; } } } },
+      scales: { x: { ticks: { font: MONO }, grid: GRID }, y: { ticks: { font: MONO }, grid: { display: false } } } }
+  });
+}
+
+var deficitSort = { col: "gap", dir: 1 };
+
+function renderDelivery(){
+  var have = LOCK.length > 0 || DELIV.length > 0;
+  els.deliveryEmpty.style.display = have ? "none" : "block";
+  els.deliveryBody.style.display = have ? "block" : "none";
+  if(!have) return;
+
+  var join = orderJoin();
+  var lock = join ? LOCK.filter(function(r){ return join(ln(r, "EWO"), lt(r, "Buyer"), lt(r, "Unit")); }) : LOCK;
+  var deliv = join ? DELIV.filter(function(r){ return join(dn(r, "ExportOrderNo"), dt_(r, "Buyer"), dt_(r, "BeneficieryUnit")); }) : DELIV;
+  var asOfMs = asOf || TODAY;
+
+  // ---- the report window: the lock month ----
+  var from = parseDate(LOCKMETA.reportFrom);
+  if(from == null && lock.length){
+    from = Math.min.apply(null, lock.map(function(r){ return ld(r, "LockStart") || Infinity; }));
+  }
+  if(from == null || !isFinite(from)) from = asOfMs;
+  var monthEnd = (function(){ var d = new Date(from); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0); })();
+
+  els.asOfHint.textContent = "Lock month from " + fmtDate(from) + ". Delivered and RFD figures are as of the last export"
+    + (LOCKMETA.reportTo ? ", the published report was as of " + fmtDate(parseDate(LOCKMETA.reportTo)) + "." : ".");
+
+  // ---- weekly KPI groupings ----
+  var byUnit = kpiGroup(lock, function(r){ return lt(r, "Unit"); }, asOfMs);
+  var byBuyer = kpiGroup(lock, function(r){ return lt(r, "Buyer"); }, asOfMs);
+  var tot = kpiTable(els.kpiBuyerTable, byBuyer, "Buyer");
+  kpiTable(els.kpiUnitTable, byUnit, "Garments unit");
+  pvaChart("unitPvaChart", byUnit, 0);
+  pvaChart("buyerPvaChart", byBuyer, 12);
+
+  // ---- delivery-sheet aggregates over the lock month ----
+  var lockSet = {}; lock.forEach(function(r){ lockSet[String(ln(r, "EWO"))] = true; });
+  var fresh = 0, redeliv = 0, returns = 0, freshToPlan = 0, lines = 0;
+  deliv.forEach(function(r){
+    var d = dd(r, "DeliveryDate"); if(d == null || d < from || d > asOfMs) return;
+    var kg = dn(r, "DeliveryQtyKg"), type = dt_(r, "DeliveryType").toLowerCase();
+    lines++;
+    if(type.indexOf("return") !== -1) returns += kg;
+    else if(type.indexOf("re-") === 0 || type.indexOf("re ") === 0) redeliv += kg;
+    else { fresh += kg; if(lockSet[String(dn(r, "ExportOrderNo"))]) freshToPlan += kg; }
+  });
+
+  var planTotal = lock.reduce(function(t, r){ return t + ln(r, "PlanKg"); }, 0);
+  // The published report divides by working days, which the KPI sheet states.
+  // Fall back to calendar days only when it does not.
+  var reportDate = parseDate(LOCKMETA.reportTo);
+  var useSheetDays = reportDate != null && asOfMs === reportDate && toNum(LOCKMETA.daysDone);
+  var daysDone = useSheetDays ? toNum(LOCKMETA.daysDone)
+    : Math.max(1, Math.round((Math.min(asOfMs, monthEnd) - from) / DAY) + 1);
+  var daysLeft = useSheetDays && toNum(LOCKMETA.daysRemain) != null ? toNum(LOCKMETA.daysRemain)
+    : Math.max(0, Math.round((monthEnd - asOfMs) / DAY));
+  var dayWord = useSheetDays ? " working days" : " days";
+  var target = toNum(LOCKMETA.monthTarget);
+  var pct = tot.req > 0 ? Math.round(100 * tot.actual / tot.req) : 0;
+  var tiles = [
+    ["Month target", target ? fmtInt(target) : "n/a", target ? "kg, from the KPI sheet" : "not in the sheet"],
+    ["Lock plan for month", fmtInt(planTotal), lock.length + " bookings"],
+    ["Required till date", fmtInt(tot.req), "as of " + fmtDate(asOfMs)],
+    ["Actual, KPI rule", fmtInt(tot.actual), pct + "% achieved"],
+    ["Net against plan", fmtInt(tot.actual - tot.req), fmtInt(tot.nDef) + " short, " + fmtInt(tot.nSur) + " over"],
+    ["RFD on planned", fmtInt(tot.rfd), tot.req > 0 ? Math.round(100 * tot.rfd / tot.req) + "% of required" : ""],
+    ["Fresh delivery", fmtInt(fresh), fmtInt(freshToPlan) + " to lock-plan orders"],
+    ["Returns", fmtInt(-returns), fmtInt(redeliv) + " re-delivered"],
+    ["Daily average so far", fmtInt(fresh / daysDone), daysDone + dayWord],
+    ["Needed per day to hit plan", daysLeft ? fmtInt(Math.max(0, planTotal - fresh) / daysLeft) : "n/a", daysLeft + dayWord + " left"]
+  ];
+  els.delKpis.innerHTML = tiles.map(function(t){
+    return '<div class="kpi"><div class="label">' + esc(t[0]) + '</div><div class="value">' + esc(t[1])
+      + '</div><div class="foot">' + esc(t[2]) + '</div></div>'; }).join("");
+
+  // ---- cumulative plan against actual across the lock month ----
+  var days = []; for(var d = from; d <= monthEnd; d += DAY) days.push(d);
+  var planByDay = {}, actByDay = {}, allByDay = {};
+  lock.forEach(function(r){
+    var s = ld(r, "LockStart"), e = ld(r, "LockEnd"), q = ln(r, "PlanKg");
+    if(s == null || e == null || e < s || q <= 0) return;
+    var per = q / (Math.round((e - s) / DAY) + 1);
+    for(var x = s; x <= e; x += DAY) planByDay[x] = (planByDay[x] || 0) + per;
+  });
+  deliv.forEach(function(r){
+    var x = dd(r, "DeliveryDate"); if(x == null) return;
+    var type = dt_(r, "DeliveryType").toLowerCase(); if(type.indexOf("fresh") === -1) return;
+    var kg = dn(r, "DeliveryQtyKg");
+    allByDay[x] = (allByDay[x] || 0) + kg;
+    if(lockSet[String(dn(r, "ExportOrderNo"))]) actByDay[x] = (actByDay[x] || 0) + kg;
+  });
+  var cp = 0, ca = 0, cAll = 0, cumPlan = [], cumAct = [], cumAll = [];
+  days.forEach(function(x){
+    cp += planByDay[x] || 0; cumPlan.push(Math.round(cp));
+    if(x <= asOfMs){ ca += actByDay[x] || 0; cAll += allByDay[x] || 0; cumAct.push(Math.round(ca)); cumAll.push(Math.round(cAll)); }
+    else { cumAct.push(null); cumAll.push(null); }
+  });
+  destroyChart("cumChart");
+  var el = document.getElementById("cumChart");
+  if(el && days.length){
+    charts.cumChart = new Chart(el, {
+      type: "line",
+      data: { labels: days.map(function(x){ return fmtDate(x); }),
+        datasets: [
+          { label: "Lock plan, cumulative", data: cumPlan, borderColor: "#F8B000", backgroundColor: "rgba(248,176,0,0.12)", fill: true, pointRadius: 0, borderWidth: 2, tension: 0.2 },
+          { label: "Fresh delivery to plan orders", data: cumAct, borderColor: "#006040", pointRadius: 0, borderWidth: 2.5, tension: 0.2 },
+          { label: "All fresh delivery", data: cumAll, borderColor: "#3FA566", borderDash: [5, 4], pointRadius: 0, borderWidth: 1.5, tension: 0.2 } ] },
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: "bottom", labels: { font: MONO, boxWidth: 12 } },
+                   tooltip: { callbacks: { label: function(c){ return c.dataset.label + ": " + fmtInt(c.parsed.y) + " kg"; } } } },
+        scales: { x: { ticks: { font: MONO, autoSkip: true, maxTicksLimit: 12 }, grid: { display: false } },
+                  y: { ticks: { font: MONO }, grid: GRID } } }
+    });
+  }
+
+  // ---- delivered per day / week / month, by type ----
+  var g = granularity, tb = {}, types = { "Fresh delivery": 0, "Re-delivery": 1, "Return": 2 };
+  deliv.forEach(function(r){
+    var x = dd(r, "DeliveryDate"); if(x == null) return;
+    var type = dt_(r, "DeliveryType").toLowerCase();
+    var lab = type.indexOf("return") !== -1 ? "Return" : (type.indexOf("re-") === 0 ? "Re-delivery" : "Fresh delivery");
+    var k = bucketKey(x, g);
+    var b = tb[k] || (tb[k] = {});
+    b[lab] = (b[lab] || 0) + dn(r, "DeliveryQtyKg");
+  });
+  var keys = Object.keys(tb).map(Number).sort(function(a, b){ return a - b; });
+  var series = {};
+  Object.keys(types).forEach(function(n){ series[n] = keys.map(function(k){ return Math.round(tb[k][n] || 0); }); });
+  stackedChart("delDailyChart", keys, series, g, "kg", ["#006040", "#3FA566", "#C7511F"]);
+  var word = g === "day" ? "day" : (g === "week" ? "week" : "month");
+  ["data-grantitle3", "data-grantitle4", "data-grantitle5", "data-grantitle6"].forEach(function(attr){
+    document.querySelectorAll("[" + attr + "]").forEach(function(h){
+      h.textContent = h.getAttribute(attr).replace("{g}", word);
+    });
+  });
+
+  // ---- the two report blocks ----
+  var rfdTotal = RFDROWS.reduce(function(t, r){ return t + (toNum(r[RFDROWS.idxKg]) || 0); }, 0);
+  var tillTarget = (target && toNum(LOCKMETA.daysInMonth)) ? target * daysDone / toNum(LOCKMETA.daysInMonth) : null;
+  var dailyTarget = (target && toNum(LOCKMETA.daysInMonth)) ? target / toNum(LOCKMETA.daysInMonth) : null;
+  function pctOf(a, b){ return b ? Math.round(100 * a / b) + "%" : ""; }
+  function signed(v){ return '<span class="' + (v < 0 ? "neg" : "pos") + '">' + fmtInt(v) + '</span>'; }
+  function rowH(label, valueHtml, hl){ return '<tr' + (hl ? ' class="hl"' : "") + '><td>' + esc(label) + '</td><td class="num">' + valueHtml + '</td></tr>'; }
+
+  els.statusTable.innerHTML = '<tbody>'
+    + rowH("Monthly target", target ? fmtInt(target) + " kg" : "n/a")
+    + rowH("Till date delivery target", tillTarget != null ? fmtInt(tillTarget) + " kg" : "n/a")
+    + rowH("Till date delivered", fmtInt(fresh) + " kg" + (tillTarget ? '<span class="pct ' + (fresh >= tillTarget ? "pos" : "neg") + '">' + pctOf(fresh, tillTarget) + '</span>' : ""), true)
+    + rowH("Till date deficit", tillTarget != null ? signed(fresh - tillTarget) + " kg" : "n/a")
+    + rowH("Current status of RFD", fmtInt(rfdTotal) + " kg")
+    + rowH("Daily average target", dailyTarget != null ? fmtInt(dailyTarget) + " kg" : "n/a")
+    + rowH("Daily average actual", fmtInt(fresh / daysDone) + " kg")
+    + '</tbody>';
+
+  var startPct = toNum(LOCKMETA.fabricStartPct), endPct = toNum(LOCKMETA.fabricEndPct);
+  els.lockTable.innerHTML = '<tbody>'
+    + rowH("Monthly planned", fmtInt(planTotal) + " kg")
+    + rowH("Till date planned", fmtInt(tot.req) + " kg")
+    + rowH("Till date actual", fmtInt(tot.actual) + " kg" + '<span class="pct ' + (pct >= 100 ? "pos" : "neg") + '">' + pct + '%</span>', true)
+    + rowH("Till date deficit", signed(tot.actual - tot.req) + " kg")
+    + rowH("RFD on lock order", fmtInt(tot.rfd) + " kg" + (rfdTotal ? '<span class="pct">[' + pctOf(tot.rfd, rfdTotal) + ' of total RFD]</span>' : ""))
+    + rowH("Fabric start %", startPct != null ? Math.round(startPct * 100) + '%<span class="pct">as published</span>' : "n/a")
+    + rowH("Fabric end %", endPct != null ? Math.round(endPct * 100) + '%<span class="pct">as published</span>' : "n/a")
+    + '</tbody>';
+
+  // ---- delivery trend, as the weekly KPI draws it ----
+  // "On lock plan" is fresh and re-delivery to bookings that had something due
+  // by the report date. That is the same set of bookings whose deliveries make
+  // up the KPI's till-date actual, which is why the bars sum to that figure.
+  var dueBooking = {};
+  lock.forEach(function(r){ if(requiredTill(r, asOfMs) > 0.5) dueBooking[lt(r, "Booking")] = true; });
+  var lastDeliv = from;
+  var trendByDay = {};
+  deliv.forEach(function(r){
+    var x = dd(r, "DeliveryDate"); if(x == null || x < from || x > monthEnd) return;
+    var type = dt_(r, "DeliveryType").toLowerCase();
+    if(type.indexOf("return") !== -1) return;
+    var kg = dn(r, "DeliveryQtyKg");
+    var b = trendByDay[x] || (trendByDay[x] = { lock: 0, all: 0 });
+    if(type.indexOf("fresh") !== -1) b.all += kg;
+    if(dueBooking[dt_(r, "BookingNo")]) b.lock += kg;
+    if(x > lastDeliv) lastDeliv = x;
+  });
+  // every day from the 1st to the last delivery appears, so a day with nothing
+  // delivered shows as a gap rather than vanishing from the axis
+  var trend = {};
+  for(var dx = from; dx <= lastDeliv; dx += DAY){
+    var k = bucketKey(dx, g);
+    var t = trend[k] || (trend[k] = { lock: 0, all: 0 });
+    var src = trendByDay[dx];
+    if(src){ t.lock += src.lock; t.all += src.all; }
+  }
+  var tkeys = Object.keys(trend).map(Number).sort(function(a, b){ return a - b; });
+  destroyChart("trendChart");
+  var tel = document.getElementById("trendChart");
+  if(tel && tkeys.length){
+    charts.trendChart = new Chart(tel, {
+      type: "bar",
+      data: { labels: tkeys.map(function(k){ return bucketLabel(k, g); }),
+        datasets: [
+          { label: "Delivery on lock plan", data: tkeys.map(function(k){ return Math.round(trend[k].lock); }), backgroundColor: "#006040" },
+          { label: "All fresh delivery", data: tkeys.map(function(k){ return Math.round(trend[k].all); }), backgroundColor: "#D9D6CC" } ] },
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: "top", labels: { font: MONO, boxWidth: 12 } },
+                   tooltip: { callbacks: { label: function(c){ return c.dataset.label + ": " + fmtInt(c.parsed.y) + " kg"; } } } },
+        scales: { x: { ticks: { font: MONO, autoSkip: true, maxTicksLimit: 16 }, grid: { display: false } },
+                  y: { ticks: { font: MONO }, grid: GRID } } }
+    });
+  }
+
+  // ---- achieved gauge ----
+  destroyChart("achievedChart");
+  var ael = document.getElementById("achievedChart");
+  if(ael){
+    var a = Math.max(0, Math.min(100, pct));
+    charts.achievedChart = new Chart(ael, {
+      type: "doughnut",
+      data: { labels: ["Achieved", "Short"], datasets: [{ data: [a, 100 - a], backgroundColor: ["#006040", "#E6F0EB"], borderWidth: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: "72%", rotation: -90, circumference: 360,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } } },
+      plugins: [{ id: "centre", afterDraw: function(chart){
+        var c = chart.ctx, w = chart.width, h = chart.height;
+        c.save(); c.font = "600 26px Georgia, serif"; c.fillStyle = "#006040"; c.textAlign = "center"; c.textBaseline = "middle";
+        c.fillText(pct + "%", w / 2, h / 2 - 6);
+        c.font = "11px IBM Plex Mono, monospace"; c.fillStyle = "#6B7280";
+        c.fillText(fmtInt(tot.actual) + " of " + fmtInt(tot.req), w / 2, h / 2 + 16); c.restore(); } }]
+    });
+  }
+
+  // ---- plan and actual, each split locked against unlocked ----
+  var ewoRows = join ? filtered : ROWS;
+  var planLU = spreadSeries(ewoRows, "Adjusted Fabric Start", "Adjusted Fabric End", "InHouse", g,
+    function(r){ return txt(r, "Status").toLowerCase().indexOf("locked") === 0 ? "Locked" : "Unlocked"; });
+  var pk = planLU.keys.map(function(k, i){ return i; }).filter(function(i){ return planLU.keys[i] >= bucketKey(from, g) - 0 && planLU.keys[i] <= bucketKey(monthEnd, g); });
+  stackedChart("planLockChart", pk.map(function(i){ return planLU.keys[i]; }),
+    Object.keys(planLU.series).reduce(function(o, n){ o[n] = pk.map(function(i){ return planLU.series[n][i]; }); return o; }, {}),
+    g, "kg", ["#006040", "#F8B000"]);
+
+  var statusByEwo = {};
+  ROWS.forEach(function(r){ statusByEwo[String(num(r, "EWO"))] = txt(r, "Status").toLowerCase().indexOf("locked") === 0 ? "Locked" : "Unlocked"; });
+  var ab = {};
+  deliv.forEach(function(r){
+    var x = dd(r, "DeliveryDate"); if(x == null || x < from || x > monthEnd) return;
+    if(dt_(r, "DeliveryType").toLowerCase().indexOf("fresh") === -1) return;
+    var lab = statusByEwo[String(dn(r, "ExportOrderNo"))] || "Not in EWO sheet";
+    var k = bucketKey(x, g);
+    var b = ab[k] || (ab[k] = {});
+    b[lab] = (b[lab] || 0) + dn(r, "DeliveryQtyKg");
+  });
+  var akeys = Object.keys(ab).map(Number).sort(function(a, b){ return a - b; });
+  var aseries = {};
+  ["Locked", "Unlocked", "Not in EWO sheet"].forEach(function(n){
+    var vals = akeys.map(function(k){ return Math.round(ab[k][n] || 0); });
+    if(vals.some(function(v){ return v; })) aseries[n] = vals;
+  });
+  stackedChart("actualLockChart", akeys, aseries, g, "kg", ["#006040", "#F8B000", "#6B7280"]);
+
+  // ---- fabric type and receiving unit, net kg in window ----
+  function netBy(col){
+    var m = {};
+    deliv.forEach(function(r){
+      var x = dd(r, "DeliveryDate"); if(x == null || x < from || x > asOfMs) return;
+      var k = dt_(r, col) || "(blank)";
+      m[k] = (m[k] || 0) + dn(r, "DeliveryQtyKg");
+    });
+    return Object.keys(m).map(function(k){ return [k, Math.round(m[k])]; }).sort(function(a, b){ return b[1] - a[1]; });
+  }
+  barChart("fabTypeChart", netBy("FabricType"), "kg");
+  barChart("delUnitChart", netBy("BeneficieryUnit"), "kg");
+
+  // ---- bookings behind plan ----
+  var scored = lock.map(function(r){
+    var sc = scoreBooking(r, asOfMs);
+    return { ewo: lt(r, "EWO"), booking: lt(r, "Booking"), buyer: lt(r, "Buyer"), unit: lt(r, "Unit"),
+             plan: sc.plan, req: sc.req, del: sc.del, gap: sc.del - sc.req, rfd: ln(r, "RFD"),
+             start: ld(r, "LockStart"), end: ld(r, "LockEnd") };
+  }).filter(function(x){ return x.req > 0.5; });
+  var cols = [["ewo","EWO"],["booking","Booking"],["buyer","Buyer"],["unit","Unit"],["start","Lock start"],["end","Lock end"],
+              ["plan","Plan kg"],["req","Required"],["del","Delivered"],["gap","Gap"],["rfd","RFD"]];
+  scored.sort(function(a, b){
+    var x = a[deficitSort.col], y = b[deficitSort.col];
+    if(typeof x === "string"){ return x.localeCompare(y) * deficitSort.dir; }
+    return ((x || 0) - (y || 0)) * deficitSort.dir;
+  });
+  var show = scored.slice(0, 300);
+  els.deficitHint.textContent = scored.length + " bookings had something due by " + fmtDate(asOfMs)
+    + ". Showing " + show.length + ". Click a heading to sort.";
+  var head = '<thead><tr>' + cols.map(function(c){
+    var numc = ["plan","req","del","gap","rfd"].indexOf(c[0]) !== -1;
+    var arrow = deficitSort.col === c[0] ? ' <span class="arrow">' + (deficitSort.dir > 0 ? "▲" : "▼") + '</span>' : "";
+    return '<th' + (numc ? ' class="num"' : "") + ' data-dc="' + c[0] + '">' + esc(c[1]) + arrow + '</th>'; }).join("") + '</tr></thead>';
+  var body = '<tbody>' + show.map(function(x){
+    return '<tr>' + cols.map(function(c){
+      var v = x[c[0]], numc = ["plan","req","del","gap","rfd"].indexOf(c[0]) !== -1;
+      if(c[0] === "start" || c[0] === "end") v = fmtDate(v);
+      else if(numc) v = fmtInt(v);
+      return '<td' + (numc ? ' class="num"' : "") + '>' + esc(v) + '</td>'; }).join("") + '</tr>'; }).join("") + '</tbody>';
+  els.deficitTable.innerHTML = show.length ? head + body
+    : '<tbody><tr><td class="empty-note">Nothing was due by this date under the current filters.</td></tr></tbody>';
+  Array.prototype.forEach.call(els.deficitTable.querySelectorAll("th[data-dc]"), function(th){
+    th.addEventListener("click", function(){
+      var c = th.getAttribute("data-dc");
+      if(deficitSort.col === c) deficitSort.dir = -deficitSort.dir;
+      else { deficitSort.col = c; deficitSort.dir = (["ewo","booking","buyer","unit"].indexOf(c) !== -1) ? 1 : 1; }
+      renderDelivery();
+    });
+  });
+}
+
+/* ============================================================
+   Tabs
+   ============================================================ */
+function showTab(name){
+  activeTab = name;
+  Array.prototype.forEach.call(els.tabBar.querySelectorAll(".tab"), function(b){
+    b.classList.toggle("on", b.getAttribute("data-tab") === name);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll(".tabpage"), function(p){
+    p.classList.toggle("on", p.id === "page-" + name);
+  });
+  renderTab(name);
+}
+els.tabBar.addEventListener("click", function(e){
+  var b = e.target.closest(".tab");
+  if(b) showTab(b.getAttribute("data-tab"));
+});
+
+/* ============================================================
+   Wiring
+   ============================================================ */
+var searchTimer = null;
+els.searchInput.addEventListener("input", function(){
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(function(){ page = 0; applyFilters(); }, 200);
+});
+[els.dateField, els.dateFrom, els.dateTo].forEach(function(el){
+  el.addEventListener("change", function(){ page = 0; applyFilters(); });
+});
+
+/* Year and month need a date column to work on. Rather than making the reader
+   pick one first, fall back to the most useful one on their behalf. */
+function ensureDateField(){
+  if(els.dateField.value) return;
+  var opts = Array.prototype.map.call(els.dateField.options, function(o){ return o.value; })
+    .filter(function(v){ return v; });
+  var preferred = ["Adjusted PCD", "Order Bank Date", "Adjusted Fabric Start"];
+  for(var i = 0; i < preferred.length; i++){
+    if(opts.indexOf(preferred[i]) !== -1){ els.dateField.value = preferred[i]; return; }
+  }
+  if(opts.length) els.dateField.value = opts[0];
+}
+[els.yearFilter, els.monthFilter].forEach(function(el){
+  el.addEventListener("change", function(){
+    if(el.value) ensureDateField();
+    page = 0;
+    applyFilters();
+  });
+});
+
+/* One switch, every time-based chart on every tab. */
+els.granSwitch.addEventListener("click", function(e){
+  var b = e.target.closest(".segbtn");
+  if(!b) return;
+  granularity = b.getAttribute("data-gran");
+  Array.prototype.forEach.call(els.granSwitch.querySelectorAll(".segbtn"), function(x){
+    x.classList.toggle("on", x.getAttribute("data-gran") === granularity);
+  });
+  renderTab(activeTab);
+});
+els.asOfDate.addEventListener("change", function(){
+  var v = parseDate(els.asOfDate.value);
+  if(v != null){ asOf = v; renderDelivery(); }
+});
+els.asOfReset.addEventListener("click", function(){
+  asOf = parseDate(LOCKMETA.reportTo) || TODAY;
+  els.asOfDate.value = new Date(asOf).toISOString().slice(0, 10);
+  renderDelivery();
+});
+els.resetBtn.addEventListener("click", resetAll);
+els.groupBy.addEventListener("change", renderPivot);
+els.pageSize.addEventListener("change", function(){ page = 0; renderTable(); });
+els.prevPage.addEventListener("click", function(){ page--; renderTable(); });
+els.nextPage.addEventListener("click", function(){ page++; renderTable(); });
+els.csvBtn.addEventListener("click", exportCsv);
+els.refreshBtn.addEventListener("click", function(){ load({ interactive: true }); });
+els.signInBtn.addEventListener("click", function(){ load({ interactive: true }).then(function(ok){ if(ok) startPolling(); }); });
+els.signInBtn2.addEventListener("click", function(){ load({ interactive: true }).then(function(ok){ if(ok) startPolling(); }); });
+els.signOutBtn.addEventListener("click", function(){
+  if(!msalApp) return;
+  var acct = msalApp.getActiveAccount() || msalApp.getAllAccounts()[0];
+  try{ localStorage.removeItem(CACHE_KEY); }catch(e){}
+  msalApp.logoutPopup({ account: acct }).catch(function(){}).then(function(){ location.reload(); });
+});
+
+window.addEventListener("resize", function(){
+  clearTimeout(window.__rs);
+  window.__rs = setTimeout(function(){ renderTab(activeTab); }, 250);
+});
+
+/* ============================================================
+   Startup
+   ============================================================ */
+(async function(){
+  if(!initMsal()) return;
+  try{ await msalApp.handleRedirectPromise(); }catch(e){}
+  var ok = await load({ interactive: false });   // silent if a session exists, else the sign-in screen
+  if(ok) startPolling();
+})();
+</script>
+</body>
+</html>
