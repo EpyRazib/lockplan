@@ -10,7 +10,7 @@ window.EWO_CONFIG = {
   /* Azure portal > App registrations > "Dashboard" > Overview >
      Application (client) ID. Required. Paste the ID of the app named
      "Dashboard" that you registered in the Epyllion directory. */
-  CLIENT_ID: "",
+  CLIENT_ID: "f52fc87b-2ce5-404d-aab3-acb90675308c",
 
   /* Epyllion Group's Directory (tenant) ID. With this set, only Epyllion
      accounts can sign in. */
