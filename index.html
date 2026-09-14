@@ -592,6 +592,7 @@ var CLIENT_ID = cfg("CLIENT_ID", "");
 var TENANT_ID = cfg("TENANT_ID", "common");
 var REDIRECT_URI = cfg("REDIRECT_URI", window.location.origin + window.location.pathname);
 var GRAPH_SCOPES = cfg("GRAPH_SCOPES", ["Files.Read.All", "User.Read"]);
+var ONEDRIVE_OWNER = cfg("ONEDRIVE_OWNER", "");
 var ONEDRIVE_FOLDER_PATH = cfg("ONEDRIVE_FOLDER_PATH", "Dashboard");
 var ONEDRIVE_SHARE_URL = cfg("ONEDRIVE_SHARE_URL", "");
 var EWO_FILE_PATTERN = cfg("EWO_FILE_PATTERN", "EWO.*Life.*Cycle");
@@ -766,7 +767,7 @@ async function graph(path, token, init){
     var msg = "Graph answered " + res.status;
     if(res.status === 401) msg = "Your sign-in has expired. Press Refresh to sign in again.";
     else if(res.status === 403) msg = "Your account does not have access to these files, or the app has not been granted the Files.Read.All permission.";
-    else if(res.status === 404) msg = "The folder or file was not found. Check ONEDRIVE_FOLDER_PATH or ONEDRIVE_SHARE_URL in config.js.";
+    else if(res.status === 404) msg = "The folder or file was not found. Check ONEDRIVE_OWNER and ONEDRIVE_FOLDER_PATH in config.js.";
     throw new Error(msg + (body ? " " + body : ""));
   }
   return res;
@@ -779,11 +780,26 @@ function encodeShareUrl(url){
 
 /* Lists the folder's files, returning the two workbooks by name pattern. */
 async function locateWorkbooks(token){
+  /* Three ways to name the folder, in order of how little permission they need:
+       ONEDRIVE_OWNER + ONEDRIVE_FOLDER_PATH   the folder in a named colleague's
+                                              OneDrive. Files.Read.All. This is
+                                              how everyone else reaches the owner's
+                                              folder; SharePoint still enforces
+                                              who may read it.
+       ONEDRIVE_FOLDER_PATH alone              the signed-in user's own OneDrive.
+                                              Files.Read is enough, but then only
+                                              the owner can use the dashboard.
+       ONEDRIVE_SHARE_URL                      a sharing link. Graph's Shares API
+                                              needs Files.ReadWrite for this, so
+                                              prefer the two above. */
   var listPath;
+  var p = String(ONEDRIVE_FOLDER_PATH || "").replace(/^\/+|\/+$/g, "");
   if(ONEDRIVE_SHARE_URL){
     listPath = "/shares/" + encodeShareUrl(ONEDRIVE_SHARE_URL) + "/driveItem/children";
+  }else if(ONEDRIVE_OWNER){
+    var drive = "/users/" + encodeURIComponent(ONEDRIVE_OWNER) + "/drive";
+    listPath = p ? drive + "/root:/" + encodeURI(p) + ":/children" : drive + "/root/children";
   }else{
-    var p = String(ONEDRIVE_FOLDER_PATH || "").replace(/^\/+|\/+$/g, "");
     listPath = p ? "/me/drive/root:/" + encodeURI(p) + ":/children" : "/me/drive/root/children";
   }
   var res = await graph(listPath + (listPath.indexOf("?") === -1 ? "?" : "&")

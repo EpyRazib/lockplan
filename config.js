@@ -1,36 +1,38 @@
 /* ============================================================
    EWO dashboard settings, Microsoft sign-in edition
+   Epyllion Group tenant
 
    This file is YOURS. Dashboard updates replace index.html but never
    this file, so anything you set here survives every update.
    ============================================================ */
 window.EWO_CONFIG = {
 
-  /* From Azure portal > App registrations > your app > Overview.
-     Application (client) ID. Required. */
-  CLIENT_ID: "",
+  /* Azure portal > App registrations > your app > Overview >
+     Application (client) ID. Required.
+     The app you registered earlier had the ID below; reuse it, or paste
+     the ID of a new one. */
+  CLIENT_ID: "f52fc87b-2ce5-404d-aab3-acb90675308c",
 
-  /* Who may sign in. Use one of:
-       "common"                          work, school AND personal Microsoft accounts
-       "consumers"                       personal Microsoft accounts only
-       "organizations"                   any work or school account
-       "<Directory (tenant) ID>"         one company only, e.g. Epyllion's tenant
-     The app registration's "Supported account types" must allow the same. */
-  TENANT_ID: "common",
+  /* Epyllion Group's Directory (tenant) ID. With this set, only Epyllion
+     accounts can sign in. */
+  TENANT_ID: "09438fa4-a67e-4666-a9c2-fcc1c2252472",
 
-  /* Must match a Redirect URI on the app registration EXACTLY, including the
-     trailing slash. Leave empty to use this page's own address. */
+  /* Must match a Redirect URI on the app registration EXACTLY, including
+     the trailing slash. Leave empty to use this page's own address. */
   REDIRECT_URI: "",
 
-  /* Where the two workbooks live. Fill in ONE of these.
+  /* What the app asks for. Read-only, delegated: each person still only
+     sees what SharePoint already lets them see. */
+  GRAPH_SCOPES: ["Files.Read.All", "User.Read"],
 
-     ONEDRIVE_FOLDER_PATH: a folder in the signed-in user's own OneDrive,
-       written from the root, e.g. "Dashboard" or "Reports/Planning".
-
-     ONEDRIVE_SHARE_URL: the sharing link of a folder that someone else
-       shared with you (any sharing link works here, it does not need to be
-       "Anyone with the link"; the signed-in user just needs access). */
+  /* Whose OneDrive holds the folder, and where in it.
+     ONEDRIVE_OWNER is the owner's work email. With it set, colleagues who
+     have been given access to the folder can use the dashboard too.
+     Leave it "" to read only the signed-in person's own OneDrive. */
+  ONEDRIVE_OWNER: "razib.hossain@epylliongroup.com",
   ONEDRIVE_FOLDER_PATH: "Dashboard",
+
+  /* Not recommended: Graph's Shares API needs Files.ReadWrite for this. */
   ONEDRIVE_SHARE_URL: "",
 
   /* How the two files are recognised inside that folder, by name. */
