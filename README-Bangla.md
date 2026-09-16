@@ -17,7 +17,7 @@
 
 ```
 index.html         ড্যাশবোর্ড, সাইন-ইন সহ
-config.js          আপনার সেটিং, Epyllion এর tenant ID আর আগের app এর client ID বসানো আছে
+config.js          আপনার সেটিং, Epyllion এর tenant ID আর ফাইলের পথ বসানো আছে, client ID বসাবেন
 README-Bangla.md   এই গাইড
 ```
 
@@ -38,65 +38,112 @@ README-Bangla.md   এই গাইড
 
 ## ধাপ ২: app registration
 
-আপনি আগেই Epyllion directory তে একটা app বানিয়েছিলেন (client ID `f52fc87b-…`,
-`config.js` এ বসানো আছে)। ওটাই ব্যবহার করুন, নতুন বানানোর দরকার নেই। অফিসের
-অ্যাকাউন্টে portal.azure.com এ ঢুকে **Microsoft Entra ID → App registrations →
-All applications** এ ওটা পাবেন।
+আপনি Epyllion directory তে **Dashboard** নামে app বানিয়েছেন, ওটাই ব্যবহার হবে।
+portal.azure.com এ **Microsoft Entra ID → App registrations → Dashboard → Overview**
+থেকে **Application (client) ID** কপি করে `config.js` এ `CLIENT_ID` তে বসান।
 
-নতুন বানাতে চাইলে **New registration**, নাম `EWO Dashboard`, Supported account
-types এ **Accounts in this organizational directory only (Epyllion Group)**।
-তারপর Overview থেকে নতুন Application (client) ID টা `config.js` এ বসাবেন।
+**Redirect URI**
 
-**Redirect URI ঠিক করুন**
+Authentication পাতায় SPA platform এ `https://epyrazib.github.io/lockplan/index.html`
+আগেই আছে। `config.js` এর `REDIRECT_URI` ও হুবহু ওটাই। repository র নাম বদলালে
+দুই জায়গাতেই বদলাবেন।
 
-1. app এর পাতায় **Authentication**।
-2. **Add a platform → Single-page application**।
-3. Redirect URI তে নতুন repository র GitHub Pages ঠিকানা, **শেষে `/` সহ**, যেমন
-   `https://epyrazib.github.io/ewo-dashboard/`।
-4. **Configure**। আগের app এ পুরনো ঠিকানা (`.../4P/`) থাকলে ওটা রেখে দিলেও ক্ষতি নেই।
+**Permission ঠিক করুন, admin যেভাবে চেয়েছেন**
 
-**Permission ঠিক করুন**
+admin `Files.Read.All` এর বদলে **`Files.SelectedOperations.Selected`** চেয়েছেন। এটা
+সবচেয়ে সংকীর্ণ permission: app শুধু সেই ফাইলগুলোই দেখতে পাবে যেগুলো আলাদা করে
+grant করা হয়েছে, আর কিছু না। কোড আর `config.js` সেভাবেই বদলে দেওয়া আছে।
 
 1. app এর পাতায় **API permissions**।
-2. আগের app এ যা আছে তা দেখুন। থাকা উচিত শুধু:
-   - Microsoft Graph, Delegated: **`Files.Read.All`**
-   - Microsoft Graph, Delegated: **`User.Read`**
-3. অন্য কিছু থাকলে (যেমন `Sites.Read.All`) মুছে দিন। যত কম চাইবেন, admin তত সহজে
-   দেবেন। না থাকলে **Add a permission → Microsoft Graph → Delegated** থেকে যোগ করুন।
+2. `Files.Read.All` এর ডান পাশে **...** → **Remove permission**।
+3. **Add a permission → Microsoft Graph → Delegated permissions**। সার্চে লিখুন
+   `SelectedOperations`, টিক দিন **`Files.SelectedOperations.Selected`**, **Add permissions**।
+4. থাকা উচিত ঠিক দুটো: `User.Read` আর `Files.SelectedOperations.Selected`।
 
-`Files.Read.All` কেন, শুধু `Files.Read` নয়: `Files.Read` দিয়ে একজন শুধু নিজের
-OneDrive পড়তে পারে। তাহলে ড্যাশবোর্ড শুধু আপনিই দেখতে পারতেন। সহকর্মীরা আপনার
-ফোল্ডার পড়তে পারবেন `Files.Read.All` দিয়ে, আর তাতেও SharePoint এর শেয়ারিং
-নিয়মই খাটে, যাকে শেয়ার করেননি সে পাবে না। দুটোই **read-only**।
+## ধাপ ৩: admin consent, তারপর ফাইল দুটো app কে grant করুন
 
-## ধাপ ৩: admin consent
+এই permission এ **তিনটা** ধাপ লাগে, একটাও বাদ গেলে চলবে না:
 
-এটাই আগে আটকেছিল। app এর **API permissions** পাতায় **Grant admin consent for
-Epyllion Group** বোতামটা admin এর অ্যাকাউন্ট থেকে চাপতে হবে।
+1. admin **Grant admin consent for Epyllion Group** চাপবেন (আপনার app এর API
+   permissions পাতায়)।
+2. আপনি, ফাইলের মালিক হিসেবে, প্রতিটা ফাইলে app কে **read** অধিকার দেবেন (নিচে)।
+3. ড্যাশবোর্ড সাইন ইনের সময় ওই scope চাইবে (কোডে করা আছে)।
 
-admin কে ঠিক এই কথাগুলো বললে কাজ দ্রুত হয়:
+**ফাইল grant করার ধাপ, Graph Explorer দিয়ে**
 
-> App: `EWO Dashboard`, client ID `f52fc87b-2ce5-404d-aab3-acb90675308c`।
-> ধরন: Single-page application, শুধু Epyllion Group অ্যাকাউন্ট।
-> চাওয়া permission: Microsoft Graph **Delegated** `Files.Read.All` আর `User.Read`।
-> দুটোই read-only, delegated মানে app নিজে কিছু পড়ে না, সাইন-ইন করা ব্যক্তি যা
-> এমনিতেই পড়তে পারেন সেটাই পড়ে। কোনো Application permission নেই, কোনো
-> client secret নেই, কোনো লেখার permission নেই।
+আমাদের দুটো ফাইল, তাই POST দুইবার। Drive ID লাগবে না, `/me/drive/items/...` পথটাই চলে।
 
-Entra তে "admin consent request" চালু থাকলে আপনি সাইন ইন করার সময় নিজেই
-**Request approval** চাপতে পারবেন, admin এর কাছে notification যাবে।
+1. `https://developer.microsoft.com/graph/graph-explorer` খুলে **Sign in** করুন,
+   Epyllion অ্যাকাউন্ট দিয়ে।
+2. বাঁ পাশে **Modify permissions** ট্যাবে `Files.ReadWrite` খুঁজে **Consent** দিন।
+   POST করতে এটুকু লাগে। এখানে "needs admin approval" এলে admin কে Graph Explorer
+   এ ওই consent দিতে বলবেন, অথবা admin নিজে নিচের POST গুলো চালাবেন।
+3. প্রথম ফাইলের ID: method **GET**, ঠিকানা:
+
+   ```
+   https://graph.microsoft.com/v1.0/me/drive/root:/Dashboard/EWO Life Cycle 2026-27.xlsx
+   ```
+
+   **Run query**। উত্তরে `"id": "01ABC..."` টা কপি করুন।
+
+4. method **POST**, ঠিকানা (ওই id বসিয়ে):
+
+   ```
+   https://graph.microsoft.com/v1.0/me/drive/items/01ABC.../permissions
+   ```
+
+   **Request body** ট্যাবে (আপনার app এর client ID বসিয়ে):
+
+   ```json
+   {
+     "grantedToV2": {
+       "application": {
+         "id": "এখানে Dashboard app এর Application (client) ID"
+       }
+     },
+     "roles": ["read"]
+   }
+   ```
+
+   **Run query**। উত্তর **201 Created** আর ভিতরে `"roles": ["read"]`,
+   `"displayName": "Dashboard"` এলে হয়ে গেছে।
+
+5. দ্বিতীয় ফাইলের জন্য ৩ আর ৪ আবার, ঠিকানায়:
+
+   ```
+   https://graph.microsoft.com/v1.0/me/drive/root:/Dashboard/Fabric Delivery 2026-27_LockPlan.xlsx
+   ```
+
+**বিকল্প, এক POST এ দুটোই: ফোল্ডারটা grant করুন**
+
+Microsoft এর ডকুমেন্টেশন অনুযায়ী grant টা ফোল্ডারে দিলে ভিতরের ফাইলগুলোতেও খাটে
+(inheritance)। তাহলে ধাপ ৩ এ `.../root:/Dashboard` দিয়ে ফোল্ডারের id নিয়ে একবার
+POST করলেই দুটো ফাইল, আর ভবিষ্যতে ওই ফোল্ডারে রাখা নতুন ফাইলও, চলে আসবে।
+এই পথ নিলে `config.js` এ `EWO_FILE_PATH` আর `DELIVERY_FILE_PATH` **খালি** করে দিন,
+তখন ড্যাশবোর্ড ফোল্ডার তালিকা করে নাম দেখে ফাইল চিনে নেবে। admin যদি নির্দিষ্ট
+ফাইলেই সীমাবদ্ধ রাখতে চান, তাহলে উপরের প্রতি-ফাইল পথটাই থাকুক।
+
+**ফাইল বদলালে বা নতুন করে আপলোড করলে**
+
+grant টা ফাইলের সাথে থাকে। OneDrive এ একই ফাইল **সেভ** করলে grant থাকে। কিন্তু
+ফাইল মুছে **নতুন ফাইল আপলোড** করলে সেটা নতুন item, grant হারাবে, আবার POST করতে
+হবে। ফোল্ডার grant নিলে এই ঝামেলা নেই।
 
 ## ধাপ ৪: config.js মিলিয়ে নিন
 
 ```javascript
-  CLIENT_ID: "f52fc87b-2ce5-404d-aab3-acb90675308c",   // নতুন app বানালে বদলাবেন
+  CLIENT_ID: "",                                        // Dashboard app এর Application (client) ID বসান
   TENANT_ID: "09438fa4-a67e-4666-a9c2-fcc1c2252472",   // Epyllion Group
-  ONEDRIVE_OWNER: "razib.hossain@epylliongroup.com",   // আপনার অফিসের ইমেইল, যার OneDrive এ ফোল্ডার
-  ONEDRIVE_FOLDER_PATH: "Dashboard",
+  REDIRECT_URI: "https://epyrazib.github.io/lockplan/index.html",
+  GRAPH_SCOPES: ["User.Read", "Files.SelectedOperations.Selected"],
+  ONEDRIVE_OWNER: "razib.hossain@epylliongroup.com",
+  EWO_FILE_PATH: "Dashboard/EWO Life Cycle 2026-27.xlsx",
+  DELIVERY_FILE_PATH: "Dashboard/Fabric Delivery 2026-27_LockPlan.xlsx",
 ```
 
-`ONEDRIVE_OWNER` এ আপনার অফিসের ইমেইলটা ঠিক আছে কিনা দেখে নেবেন। ভুল হলে
-"folder or file was not found" আসবে।
+ফাইলের নাম OneDrive এ হুবহু এই রকম কিনা মিলিয়ে নেবেন, স্পেস আর হাইফেন সহ। নাম
+আলাদা হলে এখানে বদলান। `ONEDRIVE_OWNER` ভুল হলে "folder or file was not found"
+আসবে।
 
 ## ধাপ ৫: GitHub এ দিন
 
@@ -127,7 +174,9 @@ Epyllion এর consent ছাড়া এই সংস্করণ Epyllion �
 1. `azure.microsoft.com/free` এ ব্যক্তিগত Gmail দিয়ে Azure free account খুলুন।
    কার্ড চায়, টাকা কাটে না। নিজের একটা directory পাবেন যার আপনিই admin।
 2. ওখানে app বানান, Supported account types এ **personal Microsoft accounts** allow
-   করে, Delegated `Files.Read.All` আর `User.Read`, নিজেই Grant admin consent।
+   করে, Delegated `Files.Read` আর `User.Read`, নিজেই Grant admin consent।
+   ব্যক্তিগত অ্যাকাউন্টে Selected permission নেই, তাই `config.js` এ সাময়িকভাবে
+   `GRAPH_SCOPES: ["User.Read", "Files.Read"]` আর `EWO_FILE_PATH: ""` দেবেন।
 3. `config.js` এ ওই client ID, `TENANT_ID: "common"`, `ONEDRIVE_OWNER: ""`, আর
    ফাইল দুটো ব্যক্তিগত OneDrive এর `Dashboard` ফোল্ডারে (ওখানে এখনো আছে)।
 
@@ -143,7 +192,7 @@ Epyllion এর consent ছাড়া এই সংস্করণ Epyllion �
 | popup খুলেই বন্ধ, `AADSTS50011` | Redirect URI মেলেনি। Authentication পাতায় ঠিক Pages ঠিকানাটা, শেষের `/` সহ, SPA platform এ আছে কিনা দেখুন। |
 | `AADSTS50020`, "account does not exist in tenant" | ব্যক্তিগত অ্যাকাউন্ট দিয়ে ঢোকার চেষ্টা। Epyllion অ্যাকাউন্ট দিয়ে ঢুকুন। |
 | `AADSTS700016`, "application not found" | CLIENT_ID ভুল, বা app টা অন্য directory তে। |
-| Your account does not have access to these files (403) | সাইন-ইন করা ব্যক্তিকে ফোল্ডারটা শেয়ার করা হয়নি, অথবা `Files.Read.All` grant হয়নি। |
+| Access refused (403) | তিনটার একটা: admin consent হয়নি, ফাইলে app কে read grant করা হয়নি (ধাপ ৩ এর POST), অথবা সাইন-ইন করা ব্যক্তিকে ফাইল/ফোল্ডার শেয়ার করা হয়নি। |
 | The folder or file was not found (404) | `ONEDRIVE_OWNER` এর ইমেইল বা `ONEDRIVE_FOLDER_PATH` ভুল। |
 | No workbook matching ... was found | ফোল্ডারে আছে কিন্তু নামে "EWO Life Cycle" বা "Fabric Delivery" নেই। মেসেজে ফোল্ডারের ফাইলের নাম দেখাবে। |
 | The Microsoft sign-in library did not load | অফিসের নেট বা ad-blocker `cdn.jsdelivr.net` আটকাচ্ছে। |

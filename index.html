@@ -591,10 +591,12 @@ function cfg(name, fallback){ return (CFG[name] !== undefined && CFG[name] !== n
 var CLIENT_ID = cfg("CLIENT_ID", "");
 var TENANT_ID = cfg("TENANT_ID", "common");
 var REDIRECT_URI = cfg("REDIRECT_URI", window.location.origin + window.location.pathname);
-var GRAPH_SCOPES = cfg("GRAPH_SCOPES", ["Files.Read.All", "User.Read"]);
+var GRAPH_SCOPES = cfg("GRAPH_SCOPES", ["User.Read", "Files.SelectedOperations.Selected"]);
 var ONEDRIVE_OWNER = cfg("ONEDRIVE_OWNER", "");
 var ONEDRIVE_FOLDER_PATH = cfg("ONEDRIVE_FOLDER_PATH", "Dashboard");
 var ONEDRIVE_SHARE_URL = cfg("ONEDRIVE_SHARE_URL", "");
+var EWO_FILE_PATH = cfg("EWO_FILE_PATH", "");
+var DELIVERY_FILE_PATH = cfg("DELIVERY_FILE_PATH", "");
 var EWO_FILE_PATTERN = cfg("EWO_FILE_PATTERN", "EWO.*Life.*Cycle");
 var DELIVERY_FILE_PATTERN = cfg("DELIVERY_FILE_PATTERN", "Fabric.*Delivery");
 var POLL_SECONDS = cfg("POLL_SECONDS", 300);
@@ -766,7 +768,7 @@ async function graph(path, token, init){
     try{ body = (await res.text()).slice(0, 300); }catch(e){}
     var msg = "Graph answered " + res.status;
     if(res.status === 401) msg = "Your sign-in has expired. Press Refresh to sign in again.";
-    else if(res.status === 403) msg = "Your account does not have access to these files, or the app has not been granted the Files.Read.All permission.";
+    else if(res.status === 403) msg = "Access refused. Either your account has no access to these files, or the app has not been granted access to them (for Files.SelectedOperations.Selected the file or its folder must be granted to the app with a POST to /permissions).";
     else if(res.status === 404) msg = "The folder or file was not found. Check ONEDRIVE_OWNER and ONEDRIVE_FOLDER_PATH in config.js.";
     throw new Error(msg + (body ? " " + body : ""));
   }
@@ -778,8 +780,43 @@ function encodeShareUrl(url){
   return "u!" + b64.replace(/=+$/, "").replace(/\//g, "_").replace(/\+/g, "-");
 }
 
-/* Lists the folder's files, returning the two workbooks by name pattern. */
+/* Finds the two workbooks. Two ways, chosen by config.js:
+
+   EWO_FILE_PATH / DELIVERY_FILE_PATH set   each file is fetched by its own path,
+                                             and the folder is never listed. This
+                                             is the mode for Files.SelectedOperations.
+                                             Selected when the app was granted the
+                                             individual FILES: a folder listing would
+                                             be refused, but a granted item can be
+                                             addressed by path.
+   otherwise                                 the folder is listed and the files are
+                                             picked by name. Works with Files.Read.All,
+                                             or with a Selected grant placed on the
+                                             FOLDER itself, which covers its children. */
 async function locateWorkbooks(token){
+  if(EWO_FILE_PATH){
+    var itemSelect = "?$select=id,name,size,eTag,lastModifiedDateTime,parentReference,@microsoft.graph.downloadUrl";
+    async function byPath(path, what){
+      var clean = String(path).replace(/^\/+|\/+$/g, "");
+      var base = ONEDRIVE_OWNER
+        ? "/users/" + encodeURIComponent(ONEDRIVE_OWNER) + "/drive/root:/" + encodeURI(clean)
+        : "/me/drive/root:/" + encodeURI(clean);
+      var res = await graph(base + itemSelect, token);
+      return await res.json();
+    }
+    var ewoItem = await byPath(EWO_FILE_PATH, "EWO");
+    var dlvItem = null;
+    if(DELIVERY_FILE_PATH){
+      try{ dlvItem = await byPath(DELIVERY_FILE_PATH, "delivery"); }
+      catch(e){ console.warn("Delivery workbook not reachable, that tab will be empty: " + e.message); }
+    }
+    return { ewo: ewoItem, delivery: dlvItem };
+  }
+  return locateByListing(token);
+}
+
+/* Lists the folder's files, returning the two workbooks by name pattern. */
+async function locateByListing(token){
   /* Three ways to name the folder, in order of how little permission they need:
        ONEDRIVE_OWNER + ONEDRIVE_FOLDER_PATH   the folder in a named colleague's
                                               OneDrive. Files.Read.All. This is
