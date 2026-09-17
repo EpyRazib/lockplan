@@ -882,17 +882,48 @@ async function locateByListing(token){
 }
 
 async function downloadItem(item, token, label){
-  // The pre-authenticated download address is served with CORS headers and
-  // needs no token, which is what lets a browser page pull a 10 MB file.
+  var itemPath = "/drives/" + item.parentReference.driveId + "/items/" + item.id;
+  var notes = [];
+  async function snippet(res){
+    var t = ""; try{ t = (await res.text()).slice(0, 220).replace(/\s+/g, " "); }catch(e){}
+    return res.status + (t ? " " + t : "");
+  }
+
+  // 1. The pre-authenticated download address. Served with CORS headers and
+  //    needs no token, which is what normally lets a page pull a 10 MB file.
   var url = item["@microsoft.graph.downloadUrl"];
   if(!url){
-    var meta = await graph("/drives/" + item.parentReference.driveId + "/items/" + item.id
-      + "?$select=id,@microsoft.graph.downloadUrl", token);
-    url = (await meta.json())["@microsoft.graph.downloadUrl"];
+    try{
+      var meta = await graph(itemPath + "?$select=id,@microsoft.graph.downloadUrl", token);
+      url = (await meta.json())["@microsoft.graph.downloadUrl"];
+    }catch(e){ notes.push("metadata: " + e.message); }
   }
-  var res = await fetch(url);
-  if(!res.ok) throw new Error("Could not download " + label + " (" + res.status + ").");
-  return await res.arrayBuffer();
+  if(url){
+    try{
+      var res = await fetch(url);
+      if(res.ok) return await res.arrayBuffer();
+      notes.push("downloadUrl: " + (await snippet(res)));
+    }catch(e){ notes.push("downloadUrl: " + e.message); }
+  }else notes.push("downloadUrl: not returned");
+
+  // 2. Graph's own /content route, with the token. Graph answers with a
+  //    redirect to a fresh download address; current browsers follow it.
+  try{
+    var r2 = await fetch("https://graph.microsoft.com/v1.0" + itemPath + "/content",
+      { headers: { Authorization: "Bearer " + token } });
+    if(r2.ok) return await r2.arrayBuffer();
+    notes.push("/content: " + (await snippet(r2)));
+  }catch(e){ notes.push("/content: " + e.message); }
+
+  // 3. Diagnostic only: does the Excel API see the file? Tells us whether the
+  //    grant reaches the file at all, or only the download route is refused.
+  try{
+    var r3 = await fetch("https://graph.microsoft.com/v1.0" + itemPath + "/workbook/worksheets?$select=name",
+      { headers: { Authorization: "Bearer " + token } });
+    notes.push("workbook API: " + (await snippet(r3)));
+  }catch(e){ notes.push("workbook API: " + e.message); }
+
+  throw new Error("Could not download " + label + ". " + notes.join(" | "));
 }
 
 /* ============================================================
