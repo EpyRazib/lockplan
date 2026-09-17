@@ -9,7 +9,7 @@ window.EWO_CONFIG = {
 
   /* Azure portal > App registrations > "Dashboard" > Overview >
      Application (client) ID. Required. */
-  CLIENT_ID: "f52fc87b-2ce5-404d-aab3-acb90675308c",
+  CLIENT_ID: "",
 
   /* Epyllion Group's Directory (tenant) ID. Only Epyllion accounts can sign in. */
   TENANT_ID: "09438fa4-a67e-4666-a9c2-fcc1c2252472",
