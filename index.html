@@ -588,6 +588,30 @@
 var CFG = (typeof window !== "undefined" && window.EWO_CONFIG) ? window.EWO_CONFIG : {};
 function cfg(name, fallback){ return (CFG[name] !== undefined && CFG[name] !== null) ? CFG[name] : fallback; }
 
+/* The sign-in popup comes back to THIS page (it is the registered redirect
+   URI) carrying the auth code in the URL hash. The opener window reads that
+   hash and closes the popup. If this copy of the page were to boot normally it
+   would swallow the hash (MSAL's handleRedirectPromise) and the opener would
+   wait forever with the whole dashboard sitting inside the popup. So: when we
+   are that popup, show a one-line notice, touch nothing, and let the opener
+   finish. */
+var IS_AUTH_POPUP = false;
+try{
+  IS_AUTH_POPUP = !!(window.opener && window.opener !== window
+    && /(^|[#?&])(code|state|error)=/.test(location.hash + location.search));
+}catch(e){}
+if(IS_AUTH_POPUP){
+  var lsEl = document.getElementById("loadingState"), dbEl = document.getElementById("dashboard");
+  if(dbEl) dbEl.style.display = "none";
+  if(lsEl){
+    for(var ci = 0; ci < lsEl.children.length; ci++) lsEl.children[ci].style.display = "none";
+    var note = document.createElement("p");
+    note.style.cssText = "margin:48px auto;max-width:420px;font-family:sans-serif;color:#444;";
+    note.textContent = "Signing you in… this window closes by itself. If it stays open, close it and return to the dashboard.";
+    lsEl.appendChild(note);
+  }
+}
+
 var CLIENT_ID = cfg("CLIENT_ID", "");
 var TENANT_ID = cfg("TENANT_ID", "common");
 var REDIRECT_URI = cfg("REDIRECT_URI", window.location.origin + window.location.pathname);
@@ -2564,6 +2588,7 @@ window.addEventListener("resize", function(){
    Startup
    ============================================================ */
 (async function(){
+  if(IS_AUTH_POPUP) return;                      // the opener is reading our hash; stay out of the way
   if(!initMsal()) return;
   try{ await msalApp.handleRedirectPromise(); }catch(e){}
   var ok = await load({ interactive: false });   // silent if a session exists, else the sign-in screen
