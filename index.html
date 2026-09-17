@@ -1054,6 +1054,9 @@ function writeCache(sig, bundle){
 async function load(opts){
   opts = opts || {};
   var interactive = !!opts.interactive;
+  /* If MSAL never got created (no CLIENT_ID, or the library was blocked) the
+     reason is already on screen; keep it there instead of failing further down. */
+  if(!msalApp && !initMsal()) return false;
   els.refreshBtn.disabled = true;
   try{
     if(!opts.quiet){ clearError(); loadingScreen("Signing in", "Checking your Microsoft sign-in.", false); setStatus("Signing in...", "busy"); }
