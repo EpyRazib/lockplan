@@ -28,8 +28,8 @@ window.EWO_CONFIG = {
   /* Where the two workbooks are, as paths from the OneDrive root. With these
      set, each file is fetched directly and the folder is never listed, which
      is what per-file grants allow. Keep the names exactly as in OneDrive. */
-  EWO_FILE_PATH: "Dashboard/EWO Life Cycle 2026-27.xlsx",
-  DELIVERY_FILE_PATH: "Dashboard/Fabric Delivery 2026-27_LockPlan.xlsx",
+  EWO_FILE_PATH: "Dashboard/EWOLifeCycle.xlsx",
+  DELIVERY_FILE_PATH: "Dashboard/FabricDelivery.xlsx",
 
   /* Used only when EWO_FILE_PATH is empty: the folder is listed and files are
      picked by name. Needs a grant on the FOLDER (or Files.Read.All). */
