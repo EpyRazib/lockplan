@@ -150,9 +150,15 @@
   .panel .hint{font-size:11px;color:var(--ink-soft);margin-bottom:14px;}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
   .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;}
+  .grid1{display:block;}
+  .grid1 .panel{margin-bottom:18px;}
+  .chart-box.wide{height:340px;}
+  @media(max-width:1400px){.grid4{grid-template-columns:1fr 1fr;}}
   @media(max-width:1100px){.grid3{grid-template-columns:1fr 1fr;}}
-  @media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr;}}
+  @media(max-width:820px){.grid2,.grid3,.grid4{grid-template-columns:1fr;}}
   .chart-box{position:relative;height:265px;}
+  .grid4 .chart-box{height:300px;}
   .chart-box.tall{height:320px;}
   .section-head{font-size:15px;margin-bottom:3px;color:var(--green);}
   .section-hint{font-size:11px;color:var(--ink-soft);margin-bottom:12px;}
@@ -280,14 +286,6 @@
           <select id="dateField"></select>
         </div>
         <div class="fld">
-          <label for="yearFilter">Year</label>
-          <select id="yearFilter"><option value="">All years</option></select>
-        </div>
-        <div class="fld">
-          <label for="monthFilter">Month</label>
-          <select id="monthFilter"><option value="">All months</option></select>
-        </div>
-        <div class="fld">
           <label for="dateFrom">From</label>
           <input type="date" id="dateFrom" />
         </div>
@@ -317,33 +315,48 @@
     <!-- ============ OVERVIEW ============ -->
     <div class="tabpage on" id="page-overview">
       <div class="kpis" id="kpiRow"></div>
-      <div class="grid3">
+      <div class="grid4">
         <div class="panel">
-          <h3>Status</h3>
+          <h3>Lock Status</h3>
           <div class="hint">Orders by planning state</div>
           <div class="chart-box"><canvas id="statusChart"></canvas></div>
         </div>
         <div class="panel">
           <h3>Execution Unit</h3>
-          <div class="hint">Order quantity by factory</div>
+          <div class="hint">Order quantity, split by lock status</div>
           <div class="chart-box"><canvas id="execChart"></canvas></div>
         </div>
         <div class="panel">
           <h3>Team</h3>
-          <div class="hint">Order quantity by merchandising team</div>
+          <div class="hint">Order quantity, split by lock status</div>
           <div class="chart-box"><canvas id="teamChart"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3>Top buyers</h3>
+          <div class="hint">Order quantity, split by lock status, largest ten</div>
+          <div class="chart-box"><canvas id="buyerChart"></canvas></div>
         </div>
       </div>
       <div class="grid2">
         <div class="panel">
-          <h3>Top buyers</h3>
-          <div class="hint">By order quantity, largest twelve</div>
-          <div class="chart-box tall"><canvas id="buyerChart"></canvas></div>
+          <h3>OTT by event</h3>
+          <div class="hint" id="ottEventHint">Pass rate per event, from the ActualEv sheet</div>
+          <div class="chart-box tall"><canvas id="ottEventChart"></canvas></div>
+          <div class="empty-note" id="ottMissing" style="display:none;">
+            No <code>ActualEv</code> sheet was found in the EWO workbook, so the OTT charts are empty.
+          </div>
         </div>
+        <div class="panel">
+          <h3>OTT overall</h3>
+          <div class="hint" id="ottTotalHint">Every event check in the ActualEv sheet, passed against failed</div>
+          <div class="chart-box tall"><canvas id="ottPieChart"></canvas></div>
+        </div>
+      </div>
+      <div class="grid1">
         <div class="panel">
           <h3>Fabric sourcing split</h3>
           <div class="hint">In-house knitting against outside purchase</div>
-          <div class="chart-box tall"><canvas id="sourceChart"></canvas></div>
+          <div class="chart-box"><canvas id="sourceChart"></canvas></div>
         </div>
       </div>
     </div>
@@ -401,30 +414,21 @@
     <div class="tabpage" id="page-capacity">
       <div class="kpis six" id="capKpis"></div>
       <div class="granbar"><span class="granhint">Each order's quantity is spread evenly across its planned window, exactly as the fab and Sew sheets do. Filters and the Day / Week / Month switch apply.</span></div>
-      <div class="grid2">
+      <div class="grid1">
         <div class="panel">
-          <h3 data-grantitle2="In-house fabric load per {g}">In-house fabric load per month</h3>
+          <h3 data-grantitle2="In-house fabric load per {g}">In-house fabric load per day</h3>
           <div class="hint">Textile mill knitting load: InHouse kg across Adjusted Fabric Start to End, as the fab sheet builds it</div>
-          <div class="chart-box tall"><canvas id="fabLoadChart"></canvas></div>
+          <div class="chart-box wide"><canvas id="fabLoadChart"></canvas></div>
         </div>
         <div class="panel">
-          <h3 data-grantitle2="Sewing load per {g}">Sewing load per month</h3>
+          <h3 data-grantitle2="Sewing load per {g}">Sewing load per day</h3>
           <div class="hint">FR hour across Adjusted sew start to end, locked orders against the rest</div>
-          <div class="chart-box tall"><canvas id="sewLoadChart"></canvas></div>
+          <div class="chart-box wide"><canvas id="sewLoadChart"></canvas></div>
         </div>
       </div>
-      <div class="grid2">
-        <div class="panel">
-          <h3>In-house fabric load by unit</h3>
-          <div class="hint">Same spread, split by Execution Unit, monthly</div>
-          <div class="chart-box tall"><canvas id="fabUnitChart"></canvas></div>
-        </div>
-        <div class="panel">
-          <h3>Sewing load by unit</h3>
-          <div class="hint">Same spread, split by Execution Unit, monthly</div>
-          <div class="chart-box tall"><canvas id="sewUnitChart"></canvas></div>
-        </div>
-      </div>
+      <h3 class="section-head">Sewing load by unit</h3>
+      <div class="section-hint" id="sewUnitHint">One chart per Execution Unit, same spread and same window.</div>
+      <div class="grid3" id="sewUnitGrid"></div>
     </div>
 
     <!-- ============ DELIVERY ============ -->
@@ -628,7 +632,23 @@ var SHEET_MAIN = "EWO", SHEET_FABRIC = "Fsum", SHEET_SEW = "Ssum";
 
 var ID_COLUMNS = ["EWO"];
 var AVERAGE_COLUMNS = ["fab st to pcd", "fab dur", "sew dur", "pcd to sew st", "Per Day InHouse"];
-var FILTER_DIMENSIONS = ["Status", "Latest note", "Team", "Buyer", "Execution Unit", "Dept", "OrderDate duration"];
+var FILTER_DIMENSIONS = ["Status", "Latest note", "Execution Unit", "Team", "Buyer", "Dept"];
+/* The sheet's column name on the left, what the filter bar calls it on the
+   right. Renaming here changes the label only; the data is untouched. */
+var FILTER_LABELS = { "Status": "Lock Status" };
+
+/* The three date fields the dashboard filters on. Two of them are windows, not
+   single days: an order counts as inside the range when its window overlaps the
+   range at all, which is what "show me the fabric load for October" means. */
+var DATE_FIELDS = [
+  { key: "Order Bank Date",  start: "Order Bank Date",       end: "Order Bank Date" },
+  { key: "Fabric Load Date", start: "Adjusted Fabric Start", end: "Adjusted Fabric End" },
+  { key: "Sewing Load Date", start: "Adjusted sew start",    end: "Adjusted sew end" }
+];
+function dateFieldDef(key){
+  for(var i = 0; i < DATE_FIELDS.length; i++) if(DATE_FIELDS[i].key === key) return DATE_FIELDS[i];
+  return null;
+}
 var DEFAULT_TABLE_COLUMNS = ["EWO", "Status", "Buyer", "Team", "Execution Unit", "Dept",
   "Order Qty", "Fab Qty", "InHouse", "OutSide", "Order Bank Date", "Adjusted Fabric Start",
   "Adjusted Fabric End", "Adjusted PCD", "Adjusted sew start", "Adjusted sew end",
@@ -639,6 +659,7 @@ var charts = {};
 var HEADERS = [], COLTYPE = {}, COLEMPTY = {}, IDX = {};
 var ROWS = [], FSUM = [], SSUM = [];
 var DELIV = [], DIDX = {}, LOCK = [], LIDX = {}, RFDROWS = [], LOCKMETA = {};
+var OTT = { events: [], pass: 0, fail: 0, checks: 0 };
 var asOf = null;
 var visibleCols = [], filtered = [], baseFiltered = [];
 var activeAlert = null, activeTab = "overview", granularity = "day";
@@ -654,7 +675,7 @@ var els = {};
 ["statusDot","statusText","freshness","refreshBtn","csvBtn","loadingState","dashboard",
  "signInBtn","signInBtn2","signOutBtn","accountLabel","signinBox","spinner","loadingTitle","loadingText",
  "errorBox","filterGrid","searchInput","dateField","dateFieldWrap","dateFrom","dateTo","resetBtn",
- "yearFilter","monthFilter","granSwitch","granHint",
+ "granSwitch","granHint","sewUnitGrid","sewUnitHint","ottMissing","ottEventHint","ottTotalHint",
  "filterSummary","activeChips","kpiRow","alertRow","attnTable","attnTableTitle","attnTableHint",
  "pivotTable","dataTable","groupBy","colChooser","prevPage","nextPage","pageInfo","pageSize",
  "detailHint","tabBar","attnCount","capKpis","delKpis","asOfDate","asOfReset",
@@ -967,6 +988,26 @@ function sheetByName(wb, name){
   return key ? wb.Sheets[key] : null;
 }
 
+/* A sheet kept as it is: first the header row, then every row under it. Used
+   for ActualEv, whose shape is decided when the data is read, not here. */
+function extractGrid(ws){
+  var rows = sheetRows(ws);
+  var hi = -1;
+  for(var i = 0; i < Math.min(rows.length, 15); i++){
+    var filled = (rows[i] || []).filter(function(c){ return c != null && String(c).trim() !== ""; });
+    if(filled.length >= 2){ hi = i; break; }
+  }
+  if(hi === -1) return [];
+  var out = [];
+  for(var r = hi; r < rows.length; r++){
+    var row = rows[r] || [];
+    var picked = row.map(function(c){ return cellValue(c); });
+    if(r > hi && picked.every(function(c){ return c == null || c === ""; })) continue;
+    out.push(picked);
+  }
+  return out;
+}
+
 function extractMain(ws){
   var rows = sheetRows(ws);
   var hi = -1;
@@ -1085,13 +1126,14 @@ function extractLockMeta(ws){
 function bundleFromWorkbooks(ewoBuf, dlvBuf){
   // Only the sheets that are needed are parsed: the fab and Sew grids are huge
   // and the dashboard rebuilds them itself from the EWO rows.
-  var wb = XLSX.read(new Uint8Array(ewoBuf), { type: "array", cellDates: true, sheets: ["EWO", "Fsum", "Ssum"] });
+  var wb = XLSX.read(new Uint8Array(ewoBuf), { type: "array", cellDates: true, sheets: ["EWO", "Fsum", "Ssum", "ActualEv"] });
   var main = sheetByName(wb, "EWO");
   if(!main) throw new Error('The EWO workbook has no sheet named "EWO".');
   var bundle = {
     EWO: extractMain(main),
     Fsum: sheetByName(wb, "Fsum") ? extractMonthly(sheetByName(wb, "Fsum")) : [],
     Ssum: sheetByName(wb, "Ssum") ? extractMonthly(sheetByName(wb, "Ssum")) : [],
+    ActualEv: sheetByName(wb, "ActualEv") ? extractGrid(sheetByName(wb, "ActualEv")) : [],
     Delivery: [], LockPlan: [], RFD: [], LockMeta: {}
   };
   if(dlvBuf){
@@ -1270,6 +1312,8 @@ function ingest(bundle){
   RFDROWS = rt.rows;
   RFDROWS.idxKg = rt.idx["Kg"] != null ? rt.idx["Kg"] : 0;
   LOCKMETA = bundle.LockMeta || {};
+  OTT = buildOtt(bundle.ActualEv);
+  buildDeliveredIndex();
   if(asOf == null){
     asOf = parseDate(LOCKMETA.reportTo) || TODAY;
     els.asOfDate.value = new Date(asOf).toISOString().slice(0, 10);
@@ -1283,11 +1327,91 @@ function ingest(bundle){
   applyFilters();
 }
 
+/* ============================================================
+   OTT, from the ActualEv sheet
+
+   The sheet is read without assuming its layout, because two layouts are both
+   plausible and both common in this workbook family:
+
+     long   one row per check:  EWO | Event | Pass/Fail
+     wide   one row per order, one column per event, each cell Pass or Fail
+
+   Whichever it is, the answer wanted is the same: per event, how many passed
+   and how many failed. A cell only counts when it actually says pass or fail;
+   blanks, "n/a" and dates are skipped, so an event nobody has judged yet does
+   not drag a pass rate down.
+   ============================================================ */
+function ottVerdict(v){
+  if(v == null) return null;
+  var t = String(v).trim().toLowerCase();
+  if(t === "") return null;
+  if(t === "pass" || t === "passed" || t === "ok" || t === "yes" || t === "y"
+     || t === "on time" || t === "ontime" || t === "p") return "pass";
+  if(t === "fail" || t === "failed" || t === "no" || t === "n" || t === "not ok"
+     || t === "late" || t === "delay" || t === "delayed" || t === "f") return "fail";
+  return null;
+}
+
+function buildOtt(grid){
+  var out = { events: [], pass: 0, fail: 0, checks: 0, shape: "none" };
+  if(!grid || grid.length < 2) return out;
+  var header = (grid[0] || []).map(function(h){ return h == null ? "" : String(h).trim(); });
+  var body = grid.slice(1);
+  var tally = {}, order = [];
+  function add(name, verdict){
+    if(!tally[name]){ tally[name] = { pass: 0, fail: 0 }; order.push(name); }
+    tally[name][verdict]++;
+    out[verdict]++; out.checks++;
+  }
+
+  // Long shape: a column of event names beside a column of verdicts.
+  var lower = header.map(function(h){ return h.toLowerCase(); });
+  function findCol(names){
+    for(var i = 0; i < lower.length; i++)
+      for(var j = 0; j < names.length; j++)
+        if(lower[i] === names[j] || lower[i].indexOf(names[j]) !== -1) return i;
+    return -1;
+  }
+  var evCol = findCol(["event", "milestone", "activity", "process"]);
+  var resCol = findCol(["result", "status", "pass/fail", "pass fail", "ott", "remarks"]);
+  if(evCol !== -1 && resCol !== -1 && evCol !== resCol){
+    var hits = 0;
+    body.forEach(function(r){
+      var v = ottVerdict(r[resCol]);
+      var name = r[evCol] == null ? "" : String(r[evCol]).trim();
+      if(v && name){ add(name, v); hits++; }
+    });
+    if(hits > 0) out.shape = "long";
+  }
+
+  // Wide shape: every column whose cells read pass or fail is an event.
+  if(out.shape === "none"){
+    header.forEach(function(name, c){
+      if(!name) return;
+      var p = 0, f = 0;
+      for(var i = 0; i < body.length; i++){
+        var v = ottVerdict(body[i][c]);
+        if(v === "pass") p++; else if(v === "fail") f++;
+      }
+      if(p + f === 0) return;
+      tally[name] = { pass: p, fail: f }; order.push(name);
+      out.pass += p; out.fail += f; out.checks += p + f;
+    });
+    if(order.length) out.shape = "wide";
+  }
+
+  out.events = order.map(function(name){
+    var t = tally[name], n = t.pass + t.fail;
+    return { name: name, pass: t.pass, fail: t.fail, total: n,
+             passPct: n ? Math.round(1000 * t.pass / n) / 10 : 0 };
+  });
+  return out;
+}
+
 /* A background refresh must not throw away what the reader had selected. */
 function snapshotFilters(){
   var s = { dims: {}, q: els.searchInput.value, df: els.dateField.value,
-            from: els.dateFrom.value, to: els.dateTo.value,
-            year: els.yearFilter.value, month: els.monthFilter.value };
+            from: els.dateFrom.value, to: els.dateTo.value };
   Object.keys(dimSelects).forEach(function(k){ s.dims[k] = dimSelects[k].value; });
   return s;
 }
@@ -1296,11 +1420,6 @@ function restoreFilters(s){
   if(s.df){ els.dateField.value = s.df; }
   els.dateFrom.value = s.from || "";
   els.dateTo.value = s.to || "";
-  if(s.year){
-    var hasYear = Array.prototype.some.call(els.yearFilter.options, function(o){ return o.value === s.year; });
-    if(hasYear) els.yearFilter.value = s.year;
-  }
-  els.monthFilter.value = s.month || "";
   Object.keys(s.dims).forEach(function(k){
     if(dimSelects[k] && s.dims[k]){
       var has = Array.prototype.some.call(dimSelects[k].options, function(o){ return o.value === s.dims[k]; });
@@ -1365,7 +1484,7 @@ function buildFilters(){
     var wrap = document.createElement("div");
     wrap.className = "fld";
     var id = "f_" + name.replace(/\W+/g, "_");
-    wrap.innerHTML = '<label for="' + id + '">' + esc(name) + '</label>'
+    wrap.innerHTML = '<label for="' + id + '">' + esc(FILTER_LABELS[name] || name) + '</label>'
       + '<select id="' + id + '"><option value="">All</option>'
       + values.map(function(v){ return '<option value="' + esc(v) + '">' + esc(v) + '</option>'; }).join("")
       + '</select>';
@@ -1375,33 +1494,16 @@ function buildFilters(){
     dimSelects[name] = sel;
   });
 
-  var dateCols = HEADERS.filter(function(h){ return COLTYPE[h] === "date" && !COLEMPTY[h]; });
+  // Only the three fields that mean something to the people reading this, and
+  // only those whose underlying columns actually exist in the workbook.
   els.dateField.innerHTML = '<option value="">No date filter</option>'
-    + dateCols.map(function(h){ return '<option value="' + esc(h) + '">' + esc(h) + '</option>'; }).join("");
-
-  // Years actually present anywhere in the workbook's dates, so the list never
-  // offers a year with nothing behind it.
-  var years = {};
-  ROWS.forEach(function(r){
-    dateCols.forEach(function(h){
-      var d = dat(r, h);
-      if(d != null) years[new Date(d).getUTCFullYear()] = true;
-    });
-  });
-  var yearList = Object.keys(years).map(Number).sort();
-  els.yearFilter.innerHTML = '<option value="">All years</option>'
-    + yearList.map(function(y){ return '<option value="' + y + '">' + y + '</option>'; }).join("");
-  els.monthFilter.innerHTML = '<option value="">All months</option>'
-    + MONTH_FULL.map(function(name, i){
-        return '<option value="' + (i + 1) + '">' + name + '</option>';
-      }).join("");
+    + DATE_FIELDS.filter(function(d){ return IDX[d.start] != null && IDX[d.end] != null; })
+        .map(function(d){ return '<option value="' + esc(d.key) + '">' + esc(d.key) + '</option>'; }).join("");
 }
 
 function currentFilters(){
   var f = { q: els.searchInput.value.trim().toLowerCase(), dims: {},
-            dateField: els.dateField.value, from: null, to: null,
-            year: els.yearFilter.value ? parseInt(els.yearFilter.value, 10) : null,
-            month: els.monthFilter.value ? parseInt(els.monthFilter.value, 10) : null };
+            dateField: els.dateField.value, from: null, to: null };
   Object.keys(dimSelects).forEach(function(k){ if(dimSelects[k].value) f.dims[k] = dimSelects[k].value; });
   if(els.dateFrom.value) f.from = parseDate(els.dateFrom.value);
   if(els.dateTo.value) f.to = parseDate(els.dateTo.value);
@@ -1412,15 +1514,17 @@ function passesBaseFilters(r, f, dimKeys){
   for(var i = 0; i < dimKeys.length; i++){
     if(txt(r, dimKeys[i]) !== f.dims[dimKeys[i]]) return false;
   }
-  var wantsDate = f.from != null || f.to != null || f.year != null || f.month != null;
+  var wantsDate = f.from != null || f.to != null;
   if(f.dateField && wantsDate){
-    var d = dat(r, f.dateField);
-    if(d == null) return false;                       // no date means it cannot match a date filter
-    if(f.from != null && d < f.from) return false;
-    if(f.to != null && d > f.to) return false;
-    var dd = new Date(d);
-    if(f.year != null && dd.getUTCFullYear() !== f.year) return false;
-    if(f.month != null && dd.getUTCMonth() + 1 !== f.month) return false;
+    var def = dateFieldDef(f.dateField);
+    if(!def) return false;
+    var a = dat(r, def.start), b = dat(r, def.end);
+    if(a == null) a = b;
+    if(b == null) b = a;
+    if(a == null) return false;                       // no date at all cannot match a date filter
+    if(b < a){ var tmp = a; a = b; b = tmp; }
+    if(f.from != null && b < f.from) return false;    // window ends before the range starts
+    if(f.to != null && a > f.to) return false;        // window starts after the range ends
   }
   if(f.q){
     var hay = "";
@@ -1460,7 +1564,6 @@ function resetAll(){
   els.searchInput.value = "";
   Object.keys(dimSelects).forEach(function(k){ dimSelects[k].value = ""; });
   els.dateField.value = ""; els.dateFrom.value = ""; els.dateTo.value = "";
-  els.yearFilter.value = ""; els.monthFilter.value = "";
   activeAlert = null; sortCol = null; page = 0;
   applyFilters();
 }
@@ -1472,7 +1575,45 @@ function resetAll(){
    deliberately absent: fabric arrives in batches and cutting normally
    starts partway through the delivery window.
    ============================================================ */
+/* Is this order still live? A cancelled or shipped order being "overdue" is
+   noise, so the overdue rules skip those. */
+function stillOpen(r){
+  var t = txt(r, "Status").toLowerCase();
+  return t.indexOf("cancel") === -1 && t.indexOf("drop") === -1
+      && t.indexOf("ship") === -1 && t.indexOf("complete") === -1 && t.indexOf("close") === -1;
+}
+function isLocked(r){ return txt(r, "Status").toLowerCase().indexOf("lock") !== -1; }
+
 var ALERTS = [
+  { key: "obNotLocked", sev: "high", title: "In order bank 20+ days, still not locked",
+    detail: "Order Bank Date is over 20 days old and the order has not been locked",
+    test: function(r){
+      if(isLocked(r) || !stillOpen(r)) return false;
+      var d = dat(r, "Order Bank Date");
+      return d != null && d <= TODAY - 20 * DAY; } },
+  /* A locked order whose PCD has passed is usually just an order already in
+     production: the sheet records no actual cut date, so there is nothing to
+     compare against. Counting those would bury the real cases (1,389 of 1,425
+     on the September workbook). So this rule watches the orders nobody has
+     confirmed yet, where a passed PCD is unambiguously a problem. */
+  { key: "pcdOverdue", sev: "high", title: "Overdue PCD, not locked",
+    detail: "Adjusted PCD has passed while the order is still unconfirmed",
+    test: function(r){
+      if(!stillOpen(r) || isLocked(r)) return false;
+      var d = dat(r, "Adjusted PCD");
+      return d != null && d < TODAY; } },
+  /* When the delivery workbook can be joined by fabric booking number, this
+     asks the real question: has the fabric actually landed. Without that join
+     it falls back to the same unconfirmed-orders test as PCD above. */
+  { key: "fabDeliveryOverdue", sev: "high", title: "Overdue fabric delivery",
+    detail: "Adjusted Fabric End has passed and the fabric has not fully landed",
+    test: function(r){
+      if(!stillOpen(r)) return false;
+      var d = dat(r, "Adjusted Fabric End");
+      if(d == null || d >= TODAY) return false;
+      var short = fabricShortfall(r);
+      if(short == null) return !isLocked(r);
+      return short > 0; } },
   { key: "fabAfterFrd", sev: "high", title: "Fabric past Max FRD",
     detail: "Fabric ends after the latest agreed requirement date",
     test: function(r){ var a = dat(r,"Adjusted Fabric End"), b = dat(r,"Max FRD");
@@ -1519,6 +1660,35 @@ var ALERTS = [
 ];
 var ALERTS_BY_KEY = {};
 ALERTS.forEach(function(a){ ALERTS_BY_KEY[a.key] = a; });
+
+/* How much fabric is still owed on this order, in kg, or null when the
+   delivery workbook was not loaded and the question cannot be answered. The
+   join is the fabric booking number, the same one the delivery tab uses. */
+var DELIVERED_BY_BOOKING = null;
+function buildDeliveredIndex(){
+  DELIVERED_BY_BOOKING = null;
+  if(!DELIV.length) return;
+  function pick(names){ for(var i=0;i<names.length;i++) if(DIDX[names[i]] != null) return DIDX[names[i]]; return null; }
+  var bookCol = pick(["BookingNo", "Booking No", "Fabric Booking Number"]);
+  var qtyCol = pick(["DeliveryQtyKg", "Delivery Qty", "Qty"]);
+  if(bookCol == null || qtyCol == null) return;
+  var m = {};
+  DELIV.forEach(function(r){
+    var b = r[bookCol] == null ? "" : String(r[bookCol]).trim();
+    if(!b) return;
+    m[b] = (m[b] || 0) + (toNum(r[qtyCol]) || 0);
+  });
+  DELIVERED_BY_BOOKING = m;
+}
+function fabricShortfall(r){
+  if(!DELIVERED_BY_BOOKING) return null;
+  var b = txt(r, "Fabric Booking Number");
+  if(!b) return null;
+  var need = num(r, "Fab Qty") || 0;
+  if(need <= 0) return null;
+  var got = DELIVERED_BY_BOOKING[b] || 0;
+  return need - got;
+}
 
 function renderAlerts(){
   els.alertRow.innerHTML = "";
@@ -1613,15 +1783,9 @@ function renderFilterSummary(){
 
   var chips = [];
   Object.keys(dimSelects).forEach(function(k){
-    if(dimSelects[k].value) chips.push(['', k + ": " + dimSelects[k].value]);
+    if(dimSelects[k].value) chips.push(['', (FILTER_LABELS[k] || k) + ": " + dimSelects[k].value]);
   });
   if(els.searchInput.value.trim()) chips.push(['', 'search "' + els.searchInput.value.trim() + '"']);
-  if(els.dateField.value && (els.yearFilter.value || els.monthFilter.value)){
-    var part = [];
-    if(els.monthFilter.value) part.push(MONTH_FULL[parseInt(els.monthFilter.value, 10) - 1]);
-    if(els.yearFilter.value) part.push(els.yearFilter.value);
-    chips.push(['', els.dateField.value + ": " + part.join(" ")]);
-  }
   if(els.dateField.value && (els.dateFrom.value || els.dateTo.value)){
     chips.push(['', els.dateField.value + " " + (els.dateFrom.value || "any") + " to " + (els.dateTo.value || "any")]);
   }
@@ -1694,11 +1858,134 @@ function barChart(canvasId, entries, label){
   });
 }
 
+/* Lock status keeps the same colour wherever it appears, so a reader can move
+   between the unit, team and buyer charts without relearning the legend. The
+   families are matched loosely because the sheet writes them several ways
+   ("Locked", "LOCKED 100%", "Fabric plan TBC", "Hold/Block"). */
+var STATUS_COLOURS = [
+  { match: ["lock"],                     colour: "#006040" },
+  { match: ["fabric plan", "fab plan", "tbc"], colour: "#F8B000" },
+  { match: ["hold", "block"],            colour: "#C7511F" },
+  { match: ["cancel", "drop"],           colour: "#9CA3AF" },
+  { match: ["ship", "complete", "close"], colour: "#3B6FA8" }
+];
+function statusColour(name, fallbackIndex){
+  var t = String(name || "").toLowerCase();
+  for(var i = 0; i < STATUS_COLOURS.length; i++){
+    var m = STATUS_COLOURS[i].match;
+    for(var j = 0; j < m.length; j++) if(t.indexOf(m[j]) !== -1) return STATUS_COLOURS[i].colour;
+  }
+  return PALETTE[(fallbackIndex + 5) % PALETTE.length];
+}
+
+/* Horizontal bars, one per value of dim, each bar split by lock status. The
+   question these answer is "of this unit's quantity, how much is locked, how
+   much is still fabric plan TBC, how much is on hold". */
+function statusStackChart(canvasId, dim, measure, topN){
+  destroyChart(canvasId);
+  var el = document.getElementById(canvasId);
+  if(!el) return;
+  var totals = {}, byDim = {}, statusTotals = {};
+  filtered.forEach(function(r){
+    var k = txt(r, dim) || "(blank)";
+    var st = txt(r, "Status") || "(blank)";
+    var v = num(r, measure) || 0;
+    totals[k] = (totals[k] || 0) + v;
+    (byDim[k] || (byDim[k] = {}))[st] = ((byDim[k] || {})[st] || 0) + v;
+    statusTotals[st] = (statusTotals[st] || 0) + v;
+  });
+  var labels = Object.keys(totals).sort(function(a, b){ return totals[b] - totals[a]; });
+  if(topN) labels = labels.slice(0, topN);
+  if(!labels.length) return;
+  var statuses = Object.keys(statusTotals).sort(function(a, b){ return statusTotals[b] - statusTotals[a]; });
+
+  charts[canvasId] = new Chart(el, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: statuses.map(function(st, i){
+        return { label: st,
+                 data: labels.map(function(k){ return (byDim[k] && byDim[k][st]) || 0; }),
+                 backgroundColor: statusColour(st, i), borderWidth: 0 };
+      })
+    },
+    options: {
+      indexAxis: "y", responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: "bottom", labels: { font: MONO, boxWidth: 12 } },
+        tooltip: { callbacks: { label: function(c){
+          var row = labels[c.dataIndex], tot = totals[row] || 0;
+          var pct = tot ? Math.round(100 * c.parsed.x / tot) : 0;
+          return c.dataset.label + ": " + fmtInt(c.parsed.x) + " (" + pct + "% of " + row + ")";
+        } } }
+      },
+      scales: { x: { stacked: true, ticks: { font: MONO }, grid: GRID },
+                y: { stacked: true, ticks: { font: MONO }, grid: { display: false } } }
+    }
+  });
+}
+
+function renderOtt(){
+  destroyChart("ottEventChart");
+  destroyChart("ottPieChart");
+  var missing = !OTT || OTT.checks === 0;
+  els.ottMissing.style.display = missing ? "" : "none";
+  if(missing){
+    els.ottEventHint.textContent = "No pass or fail results were found in an ActualEv sheet";
+    els.ottTotalHint.textContent = "";
+    return;
+  }
+  var evs = OTT.events.slice().sort(function(a, b){ return b.total - a.total; });
+  els.ottEventHint.textContent = "Pass rate per event, " + fmtInt(OTT.checks) + " checks across "
+    + evs.length + " events";
+  els.ottTotalHint.textContent = "Every event check counted once";
+
+  var el = document.getElementById("ottEventChart");
+  if(el){
+    charts.ottEventChart = new Chart(el, {
+      type: "bar",
+      data: { labels: evs.map(function(e){ return e.name; }),
+        datasets: [
+          { label: "Pass %", data: evs.map(function(e){ return e.passPct; }),
+            backgroundColor: "#006040", borderWidth: 0 },
+          { label: "Fail %", data: evs.map(function(e){ return Math.round((100 - e.passPct) * 10) / 10; }),
+            backgroundColor: "#C7511F", borderWidth: 0 }
+        ] },
+      options: { indexAxis: "y", responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: "bottom", labels: { font: MONO, boxWidth: 12 } },
+          tooltip: { callbacks: { label: function(c){
+            var e = evs[c.dataIndex];
+            var n = c.datasetIndex === 0 ? e.pass : e.fail;
+            return c.dataset.label + ": " + c.parsed.x + "% (" + fmtInt(n) + " of " + fmtInt(e.total) + ")";
+          } } } },
+        scales: { x: { stacked: true, max: 100, ticks: { font: MONO, callback: function(v){ return v + "%"; } }, grid: GRID },
+                  y: { stacked: true, ticks: { font: MONO }, grid: { display: false } } } }
+    });
+  }
+
+  var pe = document.getElementById("ottPieChart");
+  if(pe){
+    charts.ottPieChart = new Chart(pe, {
+      type: "doughnut",
+      data: { labels: ["Pass", "Fail"],
+              datasets: [{ data: [OTT.pass, OTT.fail], backgroundColor: ["#006040", "#C7511F"],
+                           borderColor: "#fff", borderWidth: 2 }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: "58%",
+        plugins: { legend: { position: "bottom", labels: { font: MONO, boxWidth: 12 } },
+          tooltip: { callbacks: { label: function(c){
+            return c.label + ": " + fmtInt(c.parsed) + " ("
+              + (OTT.checks ? Math.round(1000 * c.parsed / OTT.checks) / 10 : 0) + "%)";
+          } } } } }
+    });
+  }
+}
+
 function renderDimensionCharts(){
   barChart("statusChart", groupSum(filtered, "Status", null), "Orders");
-  barChart("execChart", groupSum(filtered, "Execution Unit", "Order Qty"), "Order Qty");
-  barChart("teamChart", groupSum(filtered, "Team", "Order Qty"), "Order Qty");
-  barChart("buyerChart", groupSum(filtered, "Buyer", "Order Qty").slice(0, 12), "Order Qty");
+  statusStackChart("execChart", "Execution Unit", "Order Qty");
+  statusStackChart("teamChart", "Team", "Order Qty");
+  statusStackChart("buyerChart", "Buyer", "Order Qty", 10);
+  renderOtt();
 
   var inHouse = sum(filtered, "InHouse"), outSide = sum(filtered, "OutSide");
   destroyChart("sourceChart");
@@ -2033,17 +2320,25 @@ function exportCsv(){
    So the same curve is rebuilt here from start, end and quantity, which
    means it also answers to every filter, which the sheets cannot.
    ============================================================ */
-function spreadSeries(rowsIn, startCol, endCol, qtyCol, gran, splitFn){
-  /* returns { keys:[ms...], series:{ label:[values] } } */
+function spreadSeries(rowsIn, startCol, endCol, qtyCol, gran, splitFn, win){
+  /* returns { keys:[ms...], series:{ label:[values] } }
+     win, when given, is { from, to } and clips the chart to those days. The
+     order's quantity is still spread across its whole window, so a day inside
+     the window keeps its true load; only days outside the chart are dropped. */
   var buckets = {}, labels = {};
+  var wFrom = win && win.from != null ? win.from : null;
+  var wTo = win && win.to != null ? win.to : null;
   rowsIn.forEach(function(r){
     var s = dat(r, startCol), e = dat(r, endCol), q = num(r, qtyCol);
     if(s == null || e == null || q == null || q <= 0 || e < s) return;
     var days = Math.round((e - s) / DAY) + 1;
     var per = q / days;
     var lab = splitFn ? splitFn(r) : "All";
+    var from = wFrom != null && wFrom > s ? wFrom : s;
+    var to = wTo != null && wTo < e ? wTo : e;
+    if(to < from) return;
     labels[lab] = true;
-    for(var d = s; d <= e; d += DAY){
+    for(var d = from; d <= to; d += DAY){
       var k = bucketKey(d, gran);
       var b = buckets[k] || (buckets[k] = {});
       b[lab] = (b[lab] || 0) + per;
@@ -2083,26 +2378,66 @@ function lockedSplit(r){
   return txt(r, "Status").toLowerCase().indexOf("locked") === 0 ? "Locked" : "Not locked";
 }
 
+/* The window the capacity charts are drawn over: whatever From and To say.
+   The date field itself has already chosen which orders are in `filtered`, so
+   this only trims the x axis to the period being asked about. */
+function capacityWindow(){
+  var from = els.dateFrom.value ? parseDate(els.dateFrom.value) : null;
+  var to = els.dateTo.value ? parseDate(els.dateTo.value) : null;
+  return (from == null && to == null) ? null : { from: from, to: to };
+}
+
+/* One sewing-load chart per Execution Unit, three to a row. The panels are
+   built from the units actually present, so a unit that disappears from the
+   filter takes its chart with it. */
+function renderSewUnitCharts(g, win){
+  Object.keys(charts).forEach(function(id){
+    if(id.indexOf("sewUnit_") === 0) destroyChart(id);
+  });
+  var totals = {};
+  filtered.forEach(function(r){
+    if(dat(r, "Adjusted sew start") == null || dat(r, "Adjusted sew end") == null) return;
+    var u = txt(r, "Execution Unit") || "(blank)";
+    totals[u] = (totals[u] || 0) + (num(r, "FR hour") || 0);
+  });
+  var units = Object.keys(totals).sort(function(a, b){ return totals[b] - totals[a]; });
+  if(!units.length){
+    els.sewUnitGrid.innerHTML = "";
+    els.sewUnitHint.textContent = "No order in the current filter has a sewing window.";
+    return;
+  }
+  els.sewUnitHint.textContent = "One chart per Execution Unit, same spread and the same window as above. "
+    + units.length + " units, " + fmtInt(sum(filtered, "FR hour")) + " FR hours in the filter.";
+
+  els.sewUnitGrid.innerHTML = units.map(function(u, i){
+    return '<div class="panel"><h3>' + esc(u) + '</h3>'
+      + '<div class="hint">' + fmtInt(totals[u]) + ' FR hours</div>'
+      + '<div class="chart-box"><canvas id="sewUnit_' + i + '"></canvas></div></div>';
+  }).join("");
+
+  units.forEach(function(u, i){
+    var rows = filtered.filter(function(r){ return (txt(r, "Execution Unit") || "(blank)") === u; });
+    var sr = spreadSeries(rows, "Adjusted sew start", "Adjusted sew end", "FR hour", g, lockedSplit, win);
+    stackedChart("sewUnit_" + i, sr.keys, sr.series, g, "hours", ["#006040", "#F8B000"]);
+  });
+}
+
 function renderCapacity(){
   var g = granularity;
+  var win = capacityWindow();
   // The fab sheet spreads InHouse, not Fab Qty: it is the textile mill's own
   // knitting load, and fabric bought outside is not part of it. Verified on
   // all 2,128 rows.
-  var fab = spreadSeries(filtered, "Adjusted Fabric Start", "Adjusted Fabric End", "InHouse", g, lockedSplit);
-  var sew = spreadSeries(filtered, "Adjusted sew start", "Adjusted sew end", "FR hour", g, lockedSplit);
+  var fab = spreadSeries(filtered, "Adjusted Fabric Start", "Adjusted Fabric End", "InHouse", g, lockedSplit, win);
+  var sew = spreadSeries(filtered, "Adjusted sew start", "Adjusted sew end", "FR hour", g, lockedSplit, win);
   stackedChart("fabLoadChart", fab.keys, fab.series, g, "kg", ["#006040", "#F8B000"]);
   stackedChart("sewLoadChart", sew.keys, sew.series, g, "hours", ["#006040", "#F8B000"]);
 
-  var fabU = spreadSeries(filtered, "Adjusted Fabric Start", "Adjusted Fabric End", "InHouse", "month",
-                          function(r){ return txt(r, "Execution Unit") || "(blank)"; });
-  var sewU = spreadSeries(filtered, "Adjusted sew start", "Adjusted sew end", "FR hour", "month",
-                          function(r){ return txt(r, "Execution Unit") || "(blank)"; });
-  stackedChart("fabUnitChart", fabU.keys, fabU.series, "month", "kg", PALETTE);
-  stackedChart("sewUnitChart", sewU.keys, sewU.series, "month", "hours", PALETTE);
+  renderSewUnitCharts(g, win);
 
   // KPI tiles
-  var fabDaily = spreadSeries(filtered, "Adjusted Fabric Start", "Adjusted Fabric End", "InHouse", "day", null);
-  var sewDaily = spreadSeries(filtered, "Adjusted sew start", "Adjusted sew end", "FR hour", "day", null);
+  var fabDaily = spreadSeries(filtered, "Adjusted Fabric Start", "Adjusted Fabric End", "InHouse", "day", null, win);
+  var sewDaily = spreadSeries(filtered, "Adjusted sew start", "Adjusted sew end", "FR hour", "day", null, win);
   function peak(sr){ var v = sr.series.All || []; var m = 0, at = null;
     v.forEach(function(x, i){ if(x > m){ m = x; at = sr.keys[i]; } }); return { max: m, at: at }; }
   var fp = peak(fabDaily), sp = peak(sewDaily);
@@ -2590,26 +2925,6 @@ els.searchInput.addEventListener("input", function(){
 });
 [els.dateField, els.dateFrom, els.dateTo].forEach(function(el){
   el.addEventListener("change", function(){ page = 0; applyFilters(); });
-});
-
-/* Year and month need a date column to work on. Rather than making the reader
-   pick one first, fall back to the most useful one on their behalf. */
-function ensureDateField(){
-  if(els.dateField.value) return;
-  var opts = Array.prototype.map.call(els.dateField.options, function(o){ return o.value; })
-    .filter(function(v){ return v; });
-  var preferred = ["Adjusted PCD", "Order Bank Date", "Adjusted Fabric Start"];
-  for(var i = 0; i < preferred.length; i++){
-    if(opts.indexOf(preferred[i]) !== -1){ els.dateField.value = preferred[i]; return; }
-  }
-  if(opts.length) els.dateField.value = opts[0];
-}
-[els.yearFilter, els.monthFilter].forEach(function(el){
-  el.addEventListener("change", function(){
-    if(el.value) ensureDateField();
-    page = 0;
-    applyFilters();
-  });
 });
 
 /* One switch, every time-based chart on every tab. */
