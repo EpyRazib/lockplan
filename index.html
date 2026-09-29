@@ -247,7 +247,7 @@
   <button class="tab" data-tab="attention">Needs attention <span class="count" id="attnCount">0</span></button>
   <button class="tab" data-tab="timeline">Timeline</button>
   <button class="tab" data-tab="capacity">Capacity</button>
-  <!--<button class="tab" data-tab="delivery">Fabric delivery</button>-->
+  <button class="tab" data-tab="delivery">Fabric delivery</button>
   <button class="tab" data-tab="summary">Summary</button>
   <button class="tab" data-tab="orders">Orders</button>
 </div>
@@ -782,11 +782,25 @@ async function getToken(interactive){
   return res.accessToken;
 }
 
+/* fetch that cannot hang forever. A dropped office VPN otherwise leaves the
+   request pending with no error and no timeout, which looks like a frozen
+   spinner. */
+async function fetchWithTimeout(url, init, ms, what){
+  var ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+  var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, ms) : null;
+  try{
+    return await fetch(url, Object.assign({}, init || {}, ctrl ? { signal: ctrl.signal } : {}));
+  }catch(e){
+    if(e && e.name === "AbortError") throw new Error((what || "The request") + " timed out after " + Math.round(ms / 1000) + "s. Check the network and press Refresh.");
+    throw e;
+  }finally{ if(timer) clearTimeout(timer); }
+}
+
 async function graph(path, token, init){
   init = init || {};
-  var res = await fetch("https://graph.microsoft.com/v1.0" + path, Object.assign({}, init, {
+  var res = await fetchWithTimeout("https://graph.microsoft.com/v1.0" + path, Object.assign({}, init, {
     headers: Object.assign({ Authorization: "Bearer " + token }, init.headers || {})
-  }));
+  }), 45000, "Microsoft Graph");
   if(!res.ok){
     var body = "";
     try{ body = (await res.text()).slice(0, 300); }catch(e){}
@@ -900,7 +914,7 @@ async function downloadItem(item, token, label){
   }
   if(url){
     try{
-      var res = await fetch(url);
+      var res = await fetchWithTimeout(url, null, 240000, "The download");
       if(res.ok) return await res.arrayBuffer();
       notes.push("downloadUrl: " + (await snippet(res)));
     }catch(e){ notes.push("downloadUrl: " + e.message); }
@@ -1097,6 +1111,16 @@ function bundleFromWorkbooks(ewoBuf, dlvBuf){
    ============================================================ */
 var lastSignature = null, generatedAt = null, pollTimer = null, freshTimer = null, sourceLabel = "";
 var CACHE_KEY = "ewo-dashboard-cache-v1";
+var loadInFlight = false;
+
+/* Puts the dashboard back on screen. Every path that finishes a load has to
+   call this, including the "nothing changed" shortcut: the loading screen was
+   already showing, so returning without it leaves a spinner over a dashboard
+   that is perfectly fine. */
+function showDashboard(){
+  els.loadingState.style.display = "none";
+  els.dashboard.style.display = "block";
+}
 
 function readCache(){
   try{ var raw = localStorage.getItem(CACHE_KEY); return raw ? JSON.parse(raw) : null; }catch(e){ return null; }
@@ -1112,6 +1136,14 @@ async function load(opts){
   /* If MSAL never got created (no CLIENT_ID, or the library was blocked) the
      reason is already on screen; keep it there instead of failing further down. */
   if(!msalApp && !initMsal()) return false;
+  /* A background poll and a Refresh click can otherwise overlap: the poll
+     returns first, the click's own run then takes the "nothing changed" path
+     and the two disagree about what is on screen. One at a time. */
+  if(loadInFlight){
+    if(!opts.quiet) setStatus("Already checking...", "busy");
+    return false;
+  }
+  loadInFlight = true;
   els.refreshBtn.disabled = true;
   try{
     if(!opts.quiet){ clearError(); loadingScreen("Signing in", "Checking your Microsoft sign-in.", false); setStatus("Signing in...", "busy"); }
@@ -1122,7 +1154,6 @@ async function load(opts){
       loadingScreen("", "", true);              // ask for a click; popups need a gesture
       setStatus("Signed out");
       els.signInBtn.hidden = false; els.signOutBtn.hidden = true; els.refreshBtn.hidden = true; els.csvBtn.hidden = true;
-      els.refreshBtn.disabled = false;
       return false;
     }
     var acct = msalApp.getActiveAccount();
@@ -1135,7 +1166,9 @@ async function load(opts){
 
     if(sig === lastSignature && ROWS.length){
       setStatus(opts.quiet ? "Up to date" : "Checked, the files have not changed", "live");
-      els.refreshBtn.disabled = false;
+      showDashboard();
+      clearError();
+      paintFreshness();
       return true;
     }
 
@@ -1165,25 +1198,26 @@ async function load(opts){
     lastSignature = sig;
     ingest(bundle);
     sourceLabel = found.ewo.name + (found.delivery ? " + " + found.delivery.name : "");
-    els.loadingState.style.display = "none";
-    els.dashboard.style.display = "block";
+    showDashboard();
     clearError();
     setStatus(isUpdate ? "New data loaded" : "Up to date", "live");
     paintFreshness();
     if(isUpdate){ els.dashboard.classList.remove("flash"); void els.dashboard.offsetWidth; els.dashboard.classList.add("flash"); }
-    els.refreshBtn.disabled = false;
     return true;
   }catch(e){
     if(opts.quiet && ROWS.length){
       setStatus("Check failed, showing last good data", "err");
+      showDashboard();
     }else{
       loadingScreen("", "", false);
       els.loadingTitle.style.display = "none"; els.loadingText.style.display = "none"; els.spinner.style.display = "none";
       showError("<strong>Couldn't load the workbooks.</strong><br/>" + esc(e.message));
       setStatus("Not loaded", "err");
     }
-    els.refreshBtn.disabled = false;
     return false;
+  }finally{
+    loadInFlight = false;
+    els.refreshBtn.disabled = false;
   }
 }
 
@@ -1198,7 +1232,10 @@ function startPolling(){
     pollTimer = setInterval(function(){ if(!document.hidden) load({ quiet: true }); }, POLL_SECONDS * 1000);
   }
   freshTimer = setInterval(paintFreshnessOverride, 30000);
-  document.addEventListener("visibilitychange", function(){ if(!document.hidden) load({ quiet: true }); });
+  if(!startPolling.bound){                       // startPolling runs again after each sign-in
+    startPolling.bound = true;
+    document.addEventListener("visibilitychange", function(){ if(!document.hidden) load({ quiet: true }); });
+  }
 }
 
 /* ============================================================
