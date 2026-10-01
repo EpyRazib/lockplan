@@ -253,7 +253,7 @@
   <button class="tab" data-tab="attention">Needs attention <span class="count" id="attnCount">0</span></button>
   <button class="tab" data-tab="timeline">Timeline</button>
   <button class="tab" data-tab="capacity">Capacity</button>
-  <!--<button class="tab" data-tab="delivery">Fabric delivery</button>-->
+  <button class="tab" data-tab="delivery">Fabric delivery</button>
   <button class="tab" data-tab="summary">Summary</button>
   <button class="tab" data-tab="orders">Orders</button>
 </div>
@@ -323,17 +323,17 @@
         </div>
         <div class="panel">
           <h3>Execution Unit</h3>
-          <div class="hint">Order quantity, split by lock status</div>
+          <div class="hint">Number of orders, split by lock status</div>
           <div class="chart-box"><canvas id="execChart"></canvas></div>
         </div>
         <div class="panel">
           <h3>Team</h3>
-          <div class="hint">Order quantity, split by lock status</div>
+          <div class="hint">Number of orders, split by lock status</div>
           <div class="chart-box"><canvas id="teamChart"></canvas></div>
         </div>
         <div class="panel">
           <h3>Top buyers</h3>
-          <div class="hint">Order quantity, split by lock status, largest ten</div>
+          <div class="hint">Number of orders, split by lock status, busiest ten</div>
           <div class="chart-box"><canvas id="buyerChart"></canvas></div>
         </div>
       </div>
@@ -352,13 +352,13 @@
           <div class="chart-box tall"><canvas id="ottPieChart"></canvas></div>
         </div>
       </div>
-      <!--<div class="grid1">
+      <div class="grid1">
         <div class="panel">
           <h3>Fabric sourcing split</h3>
           <div class="hint">In-house knitting against outside purchase</div>
           <div class="chart-box"><canvas id="sourceChart"></canvas></div>
         </div>
-      </div>-->
+      </div>
     </div>
 
     <!-- ============ ATTENTION ============ -->
@@ -1861,13 +1861,15 @@ function barChart(canvasId, entries, label){
 /* Lock status keeps the same colour wherever it appears, so a reader can move
    between the unit, team and buyer charts without relearning the legend. The
    families are matched loosely because the sheet writes them several ways
-   ("Locked", "LOCKED 100%", "Fabric plan TBC", "Hold/Block"). */
+   ("Locked", "LOCKED 100%", "Fabric plan TBC", "Hold/Block").
+   Order matters: "Hold/Block" contains the letters of "lock" inside "block",
+   so the hold rule has to be tested before the lock rule. */
 var STATUS_COLOURS = [
-  { match: ["lock"],                     colour: "#006040" },
-  { match: ["fabric plan", "fab plan", "tbc"], colour: "#F8B000" },
   { match: ["hold", "block"],            colour: "#C7511F" },
   { match: ["cancel", "drop"],           colour: "#9CA3AF" },
-  { match: ["ship", "complete", "close"], colour: "#3B6FA8" }
+  { match: ["fabric plan", "fab plan", "tbc"], colour: "#F8B000" },
+  { match: ["ship", "complete", "close"], colour: "#3B6FA8" },
+  { match: ["lock"],                     colour: "#006040" }
 ];
 function statusColour(name, fallbackIndex){
   var t = String(name || "").toLowerCase();
@@ -1879,9 +1881,10 @@ function statusColour(name, fallbackIndex){
 }
 
 /* Horizontal bars, one per value of dim, each bar split by lock status. The
-   question these answer is "of this unit's quantity, how much is locked, how
-   much is still fabric plan TBC, how much is on hold". */
-function statusStackChart(canvasId, dim, measure, topN){
+   question these answer is "of this unit's orders, how many are locked, how
+   many are still fabric plan TBC, how many are on hold".
+   measure null counts orders; a column name sums that column instead. */
+function statusStackChart(canvasId, dim, measure, topN, unitWord){
   destroyChart(canvasId);
   var el = document.getElementById(canvasId);
   if(!el) return;
@@ -1889,7 +1892,7 @@ function statusStackChart(canvasId, dim, measure, topN){
   filtered.forEach(function(r){
     var k = txt(r, dim) || "(blank)";
     var st = txt(r, "Status") || "(blank)";
-    var v = num(r, measure) || 0;
+    var v = measure ? (num(r, measure) || 0) : 1;
     totals[k] = (totals[k] || 0) + v;
     (byDim[k] || (byDim[k] = {}))[st] = ((byDim[k] || {})[st] || 0) + v;
     statusTotals[st] = (statusTotals[st] || 0) + v;
@@ -1916,7 +1919,8 @@ function statusStackChart(canvasId, dim, measure, topN){
         tooltip: { callbacks: { label: function(c){
           var row = labels[c.dataIndex], tot = totals[row] || 0;
           var pct = tot ? Math.round(100 * c.parsed.x / tot) : 0;
-          return c.dataset.label + ": " + fmtInt(c.parsed.x) + " (" + pct + "% of " + row + ")";
+          return c.dataset.label + ": " + fmtInt(c.parsed.x) + " " + (unitWord || "")
+            + " (" + pct + "% of " + fmtInt(tot) + ")";
         } } }
       },
       scales: { x: { stacked: true, ticks: { font: MONO }, grid: GRID },
@@ -1982,9 +1986,9 @@ function renderOtt(){
 
 function renderDimensionCharts(){
   barChart("statusChart", groupSum(filtered, "Status", null), "Orders");
-  statusStackChart("execChart", "Execution Unit", "Order Qty");
-  statusStackChart("teamChart", "Team", "Order Qty");
-  statusStackChart("buyerChart", "Buyer", "Order Qty", 10);
+  statusStackChart("execChart", "Execution Unit", null, 0, "orders");
+  statusStackChart("teamChart", "Team", null, 0, "orders");
+  statusStackChart("buyerChart", "Buyer", null, 10, "orders");
   renderOtt();
 
   var inHouse = sum(filtered, "InHouse"), outSide = sum(filtered, "OutSide");
