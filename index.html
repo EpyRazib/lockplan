@@ -158,7 +158,9 @@
   @media(max-width:1400px){.grid4{grid-template-columns:1fr 1fr;}}
   @media(max-width:1100px){.grid3{grid-template-columns:1fr 1fr;}}
   @media(max-width:820px){.grid2,.grid3,.grid4{grid-template-columns:1fr;}}
-  .chart-box{position:relative;height:265px;}
+  .subtitle{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-soft);margin-top:2px;}
+  .chart-box{position:relative;height:265px;cursor:zoom-in;}
+  .kpi{cursor:zoom-in;}
   .grid4 .chart-box{height:300px;}
   .chart-box.tall{height:320px;}
   .section-head{font-size:15px;margin-bottom:3px;color:var(--green);}
@@ -225,9 +227,36 @@
   .pct{font-size:11px;color:var(--ink-soft);margin-left:6px;}
   .tabpage{display:none;}
   .tabpage.on{display:block;}
+  /* Any panel or card opens full screen on a click, and closes on the
+     backdrop, the button, or Escape. */
+  .zoomable{cursor:zoom-in;}
+  .zoom-back{position:fixed;inset:0;background:rgba(26,26,26,0.55);z-index:2000;
+             display:none;align-items:center;justify-content:center;padding:28px;}
+  .zoom-back.on{display:flex;}
+  .zoom-card{background:#fff;border:1px solid var(--line);width:100%;height:100%;
+             max-width:1700px;display:flex;flex-direction:column;padding:20px 22px 16px;position:relative;}
+  .zoom-card h3{color:var(--green);font-size:17px;margin:0 6px 2px 0;}
+  .zoom-card .hint{margin-bottom:10px;}
+  .zoom-body{flex:1;position:relative;min-height:0;}
+  .zoom-body canvas{position:absolute;inset:0;}
+  .zoom-close{position:absolute;top:12px;right:14px;border:1px solid var(--line);background:#fff;
+              color:var(--ink);font-size:20px;line-height:1;width:32px;height:32px;cursor:pointer;}
+  .zoom-close:hover{background:var(--green);color:#fff;border-color:var(--green);}
+  .zoom-figure{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;}
+  .zoom-figure .big{font-size:64px;font-weight:600;color:var(--green);font-variant-numeric:tabular-nums;}
+  .zoom-figure .cap{font-size:15px;color:var(--ink-soft);text-align:center;}
 </style>
 </head>
 <body>
+
+<div class="zoom-back" id="zoomBack">
+  <div class="zoom-card">
+    <button class="zoom-close" id="zoomClose" title="Close">&times;</button>
+    <h3 id="zoomTitle"></h3>
+    <div class="hint" id="zoomHint"></div>
+    <div class="zoom-body" id="zoomBody"></div>
+  </div>
+</div>
 
 <div class="topbar">
   <div class="brand">
@@ -235,6 +264,7 @@
     <div class="rule"></div>
     <div>
       <h1>EWO Life Cycle Dashboard</h1>
+      <div class="subtitle">Business Planning Department</div>
     </div>
   </div>
   <div class="status">
@@ -283,16 +313,16 @@
           <input type="text" id="searchInput" class="wide" placeholder="EWO, buyer, dept, note..." />
         </div>
         <div class="fld" id="dateFieldWrap">
-          <label for="dateField">Date field</label>
-          <select id="dateField"></select>
-        </div>
-        <div class="fld">
           <label for="dateFrom">From</label>
           <input type="date" id="dateFrom" />
         </div>
         <div class="fld">
           <label for="dateTo">To</label>
           <input type="date" id="dateTo" />
+        </div>
+        <div class="fld" style="flex:1 1 220px;">
+          <label>&nbsp;</label>
+          <div class="hint" style="margin:0;">Each chart reads this range against its own dates: fabric charts by the fabric window, sewing charts by the sewing window.</div>
         </div>
         <div class="fld">
           <label>Charts by</label>
@@ -638,17 +668,46 @@ var FILTER_DIMENSIONS = ["Status", "Latest note", "Execution Unit", "Team", "Buy
    right. Renaming here changes the label only; the data is untouched. */
 var FILTER_LABELS = { "Status": "Lock Status" };
 
-/* The three date fields the dashboard filters on. Two of them are windows, not
-   single days: an order counts as inside the range when its window overlaps the
-   range at all, which is what "show me the fabric load for October" means. */
-var DATE_FIELDS = [
-  { key: "Order Bank Date",  start: "Order Bank Date",       end: "Order Bank Date" },
-  { key: "Fabric Load Date", start: "Adjusted Fabric Start", end: "Adjusted Fabric End" },
-  { key: "Sewing Load Date", start: "Adjusted sew start",    end: "Adjusted sew end" }
-];
-function dateFieldDef(key){
-  for(var i = 0; i < DATE_FIELDS.length; i++) if(DATE_FIELDS[i].key === key) return DATE_FIELDS[i];
-  return null;
+/* There is no "date field" to pick any more. From and To are handed to each
+   chart, and each chart judges them against the dates it is actually about:
+   the fabric charts by the fabric window, the sewing charts by the sewing
+   window, the PCD chart by PCD. An order counts as inside the range when its
+   window overlaps it at all. */
+function dateWindow(){
+  var from = els.dateFrom.value ? parseDate(els.dateFrom.value) : null;
+  var to = els.dateTo.value ? parseDate(els.dateTo.value) : null;
+  return (from == null && to == null) ? null : { from: from, to: to };
+}
+
+/* Rows whose own window overlaps the chosen range. endCol may be the same
+   column as startCol for a single-date milestone such as PCD. */
+function rowsInWindow(rows, startCol, endCol, win){
+  if(!win) return rows;
+  return rows.filter(function(r){
+    var a = dat(r, startCol), b = dat(r, endCol || startCol);
+    if(a == null) a = b;
+    if(b == null) b = a;
+    if(a == null) return false;
+    if(b < a){ var t = a; a = b; b = t; }
+    if(win.from != null && b < win.from) return false;
+    if(win.to != null && a > win.to) return false;
+    return true;
+  });
+}
+
+/* 3. The working week here runs Saturday to Thursday: Friday is the weekly
+   holiday. A day the Capacity sheet marks zero is a holiday too. */
+function isWorkingDay(ms){
+  if(new Date(ms).getUTCDay() === 5) return false;          // Friday
+  var row = CAPACITY.byDay[ms];
+  if(row && row.total === 0) return false;
+  return true;
+}
+function workingDaysBetween(from, to){
+  if(from == null || to == null || to < from) return 0;
+  var n = 0;
+  for(var d = from; d <= to; d += DAY) if(isWorkingDay(d)) n++;
+  return n;
 }
 var DEFAULT_TABLE_COLUMNS = ["EWO", "Status", "Buyer", "Team", "Execution Unit", "Dept",
   "Order Qty", "Fab Qty", "InHouse", "OutSide", "Order Bank Date", "Adjusted Fabric Start",
@@ -675,7 +734,8 @@ var pollTimer = null, freshTimer = null, sourceLabel = "";
 var els = {};
 ["statusDot","statusText","freshness","refreshBtn","csvBtn","loadingState","dashboard",
  "signInBtn","signInBtn2","signOutBtn","accountLabel","signinBox","spinner","loadingTitle","loadingText",
- "errorBox","filterGrid","searchInput","dateField","dateFieldWrap","dateFrom","dateTo","resetBtn",
+ "errorBox","filterGrid","searchInput","dateFieldWrap","dateFrom","dateTo","resetBtn",
+ "zoomBack","zoomClose","zoomTitle","zoomHint","zoomBody",
  "granSwitch","granHint","sewUnitGrid","sewUnitHint","ottMissing","ottEventHint","ottTotalHint","sewLoadHint",
  "filterSummary","activeChips","kpiRow","alertRow","attnTable","attnTableTitle","attnTableHint",
  "pivotTable","dataTable","groupBy","colChooser","prevPage","nextPage","pageInfo","pageSize",
@@ -755,6 +815,27 @@ function paintFreshness(){
    Sign-in and Microsoft Graph
    ============================================================ */
 var msalApp = null;
+
+/* "Good afternoon, Razib" rather than the raw sign-in address. The first name
+   is taken from the Microsoft display name with any honorific dropped, so
+   "Md. Razib Hossain" greets Razib. No Mr or Ms is added: Microsoft does not
+   tell the page who is who, and guessing it wrong on a dashboard the whole
+   department opens is worse than leaving it out. */
+function greeting(acct){
+  var h = new Date().getHours();
+  var part = h < 12 ? "Good morning" : (h < 17 ? "Good afternoon" : "Good evening");
+  var name = String((acct && (acct.name || acct.username)) || "").trim();
+  if(name.indexOf("@") !== -1) name = name.split("@")[0].replace(/[._-]+/g, " ");
+  var drop = ["md", "md.", "mohammad", "muhammad", "mohammed", "mst", "mst.", "mrs", "mrs.",
+              "mr", "mr.", "ms", "ms.", "dr", "dr.", "engr", "engr.", "eng", "eng."];
+  var parts = name.split(/\s+/).filter(function(w){
+    return w && drop.indexOf(w.toLowerCase()) === -1;
+  });
+  var first = parts.length ? parts[0] : name;
+  if(!first) return part;
+  first = first.charAt(0).toUpperCase() + first.slice(1);
+  return part + ", " + first;
+}
 
 function loadingScreen(title, text, showSignIn){
   els.loadingState.style.display = "block";
@@ -1233,7 +1314,8 @@ async function load(opts){
       return false;
     }
     var acct = msalApp.getActiveAccount();
-    els.accountLabel.textContent = acct ? (acct.username || acct.name || "") : "";
+    els.accountLabel.textContent = acct ? greeting(acct) : "";
+    els.accountLabel.title = acct ? (acct.username || "") : "";
     els.signInBtn.hidden = true; els.signOutBtn.hidden = false; els.refreshBtn.hidden = false; els.csvBtn.hidden = false;
 
     if(!opts.quiet){ loadingScreen("Finding the workbooks", "Looking in the OneDrive folder.", false); setStatus("Finding files...", "busy"); }
@@ -1579,14 +1661,13 @@ function buildOtt(grid){
 
 /* A background refresh must not throw away what the reader had selected. */
 function snapshotFilters(){
-  var s = { dims: {}, q: els.searchInput.value, df: els.dateField.value,
+  var s = { dims: {}, q: els.searchInput.value,
             from: els.dateFrom.value, to: els.dateTo.value };
   Object.keys(dimSelects).forEach(function(k){ s.dims[k] = dimSelects[k].value; });
   return s;
 }
 function restoreFilters(s){
   els.searchInput.value = s.q || "";
-  if(s.df){ els.dateField.value = s.df; }
   els.dateFrom.value = s.from || "";
   els.dateTo.value = s.to || "";
   Object.keys(s.dims).forEach(function(k){
@@ -1663,37 +1744,17 @@ function buildFilters(){
     dimSelects[name] = sel;
   });
 
-  // Only the three fields that mean something to the people reading this, and
-  // only those whose underlying columns actually exist in the workbook.
-  els.dateField.innerHTML = '<option value="">No date filter</option>'
-    + DATE_FIELDS.filter(function(d){ return IDX[d.start] != null && IDX[d.end] != null; })
-        .map(function(d){ return '<option value="' + esc(d.key) + '">' + esc(d.key) + '</option>'; }).join("");
 }
 
 function currentFilters(){
-  var f = { q: els.searchInput.value.trim().toLowerCase(), dims: {},
-            dateField: els.dateField.value, from: null, to: null };
+  var f = { q: els.searchInput.value.trim().toLowerCase(), dims: {} };
   Object.keys(dimSelects).forEach(function(k){ if(dimSelects[k].value) f.dims[k] = dimSelects[k].value; });
-  if(els.dateFrom.value) f.from = parseDate(els.dateFrom.value);
-  if(els.dateTo.value) f.to = parseDate(els.dateTo.value);
   return f;
 }
 
 function passesBaseFilters(r, f, dimKeys){
   for(var i = 0; i < dimKeys.length; i++){
     if(txt(r, dimKeys[i]) !== f.dims[dimKeys[i]]) return false;
-  }
-  var wantsDate = f.from != null || f.to != null;
-  if(f.dateField && wantsDate){
-    var def = dateFieldDef(f.dateField);
-    if(!def) return false;
-    var a = dat(r, def.start), b = dat(r, def.end);
-    if(a == null) a = b;
-    if(b == null) b = a;
-    if(a == null) return false;                       // no date at all cannot match a date filter
-    if(b < a){ var tmp = a; a = b; b = tmp; }
-    if(f.from != null && b < f.from) return false;    // window ends before the range starts
-    if(f.to != null && a > f.to) return false;        // window starts after the range ends
   }
   if(f.q){
     var hay = "";
@@ -1732,7 +1793,7 @@ function sortFiltered(){
 function resetAll(){
   els.searchInput.value = "";
   Object.keys(dimSelects).forEach(function(k){ dimSelects[k].value = ""; });
-  els.dateField.value = ""; els.dateFrom.value = ""; els.dateTo.value = "";
+  els.dateFrom.value = ""; els.dateTo.value = "";
   activeAlert = null; sortCol = null; page = 0;
   applyFilters();
 }
@@ -1955,8 +2016,8 @@ function renderFilterSummary(){
     if(dimSelects[k].value) chips.push(['', (FILTER_LABELS[k] || k) + ": " + dimSelects[k].value]);
   });
   if(els.searchInput.value.trim()) chips.push(['', 'search "' + els.searchInput.value.trim() + '"']);
-  if(els.dateField.value && (els.dateFrom.value || els.dateTo.value)){
-    chips.push(['', els.dateField.value + " " + (els.dateFrom.value || "any") + " to " + (els.dateTo.value || "any")]);
+  if(els.dateFrom.value || els.dateTo.value){
+    chips.push(['', "charts " + (els.dateFrom.value || "any") + " to " + (els.dateTo.value || "any")]);
   }
   if(activeAlert) chips.push(['alert', ALERTS_BY_KEY[activeAlert].title]);
   els.activeChips.innerHTML = chips.map(function(c){
@@ -2138,7 +2199,7 @@ function renderOtt(){
           { label: "Pass %", data: evs.map(function(e){ return e.passPct; }),
             backgroundColor: "#006040", borderWidth: 0 },
           { label: "Fail %", data: evs.map(function(e){ return Math.round((100 - e.passPct) * 10) / 10; }),
-            backgroundColor: "#C7511F", borderWidth: 0 }
+            backgroundColor: "#E8907A", borderWidth: 0 }
         ] },
       options: { indexAxis: "y", responsive: true, maintainAspectRatio: false,
         plugins: { legend: { position: "bottom", labels: { font: MONO, boxWidth: 12 } },
@@ -2157,7 +2218,7 @@ function renderOtt(){
     charts.ottPieChart = new Chart(pe, {
       type: "doughnut",
       data: { labels: ["Pass", "Fail"],
-              datasets: [{ data: [OTT.pass, OTT.fail], backgroundColor: ["#006040", "#C7511F"],
+              datasets: [{ data: [OTT.pass, OTT.fail], backgroundColor: ["#006040", "#E8907A"],
                            borderColor: "#fff", borderWidth: 2 }] },
       options: { responsive: true, maintainAspectRatio: false, cutout: "58%",
         plugins: { legend: { position: "bottom", labels: { font: MONO, boxWidth: 12 } },
@@ -2214,10 +2275,10 @@ function bucketLabel(ms, gran){
   return fmtDate(ms);                        // day, and the Monday for a week
 }
 
-function bucketSeries(dateCol, measure, gran){
+function bucketSeries(dateCol, measure, gran, rowsIn){
   if(IDX[dateCol] == null) return { labels: [], values: [] };
   var m = {};
-  filtered.forEach(function(r){
+  (rowsIn || filtered).forEach(function(r){
     var d = dat(r, dateCol);
     if(d == null) return;
     var k = bucketKey(d, gran);
@@ -2252,11 +2313,14 @@ function lineChart(canvasId, series, label, colour, fill, gran){
 
 function renderMonthCharts(){
   var g = granularity;
-  var pcd = bucketSeries("Adjusted PCD", "Order Qty", g);
+  var win = dateWindow();
+  var pcd = bucketSeries("Adjusted PCD", "Order Qty", g, rowsInWindow(filtered, "Adjusted PCD", null, win));
   lineChart("pcdChart", pcd, "Order Qty", "#006040", "rgba(0,96,64,0.10)", g);
-  lineChart("fabMonthChart", bucketSeries("Adjusted Fabric Start", "Fab Qty", g),
+  lineChart("fabMonthChart", bucketSeries("Adjusted Fabric Start", "Fab Qty", g,
+              rowsInWindow(filtered, "Adjusted Fabric Start", "Adjusted Fabric End", win)),
             "Fab Qty", "#F8B000", "rgba(248,176,0,0.14)", g);
-  lineChart("sewMonthChart", bucketSeries("Adjusted sew start", "FR hour", g),
+  lineChart("sewMonthChart", bucketSeries("Adjusted sew start", "FR hour", g,
+              rowsInWindow(filtered, "Adjusted sew start", "Adjusted sew end", win)),
             "FR hour", "#0A7A54", "rgba(10,122,84,0.10)", g);
 
   var word = g === "day" ? "day" : (g === "week" ? "week" : "month");
@@ -2552,11 +2616,13 @@ function stackedChart(canvasId, keys, series, gran, unitLabel, colours, capacity
   if(capacity){
     // Drawn as a line over the stack so the eye reads "the bars must stay under
     // this". A day the plan overshoots is then impossible to miss.
-    // Filled, very faintly, so the band under the line reads as "room still
-    // available" without hiding the bars standing in it.
-    sets.push({ label: "Capacity", data: capacity, type: "line", borderColor: "#C7511F",
-                backgroundColor: "rgba(199, 81, 31, 0.10)", borderWidth: 2,
-                pointRadius: 0, pointHoverRadius: 3, tension: 0, fill: "origin", order: 1 });
+    // A light blue band with a blue edge along the top only: Chart.js draws the
+    // border on the line itself, so the filled area is left unoutlined at the
+    // sides and the bars standing in it stay readable.
+    sets.push({ label: "Capacity", data: capacity, type: "line", borderColor: "#4A90D9",
+                backgroundColor: "rgba(74, 144, 217, 0.16)", borderWidth: 2,
+                pointRadius: 0, pointHoverRadius: 4, pointBackgroundColor: "#4A90D9",
+                tension: 0, fill: "origin", order: 1 });
   }
   charts[canvasId] = new Chart(el, {
     type: "bar",
@@ -2565,6 +2631,10 @@ function stackedChart(canvasId, keys, series, gran, unitLabel, colours, capacity
       datasets: sets
     },
     options: { responsive: true, maintainAspectRatio: false,
+      /* Hovering anywhere on a day shows every number for that day, the
+         capacity line included. Without this the line has no points to hit and
+         its value could never be read. */
+      interaction: { mode: "index", intersect: false },
       plugins: { legend: { position: "bottom", labels: { font: MONO, boxWidth: 12 } },
                  tooltip: { callbacks: { label: function(c){ return c.dataset.label + ": " + fmtInt(c.parsed.y) + " " + unitLabel; } } } },
       scales: { x: { stacked: true, ticks: { font: MONO, autoSkip: true, maxTicksLimit: gran === "day" ? 14 : 18,
@@ -2577,24 +2647,15 @@ function lockedSplit(r){
   return txt(r, "Status").toLowerCase().indexOf("locked") === 0 ? "Locked" : "Not locked";
 }
 
-/* The window the capacity charts are drawn over: whatever From and To say.
-   The date field itself has already chosen which orders are in `filtered`, so
-   this only trims the x axis to the period being asked about. */
-function capacityWindow(){
-  var from = els.dateFrom.value ? parseDate(els.dateFrom.value) : null;
-  var to = els.dateTo.value ? parseDate(els.dateTo.value) : null;
-  return (from == null && to == null) ? null : { from: from, to: to };
-}
-
 /* One sewing-load chart per Execution Unit, three to a row. The panels are
    built from the units actually present, so a unit that disappears from the
    filter takes its chart with it. */
-function renderSewUnitCharts(g, win){
+function renderSewUnitCharts(g, win, sewRows){
   Object.keys(charts).forEach(function(id){
     if(id.indexOf("sewUnit_") === 0) destroyChart(id);
   });
   var totals = {};
-  filtered.forEach(function(r){
+  sewRows.forEach(function(r){
     if(dat(r, "Adjusted sew start") == null || dat(r, "Adjusted sew end") == null) return;
     var u = txt(r, "Execution Unit") || "(blank)";
     totals[u] = (totals[u] || 0) + (num(r, "FR hour") || 0);
@@ -2606,7 +2667,7 @@ function renderSewUnitCharts(g, win){
     return;
   }
   els.sewUnitHint.textContent = "One chart per Execution Unit, same spread and the same window as above. "
-    + units.length + " units, " + fmtInt(sum(filtered, "FR hour")) + " FR hours in the filter.";
+    + units.length + " units, " + fmtInt(sum(sewRows, "FR hour")) + " FR hours in the filter.";
 
   els.sewUnitGrid.innerHTML = units.map(function(u, i){
     return '<div class="panel"><h3>' + esc(u) + '</h3>'
@@ -2615,7 +2676,7 @@ function renderSewUnitCharts(g, win){
   }).join("");
 
   units.forEach(function(u, i){
-    var rows = filtered.filter(function(r){ return (txt(r, "Execution Unit") || "(blank)") === u; });
+    var rows = sewRows.filter(function(r){ return (txt(r, "Execution Unit") || "(blank)") === u; });
     var sr = spreadSeries(rows, "Adjusted sew start", "Adjusted sew end", "FR hour", g, lockedSplit, win);
     var key = unitKey(u);
     var cap = CAPACITY.unitKeys[key] ? capacitySeries(sr.keys, g, [key]) : null;
@@ -2625,27 +2686,32 @@ function renderSewUnitCharts(g, win){
 
 function renderCapacity(){
   var g = granularity;
-  var win = capacityWindow();
+  var win = dateWindow();
   // The fab sheet spreads InHouse, not Fab Qty: it is the textile mill's own
   // knitting load, and fabric bought outside is not part of it. Verified on
   // all 2,128 rows.
-  var fab = spreadSeries(filtered, "Adjusted Fabric Start", "Adjusted Fabric End", "InHouse", g, lockedSplit, win);
-  var sew = spreadSeries(filtered, "Adjusted sew start", "Adjusted sew end", "FR hour", g, lockedSplit, win);
+  /* Each chart takes the range against its own dates, so "1 to 31 October"
+     means October fabric on the fabric chart and October sewing on the sewing
+     chart, not one shared interpretation of the word October. */
+  var fabRows = rowsInWindow(filtered, "Adjusted Fabric Start", "Adjusted Fabric End", win);
+  var sewRows = rowsInWindow(filtered, "Adjusted sew start", "Adjusted sew end", win);
+  var fab = spreadSeries(fabRows, "Adjusted Fabric Start", "Adjusted Fabric End", "InHouse", g, lockedSplit, win);
+  var sew = spreadSeries(sewRows, "Adjusted sew start", "Adjusted sew end", "FR hour", g, lockedSplit, win);
   stackedChart("fabLoadChart", fab.keys, fab.series, g, "kg", ["#006040", "#F8B000"]);
 
-  var wantKeys = wantedUnitKeys(filtered);
+  var wantKeys = wantedUnitKeys(sewRows);
   var sewCap = capacitySeries(sew.keys, g, wantKeys);
   stackedChart("sewLoadChart", sew.keys, sew.series, g, "hours", ["#006040", "#F8B000"], sewCap);
 
   els.sewLoadHint.textContent = CAPACITY.days
-    ? ("FR hour across Adjusted sew start to end, locked orders against the rest. The red line is available hours from the Capacity sheet"
+    ? ("FR hour across Adjusted sew start to end, locked orders against the rest. The blue band is available hours from the Capacity sheet"
        + (wantKeys ? " for the " + wantKeys.length + " unit" + (wantKeys.length > 1 ? "s" : "") + " in this filter." : " for all units."))
     : "FR hour across Adjusted sew start to end, locked orders against the rest.";
-  renderSewUnitCharts(g, win);
+  renderSewUnitCharts(g, win, sewRows);
 
   // KPI tiles
-  var fabDaily = spreadSeries(filtered, "Adjusted Fabric Start", "Adjusted Fabric End", "InHouse", "day", null, win);
-  var sewDaily = spreadSeries(filtered, "Adjusted sew start", "Adjusted sew end", "FR hour", "day", null, win);
+  var fabDaily = spreadSeries(fabRows, "Adjusted Fabric Start", "Adjusted Fabric End", "InHouse", "day", null, win);
+  var sewDaily = spreadSeries(sewRows, "Adjusted sew start", "Adjusted sew end", "FR hour", "day", null, win);
   function peak(sr){ var v = sr.series.All || []; var m = 0, at = null;
     v.forEach(function(x, i){ if(x > m){ m = x; at = sr.keys[i]; } }); return { max: m, at: at }; }
   var fp = peak(fabDaily), sp = peak(sewDaily);
@@ -2661,8 +2727,8 @@ function renderCapacity(){
     for(var i = 0; i < v.length; i++) t += v[i] || 0;
     return t;
   }
-  function windowed(startCol, endCol, qtyCol){
-    return filtered.filter(function(r){
+  function windowed(rows, startCol, endCol, qtyCol){
+    return rows.filter(function(r){
       var a = dat(r, startCol), b = dat(r, endCol), q = num(r, qtyCol);
       if(a == null || b == null || b < a || q == null || q <= 0) return false;
       if(win && win.from != null && b < win.from) return false;
@@ -2671,36 +2737,54 @@ function renderCapacity(){
     });
   }
   var fabHours = seriesTotal(fabDaily), sewHours = seriesTotal(sewDaily);
-  /* Averaged over the days that actually carry work. Dividing by every day on
-     the calendar instead would quietly fold Fridays and the Eid shutdown into
-     the figure and make the floor look half empty. */
-  function loadedDays(sr){
-    var v = sr.series.All || [], n = 0;
-    for(var i = 0; i < v.length; i++) if(v[i] > 0) n++;
-    return n;
+  /* Averaged over WORKING days, not calendar days: the week's holiday here is
+     Friday, and the Capacity sheet marks the Eid shutdowns as zero. Counting
+     those would make the floor look emptier than it is. The span is the chosen
+     range, or the stretch the load itself covers when no range is set. */
+  function loadSpan(sr){
+    var v = sr.series.All || [], first = null, last = null;
+    for(var i = 0; i < v.length; i++) if(v[i] > 0){ if(first === null) first = sr.keys[i]; last = sr.keys[i]; }
+    return { first: first, last: last };
   }
-  var fabDays = loadedDays(fabDaily), sewDays = loadedDays(sewDaily);
-  var planned = windowed("Adjusted Fabric Start", "Adjusted Fabric End", "InHouse");
-  var sewPlanned = windowed("Adjusted sew start", "Adjusted sew end", "FR hour");
+  function workingDaysFor(sr){
+    var from = win && win.from != null ? win.from : null;
+    var to = win && win.to != null ? win.to : null;
+    var span = loadSpan(sr);
+    if(from == null) from = span.first;
+    if(to == null) to = span.last;
+    if(from == null || to == null) return 0;
+    if(span.first != null && span.first > from) from = from;   // keep the asked-for range
+    return workingDaysBetween(from, to);
+  }
+  var fabDays = workingDaysFor(fabDaily), sewDays = workingDaysFor(sewDaily);
+  var planned = windowed(fabRows, "Adjusted Fabric Start", "Adjusted Fabric End", "InHouse");
+  var sewPlanned = windowed(sewRows, "Adjusted sew start", "Adjusted sew end", "FR hour");
   var rangeNote = win ? "in the selected range" : "across the plan";
   /* Capacity against load, day by day, over whatever window is on screen.
      Only days the Capacity sheet actually covers are counted, so a plan that
      runs past the end of the sheet does not look like a shortage. */
-  var capStat = { avail: 0, used: 0, over: 0, shortfall: 0, covered: 0, worst: null, worstPct: 0 };
+  var capStat = { avail: 0, used: 0, over: 0, shortfall: 0, covered: 0, worst: null, worstPct: 0,
+                  holidayDays: 0, holidayHours: 0 };
   if(CAPACITY.days){
     var dayLoad = sewDaily.series.All || [];
-    var wantKeys2 = wantedUnitKeys(filtered);
+    var wantKeys2 = wantedUnitKeys(sewRows);
     sewDaily.keys.forEach(function(k, i){
       var c = capacityOnDay(k, wantKeys2);
       if(c == null) return;
+      var load = dayLoad[i] || 0;
       capStat.covered++;
       capStat.avail += c;
-      capStat.used += dayLoad[i] || 0;
-      if(c > 0){
-        var pct = 100 * (dayLoad[i] || 0) / c;
-        if(pct > capStat.worstPct){ capStat.worstPct = pct; capStat.worst = k; }
+      capStat.used += load;
+      /* A closed day is not an overloaded day. Work landing on Eid or a Friday
+         is a different problem from a day that is simply too full, and lumping
+         them together buried the real overload under one holiday. */
+      if(c === 0){
+        if(load > 0){ capStat.holidayDays++; capStat.holidayHours += load; }
+        return;
       }
-      if((dayLoad[i] || 0) > c){ capStat.over++; capStat.shortfall += (dayLoad[i] || 0) - c; }
+      var pct = 100 * load / c;
+      if(pct > capStat.worstPct){ capStat.worstPct = pct; capStat.worst = k; }
+      if(load > c){ capStat.over++; capStat.shortfall += load - c; }
     });
   }
   var usedPct = capStat.avail ? Math.round(1000 * capStat.used / capStat.avail) / 10 : 0;
@@ -2708,20 +2792,24 @@ function renderCapacity(){
   var tiles = [
     ["In-house fabric in plan", fmtInt(fabHours), fmtInt(planned.length) + " orders, spread " + rangeNote],
     ["Avg fabric load per day", fabDays ? fmtInt(fabHours / fabDays) : "0",
-      fabDays ? "kg, over " + fmtInt(fabDays) + " days with load" : "no day carries fabric"],
+      fabDays ? "kg, over " + fmtInt(fabDays) + " working days" : "no day carries fabric"],
     ["Peak knitting day", fmtInt(fp.max), fp.at ? fmtDate(fp.at) : ""],
     ["Sewing hours in plan", fmtInt(sewHours), fmtInt(sewPlanned.length) + " orders, spread " + rangeNote],
     ["Avg sewing load per day", sewDays ? fmtInt(sewHours / sewDays) : "0",
-      sewDays ? "FR hours, over " + fmtInt(sewDays) + " days with load" : "no day carries sewing"],
+      sewDays ? "FR hours, over " + fmtInt(sewDays) + " working days" : "no day carries sewing"],
     ["Peak sewing day", fmtInt(sp.max), sp.at ? fmtDate(sp.at) : ""],
     CAPACITY.days
       ? ["Capacity used", usedPct + "%", fmtInt(capStat.used) + " of " + fmtInt(capStat.avail) + " hours, " + capStat.covered + " days"]
       : ["Sewing not planned", fmtInt(sum(filtered, "FR hour") - sewHours),
          fmtInt(filtered.length - sewPlanned.length) + " orders with no window, or outside the range"],
     CAPACITY.days
-      ? ["Days over capacity", fmtInt(capStat.over), capStat.over
-          ? fmtInt(capStat.shortfall) + " hours short, worst " + (capStat.worst ? fmtDate(capStat.worst) : "") + " at " + Math.round(capStat.worstPct) + "%"
-          : "every covered day fits"]
+      ? ["Days over capacity", fmtInt(capStat.over),
+          (capStat.over
+            ? fmtInt(capStat.shortfall) + " hours short, worst " + (capStat.worst ? fmtDate(capStat.worst) : "") + " at " + Math.round(capStat.worstPct) + "%"
+            : "every open day fits")
+          + (capStat.holidayDays
+              ? " · " + fmtInt(capStat.holidayHours) + " hours fall on " + fmtInt(capStat.holidayDays) + " closed day" + (capStat.holidayDays > 1 ? "s" : "")
+              : "")]
       : ["In-house not windowed", fmtInt(sum(filtered, "InHouse") - fabHours),
          fmtInt(filtered.length - planned.length) + " orders, InStock, blank, or outside the range"]
   ];
@@ -2770,8 +2858,7 @@ function orderJoin(){
   var f = currentFilters();
   var buyerF = f.dims["Buyer"] || "", unitF = f.dims["Execution Unit"] || "";
   var otherDims = Object.keys(f.dims).filter(function(k){ return k !== "Buyer" && k !== "Execution Unit"; });
-  var onlyDirect = !f.q && !activeAlert && otherDims.length === 0
-    && !(f.dateField && (f.from != null || f.to != null || f.year != null || f.month != null));
+  var onlyDirect = !f.q && !activeAlert && otherDims.length === 0;
 
   return function(ewo, buyer, unit){
     var key = String(ewo);
@@ -3196,8 +3283,77 @@ els.searchInput.addEventListener("input", function(){
   clearTimeout(searchTimer);
   searchTimer = setTimeout(function(){ page = 0; applyFilters(); }, 200);
 });
-[els.dateField, els.dateFrom, els.dateTo].forEach(function(el){
+[els.dateFrom, els.dateTo].forEach(function(el){
   el.addEventListener("change", function(){ page = 0; applyFilters(); });
+});
+
+/* ============================================================
+   Full screen for one chart or one card
+
+   A chart is reopened rather than moved: the original stays where it is, and a
+   second Chart is built on a fresh canvas from the same config. Closing throws
+   that copy away, so nothing the dashboard holds is disturbed.
+   ============================================================ */
+var zoomChart = null;
+
+function closeZoom(){
+  if(zoomChart){ zoomChart.destroy(); zoomChart = null; }
+  els.zoomBody.innerHTML = "";
+  els.zoomBack.classList.remove("on");
+}
+
+function openZoomChart(canvasId, title, hint){
+  var src = charts[canvasId];
+  if(!src) return;
+  closeZoom();
+  els.zoomTitle.textContent = title || "";
+  els.zoomHint.textContent = hint || "";
+  var cv = document.createElement("canvas");
+  els.zoomBody.appendChild(cv);
+  els.zoomBack.classList.add("on");
+  zoomChart = new Chart(cv, {
+    type: src.config.type,
+    data: src.config.data,
+    options: Object.assign({}, src.config.options, { animation: false })
+  });
+}
+
+function openZoomCard(label, value, foot){
+  closeZoom();
+  els.zoomTitle.textContent = label || "";
+  els.zoomHint.textContent = "";
+  els.zoomBody.innerHTML = '<div class="zoom-figure"><div class="big">' + esc(value || "")
+    + '</div><div class="cap">' + esc(foot || "") + '</div></div>';
+  els.zoomBack.classList.add("on");
+}
+
+document.addEventListener("click", function(e){
+  if(els.zoomBack.classList.contains("on")) return;      // already open
+  var box = e.target.closest ? e.target.closest(".chart-box") : null;
+  if(box){
+    var cv = box.querySelector("canvas");
+    var panel = box.closest(".panel");
+    if(cv && cv.id && charts[cv.id]){
+      var h3 = panel ? panel.querySelector("h3") : null;
+      var hint = panel ? panel.querySelector(".hint") : null;
+      openZoomChart(cv.id, h3 ? h3.textContent : "", hint ? hint.textContent : "");
+      return;
+    }
+  }
+  var kpi = e.target.closest ? e.target.closest(".kpi") : null;
+  if(kpi){
+    openZoomCard(kpi.querySelector(".label") ? kpi.querySelector(".label").textContent : "",
+                 kpi.querySelector(".value") ? kpi.querySelector(".value").textContent : "",
+                 kpi.querySelector(".foot") ? kpi.querySelector(".foot").textContent : "");
+  }
+});
+
+els.zoomBack.addEventListener("click", function(e){
+  if(e.target === els.zoomBack) closeZoom();            // backdrop only, not the card
+});
+els.zoomClose.addEventListener("click", closeZoom);
+document.addEventListener("keydown", function(e){
+  if(e.key === "Escape") closeZoom();
 });
 
 /* One switch, every time-based chart on every tab. */
