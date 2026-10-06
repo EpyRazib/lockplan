@@ -54,11 +54,24 @@
   .brand h1{font-size:18px;letter-spacing:-0.01em;color:var(--green);}
   .brand .sub{color:var(--ink-soft);font-size:11px;margin-top:2px;}
   .status{display:flex;align-items:center;gap:9px;font-size:11.5px;color:var(--ink-soft);flex-wrap:wrap;}
+  /* Normally only the dot is on show: a green pulse means the data is current.
+     The words appear while the reader hovers it, and while a refresh runs. */
+  .live{display:inline-flex;align-items:center;gap:9px;cursor:default;}
+  .live #statusText, .live #freshness{display:none;}
+  .live:hover #statusText, .live:hover #freshness,
+  .live.show #statusText, .live.show #freshness{display:inline;}
   .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-soft);flex:none;}
-  .dot.live{background:var(--green-light);box-shadow:0 0 0 3px rgba(63,165,102,0.18);}
+  .dot.live{background:var(--green-light);box-shadow:0 0 0 3px rgba(63,165,102,0.18);
+            animation:livepulse 2.2s ease-in-out infinite;}
+  @keyframes livepulse{
+    0%,100%{opacity:1;box-shadow:0 0 0 3px rgba(63,165,102,0.18);}
+    50%{opacity:0.45;box-shadow:0 0 0 6px rgba(63,165,102,0.05);}
+  }
+  @media(prefers-reduced-motion:reduce){ .dot.live{animation:none;} }
   .dot.err{background:var(--rust);}
   .dot.busy{background:var(--gold);}
-  .acct{font-size:11px;color:var(--ink-soft);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .acct{font-size:14px;font-weight:600;color:var(--green);max-width:260px;
+        overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:0.01em;}
   .signin-box{max-width:560px;margin:0 auto;text-align:left;background:#fff;border:1px solid var(--line);
               border-top:3px solid var(--gold);padding:22px 26px;font-size:12.5px;color:var(--ink-soft);}
   .signin-box h2{text-align:left;}
@@ -235,6 +248,7 @@
   .zoom-back.on{display:flex;}
   .zoom-card{background:#fff;border:1px solid var(--line);width:100%;height:100%;
              max-width:1700px;display:flex;flex-direction:column;padding:20px 22px 16px;position:relative;}
+  .zoom-card.small{width:auto;height:auto;min-width:360px;max-width:520px;padding:26px 30px 24px;}
   .zoom-card h3{color:var(--green);font-size:17px;margin:0 6px 2px 0;}
   .zoom-card .hint{margin-bottom:10px;}
   .zoom-body{flex:1;position:relative;min-height:0;}
@@ -243,8 +257,9 @@
               color:var(--ink);font-size:20px;line-height:1;width:32px;height:32px;cursor:pointer;}
   .zoom-close:hover{background:var(--green);color:#fff;border-color:var(--green);}
   .zoom-figure{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;}
-  .zoom-figure .big{font-size:64px;font-weight:600;color:var(--green);font-variant-numeric:tabular-nums;}
-  .zoom-figure .cap{font-size:15px;color:var(--ink-soft);text-align:center;}
+  .zoom-figure{padding:4px 0 2px;}
+  .zoom-figure .big{font-size:44px;font-weight:600;color:var(--green);font-variant-numeric:tabular-nums;}
+  .zoom-figure .cap{font-size:13px;color:var(--ink-soft);text-align:center;}
 </style>
 </head>
 <body>
@@ -268,9 +283,11 @@
     </div>
   </div>
   <div class="status">
-    <span class="dot busy" id="statusDot"></span>
-    <span id="statusText">Loading</span>
-    <span id="freshness"></span>
+    <span class="live" id="liveWrap" title="Data status">
+      <span class="dot busy" id="statusDot"></span>
+      <span id="statusText">Loading</span>
+      <span id="freshness"></span>
+    </span>
     <span id="accountLabel" class="acct"></span>
     <button class="secondary tiny" id="csvBtn" hidden>Export CSV</button>
     <button class="secondary tiny" id="signOutBtn" hidden>Sign out</button>
@@ -735,7 +752,7 @@ var els = {};
 ["statusDot","statusText","freshness","refreshBtn","csvBtn","loadingState","dashboard",
  "signInBtn","signInBtn2","signOutBtn","accountLabel","signinBox","spinner","loadingTitle","loadingText",
  "errorBox","filterGrid","searchInput","dateFieldWrap","dateFrom","dateTo","resetBtn",
- "zoomBack","zoomClose","zoomTitle","zoomHint","zoomBody",
+ "zoomBack","zoomClose","zoomTitle","zoomHint","zoomBody","liveWrap",
  "granSwitch","granHint","sewUnitGrid","sewUnitHint","ottMissing","ottEventHint","ottTotalHint","sewLoadHint",
  "filterSummary","activeChips","kpiRow","alertRow","attnTable","attnTableTitle","attnTableHint",
  "pivotTable","dataTable","groupBy","colChooser","prevPage","nextPage","pageInfo","pageSize",
@@ -752,7 +769,19 @@ function esc(v){
 }
 function showError(html){ els.errorBox.innerHTML = '<div class="error">' + html + '</div>'; }
 function clearError(){ els.errorBox.innerHTML = ""; }
-function setStatus(t, c){ els.statusText.textContent = t; els.statusDot.className = "dot" + (c ? " " + c : ""); }
+function setStatus(t, c){
+  els.statusText.textContent = t;
+  els.statusDot.className = "dot" + (c ? " " + c : "");
+  /* The hidden words are still the tooltip, so hovering the dot reads the same
+     thing whether or not the browser shows the inline text. */
+  if(els.liveWrap) els.liveWrap.title = t + (els.freshness.textContent ? " " + els.freshness.textContent : "");
+}
+/* Shown while a refresh is running, then put away again. */
+function flashStatus(on){
+  if(!els.liveWrap) return;
+  if(on){ clearTimeout(flashStatus.t); els.liveWrap.classList.add("show"); }
+  else { flashStatus.t = setTimeout(function(){ els.liveWrap.classList.remove("show"); }, 2500); }
+}
 function fmtInt(n){ return Math.round(n || 0).toLocaleString(); }
 function fmt1(n){ return (Math.round((n || 0) * 10) / 10).toLocaleString(undefined, {minimumFractionDigits:1, maximumFractionDigits:1}); }
 
@@ -809,6 +838,8 @@ function ago(iso){
 }
 function paintFreshness(){
   els.freshness.textContent = generatedAt ? "· file saved " + ago(generatedAt) : "";
+  if(els.liveWrap) els.liveWrap.title = els.statusText.textContent
+    + (els.freshness.textContent ? " " + els.freshness.textContent : "");
 }
 
 /* ============================================================
@@ -1381,6 +1412,8 @@ async function load(opts){
 
 function paintFreshnessOverride(){
   els.freshness.textContent = generatedAt ? "· file saved " + ago(generatedAt) : "";
+  if(els.liveWrap) els.liveWrap.title = els.statusText.textContent
+    + (els.freshness.textContent ? " " + els.freshness.textContent : "");
 }
 
 function startPolling(){
@@ -2619,10 +2652,14 @@ function stackedChart(canvasId, keys, series, gran, unitLabel, colours, capacity
     // A light blue band with a blue edge along the top only: Chart.js draws the
     // border on the line itself, so the filled area is left unoutlined at the
     // sides and the bars standing in it stay readable.
-    sets.push({ label: "Capacity", data: capacity, type: "line", borderColor: "#4A90D9",
+    /* A closed day has no capacity to draw. Plotting it as zero made the line
+       dive to the axis and back, and those two near-vertical strokes read as
+       side borders on the band. A gap says the same thing more quietly. */
+    var capLine = capacity.map(function(v){ return v > 0 ? v : null; });
+    sets.push({ label: "Capacity", data: capLine, type: "line", borderColor: "#4A90D9",
                 backgroundColor: "rgba(74, 144, 217, 0.16)", borderWidth: 2,
                 pointRadius: 0, pointHoverRadius: 4, pointBackgroundColor: "#4A90D9",
-                tension: 0, fill: "origin", order: 1 });
+                tension: 0, fill: "origin", order: 1, spanGaps: false });
   }
   charts[canvasId] = new Chart(el, {
     type: "bar",
@@ -3306,6 +3343,7 @@ function openZoomChart(canvasId, title, hint){
   var src = charts[canvasId];
   if(!src) return;
   closeZoom();
+  document.querySelector(".zoom-card").classList.remove("small");
   els.zoomTitle.textContent = title || "";
   els.zoomHint.textContent = hint || "";
   var cv = document.createElement("canvas");
@@ -3320,6 +3358,7 @@ function openZoomChart(canvasId, title, hint){
 
 function openZoomCard(label, value, foot){
   closeZoom();
+  document.querySelector(".zoom-card").classList.add("small");
   els.zoomTitle.textContent = label || "";
   els.zoomHint.textContent = "";
   els.zoomBody.innerHTML = '<div class="zoom-figure"><div class="big">' + esc(value || "")
@@ -3381,7 +3420,10 @@ els.pageSize.addEventListener("change", function(){ page = 0; renderTable(); });
 els.prevPage.addEventListener("click", function(){ page--; renderTable(); });
 els.nextPage.addEventListener("click", function(){ page++; renderTable(); });
 els.csvBtn.addEventListener("click", exportCsv);
-els.refreshBtn.addEventListener("click", function(){ load({ interactive: true }); });
+els.refreshBtn.addEventListener("click", function(){
+  flashStatus(true);
+  load({ interactive: true }).then(function(){ flashStatus(false); });
+});
 els.signInBtn.addEventListener("click", function(){ load({ interactive: true }).then(function(ok){ if(ok) startPolling(); }); });
 els.signInBtn2.addEventListener("click", function(){ load({ interactive: true }).then(function(ok){ if(ok) startPolling(); }); });
 els.signOutBtn.addEventListener("click", function(){
