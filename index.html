@@ -2648,9 +2648,31 @@ function renderCapacity(){
   function peak(sr){ var v = sr.series.All || []; var m = 0, at = null;
     v.forEach(function(x, i){ if(x > m){ m = x; at = sr.keys[i]; } }); return { max: m, at: at }; }
   var fp = peak(fabDaily), sp = peak(sewDaily);
-  var planned = filtered.filter(function(r){ return dat(r, "Adjusted Fabric Start") != null && dat(r, "Adjusted Fabric End") != null; });
-  var sewPlanned = filtered.filter(function(r){ return dat(r, "Adjusted sew start") != null && dat(r, "Adjusted sew end") != null; });
-  var notPlannedHours = sum(filtered, "FR hour") - sum(sewPlanned, "FR hour");
+
+  /* The tiles must agree with the charts above them, so they add up the same
+     daily spread the charts draw rather than the raw column. An order running
+     1 Oct to 4 Oct carries 227 FR hours, which is 56.75 hours on each of those
+     four days; asking for 1 Oct to 2 Oct must therefore count 113.5 hours, not
+     the whole 227. Summing the column would also quietly include orders whose
+     window sits entirely outside the range. */
+  function seriesTotal(sr){
+    var v = sr.series.All || [], t = 0;
+    for(var i = 0; i < v.length; i++) t += v[i] || 0;
+    return t;
+  }
+  function windowed(startCol, endCol, qtyCol){
+    return filtered.filter(function(r){
+      var a = dat(r, startCol), b = dat(r, endCol), q = num(r, qtyCol);
+      if(a == null || b == null || b < a || q == null || q <= 0) return false;
+      if(win && win.from != null && b < win.from) return false;
+      if(win && win.to != null && a > win.to) return false;
+      return true;
+    });
+  }
+  var fabHours = seriesTotal(fabDaily), sewHours = seriesTotal(sewDaily);
+  var planned = windowed("Adjusted Fabric Start", "Adjusted Fabric End", "InHouse");
+  var sewPlanned = windowed("Adjusted sew start", "Adjusted sew end", "FR hour");
+  var rangeNote = win ? "in the selected range" : "across the plan";
   /* Capacity against load, day by day, over whatever window is on screen.
      Only days the Capacity sheet actually covers are counted, so a plan that
      runs past the end of the sheet does not look like a shortage. */
@@ -2674,18 +2696,20 @@ function renderCapacity(){
   var usedPct = capStat.avail ? Math.round(1000 * capStat.used / capStat.avail) / 10 : 0;
 
   var tiles = [
-    ["In-house fabric in plan", fmtInt(sum(planned, "InHouse")), planned.length + " orders with a window"],
+    ["In-house fabric in plan", fmtInt(fabHours), fmtInt(planned.length) + " orders, spread " + rangeNote],
     ["Peak knitting day", fmtInt(fp.max), fp.at ? fmtDate(fp.at) : ""],
-    ["Sewing hours in plan", fmtInt(sum(sewPlanned, "FR hour")), sewPlanned.length + " orders with a window"],
+    ["Sewing hours in plan", fmtInt(sewHours), fmtInt(sewPlanned.length) + " orders, spread " + rangeNote],
     ["Peak sewing day", fmtInt(sp.max), sp.at ? fmtDate(sp.at) : ""],
     CAPACITY.days
       ? ["Capacity used", usedPct + "%", fmtInt(capStat.used) + " of " + fmtInt(capStat.avail) + " hours, " + capStat.covered + " days"]
-      : ["Sewing not planned", fmtInt(notPlannedHours), (filtered.length - sewPlanned.length) + " orders without a window"],
+      : ["Sewing not planned", fmtInt(sum(filtered, "FR hour") - sewHours),
+         fmtInt(filtered.length - sewPlanned.length) + " orders with no window, or outside the range"],
     CAPACITY.days
       ? ["Days over capacity", fmtInt(capStat.over), capStat.over
           ? fmtInt(capStat.shortfall) + " hours short, worst " + (capStat.worst ? fmtDate(capStat.worst) : "") + " at " + Math.round(capStat.worstPct) + "%"
           : "every covered day fits"]
-      : ["In-house not windowed", fmtInt(sum(filtered, "InHouse") - sum(planned, "InHouse")), (filtered.length - planned.length) + " orders, InStock or blank"]
+      : ["In-house not windowed", fmtInt(sum(filtered, "InHouse") - fabHours),
+         fmtInt(filtered.length - planned.length) + " orders, InStock, blank, or outside the range"]
   ];
   els.capKpis.innerHTML = tiles.map(function(t){
     return '<div class="kpi"><div class="label">' + esc(t[0]) + '</div><div class="value">' + esc(t[1])
