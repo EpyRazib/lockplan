@@ -117,8 +117,9 @@
   /* ten tiles sit in two clean rows of five, six in one row, so no grey gaps show */
   .kpis.ten{grid-template-columns:repeat(5,1fr);}
   .kpis.six{grid-template-columns:repeat(6,1fr);}
-  @media(max-width:1100px){.kpis.ten{grid-template-columns:repeat(3,1fr);}.kpis.six{grid-template-columns:repeat(3,1fr);}}
-  @media(max-width:700px){.kpis.ten,.kpis.six{grid-template-columns:repeat(2,1fr);}}
+  .kpis.eight{grid-template-columns:repeat(4,1fr);}
+  @media(max-width:1100px){.kpis.ten{grid-template-columns:repeat(3,1fr);}.kpis.six,.kpis.eight{grid-template-columns:repeat(3,1fr);}}
+  @media(max-width:700px){.kpis.ten,.kpis.six,.kpis.eight{grid-template-columns:repeat(2,1fr);}}
   .kpi:nth-child(odd){border-top-color:var(--green);}
   .kpi:nth-child(even){border-top-color:var(--gold);}
   .kpi .label{color:var(--ink-soft);font-size:10.5px;margin-bottom:5px;letter-spacing:0.02em;}
@@ -412,7 +413,7 @@
 
     <!-- ============ CAPACITY ============ -->
     <div class="tabpage" id="page-capacity">
-      <div class="kpis six" id="capKpis"></div>
+      <div class="kpis eight" id="capKpis"></div>
       <div class="granbar"><span class="granhint">Each order's quantity is spread evenly across its planned window, exactly as the fab and Sew sheets do. Filters and the Day / Week / Month switch apply.</span></div>
       <div class="grid1">
         <div class="panel">
@@ -424,11 +425,6 @@
           <h3 data-grantitle2="Sewing load per {g}">Sewing load per day</h3>
           <div class="hint" id="sewLoadHint">FR hour across Adjusted sew start to end, locked orders against the rest</div>
           <div class="chart-box wide"><canvas id="sewLoadChart"></canvas></div>
-        </div>
-        <div class="panel" id="utilPanel">
-          <h3 data-grantitle2="Sewing capacity used per {g}">Sewing capacity used per day</h3>
-          <div class="hint" id="utilHint">Planned hours against the Capacity sheet. Anything over 100% is more work than the floor can take.</div>
-          <div class="chart-box wide"><canvas id="utilChart"></canvas></div>
         </div>
       </div>
       <h3 class="section-head">Sewing load by unit</h3>
@@ -1153,6 +1149,11 @@ function bundleFromWorkbooks(ewoBuf, dlvBuf){
       var ott = sheetByName(wb, "OTT") || sheetByName(wb, "ActualEv");
       return ott ? extractGrid(ott) : [];
     })(),
+    /* Which sheet the OTT rows came from, or the names the workbook does have.
+       An empty chart has two very different causes, no sheet or no recognised
+       values in it, and the reader should be told which one. */
+    OttSheet: (sheetByName(wb, "OTT") ? "OTT" : (sheetByName(wb, "ActualEv") ? "ActualEv" : null)),
+    SheetNames: wb.SheetNames.slice(0),
     Capacity: sheetByName(wb, "Capacity") ? extractGrid(sheetByName(wb, "Capacity"), ["day"]) : [],
     Delivery: [], LockPlan: [], RFD: [], LockMeta: {}
   };
@@ -1346,6 +1347,8 @@ function ingest(bundle){
   RFDROWS.idxKg = rt.idx["Kg"] != null ? rt.idx["Kg"] : 0;
   LOCKMETA = bundle.LockMeta || {};
   OTT = buildOtt(bundle.ActualEv);
+  OTT.sheet = bundle.OttSheet || null;
+  OTT.sheetNames = bundle.SheetNames || [];
   CAPACITY = buildCapacity(bundle.Capacity);
   buildDeliveredIndex();
   if(asOf == null){
@@ -1488,15 +1491,21 @@ function ottVerdict(v){
   var t = String(v).trim().toLowerCase();
   if(t === "") return null;
   if(t === "pass" || t === "passed" || t === "ok" || t === "yes" || t === "y"
-     || t === "on time" || t === "ontime" || t === "p") return "pass";
+     || t === "on time" || t === "ontime" || t === "in time" || t === "intime"
+     || t === "achieved" || t === "done" || t === "within" || t === "early"
+     || t === "true" || t === "p" || t === "ot") return "pass";
   if(t === "fail" || t === "failed" || t === "no" || t === "n" || t === "not ok"
-     || t === "late" || t === "delay" || t === "delayed" || t === "f") return "fail";
+     || t === "late" || t === "delay" || t === "delayed" || t === "miss" || t === "missed"
+     || t === "not achieved" || t === "not done" || t === "false" || t === "f"
+     || t === "nt" || t === "not on time") return "fail";
   return null;
 }
 
 function buildOtt(grid){
-  var out = { events: [], pass: 0, fail: 0, checks: 0, shape: "none" };
+  var out = { events: [], pass: 0, fail: 0, checks: 0, shape: "none",
+              rows: 0, headers: [], samples: [] };
   if(!grid || grid.length < 2) return out;
+  out.rows = grid.length - 1;
   var header = (grid[0] || []).map(function(h){ return h == null ? "" : String(h).trim(); });
   var body = grid.slice(1);
   var tally = {}, order = [];
@@ -1547,6 +1556,24 @@ function buildOtt(grid){
     return { name: name, pass: t.pass, fail: t.fail, total: n,
              passPct: n ? Math.round(1000 * t.pass / n) / 10 : 0 };
   });
+
+  /* Nothing recognised: collect what the sheet actually holds, so the empty
+     state can show it instead of leaving everyone guessing. */
+  if(out.shape === "none"){
+    out.headers = header.filter(function(h){ return h !== ""; }).slice(0, 12);
+    var seenVal = {};
+    for(var ri = 0; ri < body.length && out.samples.length < 10; ri++){
+      for(var ci = 0; ci < (body[ri] || []).length; ci++){
+        var cell = body[ri][ci];
+        if(cell == null) continue;
+        var txtv = String(cell).trim();
+        if(txtv === "" || seenVal[txtv] || /^[0-9.\-\/: ]+$/.test(txtv)) continue;
+        seenVal[txtv] = true;
+        out.samples.push(txtv.slice(0, 24));
+        if(out.samples.length >= 10) break;
+      }
+    }
+  }
   return out;
 }
 
@@ -2077,7 +2104,23 @@ function renderOtt(){
   var missing = !OTT || OTT.checks === 0;
   els.ottMissing.style.display = missing ? "" : "none";
   if(missing){
-    els.ottEventHint.textContent = "No pass or fail results were found in an ActualEv sheet";
+    var why;
+    if(!OTT.sheet){
+      why = "<strong>No sheet named <code>OTT</code> (or <code>ActualEv</code>) is in the workbook.</strong>"
+          + (OTT.sheetNames && OTT.sheetNames.length
+              ? "<br/>The sheets it does have: " + OTT.sheetNames.map(esc).join(", ") + "."
+              : "");
+    }else if(!OTT.rows){
+      why = "<strong>The <code>" + esc(OTT.sheet) + "</code> sheet was read but has no rows under its header.</strong>";
+    }else{
+      why = "<strong>The <code>" + esc(OTT.sheet) + "</code> sheet has " + fmtInt(OTT.rows)
+          + " rows, but no cell in it reads as pass or fail.</strong>"
+          + (OTT.headers.length ? "<br/>Columns found: " + OTT.headers.map(esc).join(", ") + "." : "")
+          + (OTT.samples.length ? "<br/>Values found: " + OTT.samples.map(esc).join(", ") + "." : "")
+          + "<br/>Send these to whoever maintains the dashboard and the words will be added.";
+    }
+    els.ottMissing.innerHTML = why;
+    els.ottEventHint.textContent = "Waiting for pass or fail results";
     els.ottTotalHint.textContent = "";
     return;
   }
@@ -2509,9 +2552,11 @@ function stackedChart(canvasId, keys, series, gran, unitLabel, colours, capacity
   if(capacity){
     // Drawn as a line over the stack so the eye reads "the bars must stay under
     // this". A day the plan overshoots is then impossible to miss.
+    // Filled, very faintly, so the band under the line reads as "room still
+    // available" without hiding the bars standing in it.
     sets.push({ label: "Capacity", data: capacity, type: "line", borderColor: "#C7511F",
-                backgroundColor: "#C7511F", borderWidth: 2, pointRadius: 0, pointHoverRadius: 3,
-                tension: 0, fill: false, order: 0 });
+                backgroundColor: "rgba(199, 81, 31, 0.10)", borderWidth: 2,
+                pointRadius: 0, pointHoverRadius: 3, tension: 0, fill: "origin", order: 1 });
   }
   charts[canvasId] = new Chart(el, {
     type: "bar",
@@ -2578,43 +2623,6 @@ function renderSewUnitCharts(g, win){
   });
 }
 
-/* Planned hours against available hours, as a percentage per bucket. Days the
-   Capacity sheet does not cover, and holidays written as zero, are left out:
-   a bar of "infinity percent" on a holiday says nothing useful. */
-function renderUtilisation(keys, gran, load, cap){
-  destroyChart("utilChart");
-  var el = document.getElementById("utilChart");
-  var panel = document.getElementById("utilPanel");
-  if(!el || !panel) return;
-  if(!cap){
-    panel.style.display = "none";
-    return;
-  }
-  panel.style.display = "";
-  var pct = [], colours = [];
-  for(var i = 0; i < keys.length; i++){
-    var c = cap[i] || 0;
-    var v = c > 0 ? Math.round(1000 * load[i] / c) / 10 : null;
-    pct.push(v);
-    colours.push(v == null ? "#E5E3DC" : (v > 100 ? "#C7511F" : (v > 90 ? "#F8B000" : "#006040")));
-  }
-  charts.utilChart = new Chart(el, {
-    type: "bar",
-    data: { labels: keys.map(function(k){ return bucketLabel(k, gran); }),
-            datasets: [{ label: "Capacity used", data: pct, backgroundColor: colours, borderWidth: 0 }] },
-    options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false },
-        tooltip: { callbacks: { label: function(c){
-          var i = c.dataIndex;
-          if(pct[i] == null) return "No capacity recorded";
-          return pct[i] + "% · " + fmtInt(load[i]) + " of " + fmtInt(cap[i]) + " hours";
-        } } } },
-      scales: { x: { ticks: { font: MONO, autoSkip: true, maxTicksLimit: gran === "day" ? 14 : 18,
-                              maxRotation: gran === "day" ? 60 : 0 }, grid: { display: false } },
-                y: { ticks: { font: MONO, callback: function(v){ return v + "%"; } }, grid: GRID } } }
-  });
-}
-
 function renderCapacity(){
   var g = granularity;
   var win = capacityWindow();
@@ -2629,17 +2637,10 @@ function renderCapacity(){
   var sewCap = capacitySeries(sew.keys, g, wantKeys);
   stackedChart("sewLoadChart", sew.keys, sew.series, g, "hours", ["#006040", "#F8B000"], sewCap);
 
-  var sewLoadTotals = sew.keys.map(function(_, i){
-    var t = 0;
-    Object.keys(sew.series).forEach(function(n){ t += sew.series[n][i] || 0; });
-    return t;
-  });
   els.sewLoadHint.textContent = CAPACITY.days
     ? ("FR hour across Adjusted sew start to end, locked orders against the rest. The red line is available hours from the Capacity sheet"
        + (wantKeys ? " for the " + wantKeys.length + " unit" + (wantKeys.length > 1 ? "s" : "") + " in this filter." : " for all units."))
     : "FR hour across Adjusted sew start to end, locked orders against the rest.";
-  renderUtilisation(sew.keys, g, sewLoadTotals, sewCap);
-
   renderSewUnitCharts(g, win);
 
   // KPI tiles
@@ -2670,6 +2671,15 @@ function renderCapacity(){
     });
   }
   var fabHours = seriesTotal(fabDaily), sewHours = seriesTotal(sewDaily);
+  /* Averaged over the days that actually carry work. Dividing by every day on
+     the calendar instead would quietly fold Fridays and the Eid shutdown into
+     the figure and make the floor look half empty. */
+  function loadedDays(sr){
+    var v = sr.series.All || [], n = 0;
+    for(var i = 0; i < v.length; i++) if(v[i] > 0) n++;
+    return n;
+  }
+  var fabDays = loadedDays(fabDaily), sewDays = loadedDays(sewDaily);
   var planned = windowed("Adjusted Fabric Start", "Adjusted Fabric End", "InHouse");
   var sewPlanned = windowed("Adjusted sew start", "Adjusted sew end", "FR hour");
   var rangeNote = win ? "in the selected range" : "across the plan";
@@ -2697,8 +2707,12 @@ function renderCapacity(){
 
   var tiles = [
     ["In-house fabric in plan", fmtInt(fabHours), fmtInt(planned.length) + " orders, spread " + rangeNote],
+    ["Avg fabric load per day", fabDays ? fmtInt(fabHours / fabDays) : "0",
+      fabDays ? "kg, over " + fmtInt(fabDays) + " days with load" : "no day carries fabric"],
     ["Peak knitting day", fmtInt(fp.max), fp.at ? fmtDate(fp.at) : ""],
     ["Sewing hours in plan", fmtInt(sewHours), fmtInt(sewPlanned.length) + " orders, spread " + rangeNote],
+    ["Avg sewing load per day", sewDays ? fmtInt(sewHours / sewDays) : "0",
+      sewDays ? "FR hours, over " + fmtInt(sewDays) + " days with load" : "no day carries sewing"],
     ["Peak sewing day", fmtInt(sp.max), sp.at ? fmtDate(sp.at) : ""],
     CAPACITY.days
       ? ["Capacity used", usedPct + "%", fmtInt(capStat.used) + " of " + fmtInt(capStat.avail) + " hours, " + capStat.covered + " days"]
