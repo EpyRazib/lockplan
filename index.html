@@ -1173,6 +1173,13 @@ function bundleFromWorkbooks(ewoBuf, dlvBuf){
    ============================================================ */
 var lastSignature = null, generatedAt = null, pollTimer = null, freshTimer = null, sourceLabel = "";
 var CACHE_KEY = "ewo-dashboard-cache-v1";
+/* Bump this whenever the dashboard starts reading a sheet, or a column, it did
+   not read before. The workbook can be untouched, so its eTag still matches
+   and the stored copy still looks current, while being the wrong SHAPE: parsed
+   by older code that never saw those sheets. Without this, a reader whose
+   browser holds a cached copy sees none of the new charts and no error either,
+   which is indistinguishable from the update not having been uploaded. */
+var CACHE_VERSION = 3;
 var loadInFlight = false;
 
 /* Puts the dashboard back on screen. Every path that finishes a load has to
@@ -1185,10 +1192,16 @@ function showDashboard(){
 }
 
 function readCache(){
-  try{ var raw = localStorage.getItem(CACHE_KEY); return raw ? JSON.parse(raw) : null; }catch(e){ return null; }
+  try{
+    var raw = localStorage.getItem(CACHE_KEY);
+    if(!raw) return null;
+    var c = JSON.parse(raw);
+    if(!c || c.v !== CACHE_VERSION) return null;      // parsed by an older build
+    return c;
+  }catch(e){ return null; }
 }
 function writeCache(sig, bundle){
-  try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ sig: sig, at: new Date().toISOString(), bundle: bundle })); }
+  try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ v: CACHE_VERSION, sig: sig, at: new Date().toISOString(), bundle: bundle })); }
   catch(e){ /* quota exceeded on a small browser profile: fine, we just re-download next time */ }
 }
 
