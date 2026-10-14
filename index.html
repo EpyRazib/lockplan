@@ -678,6 +678,53 @@ var DELIVERY_FILE_PATTERN = cfg("DELIVERY_FILE_PATTERN", "Fabric.*Delivery");
 var POLL_SECONDS = cfg("POLL_SECONDS", 300);
 var SHEET_MAIN = "EWO", SHEET_FABRIC = "Fsum", SHEET_SEW = "Ssum";
 
+/* ============================================================
+   Column names, old and new
+
+   The EWO sheet was relabelled: "Adjusted Fabric Start" is now "Fabric
+   Delivery start", "Adjusted PCD" is now "PCD (Cutting Input)", and so on.
+   Rather than rewrite every chart, every alert and every default column list
+   to chase the new wording, each role keeps one name inside the dashboard and
+   lists the spellings the sheet may use. Whichever one the workbook actually
+   has is wired to that role when the file is read.
+
+   This also means the dashboard keeps working with an older copy of the
+   workbook, which matters while people still have one open.
+   ============================================================ */
+var COLUMN_ALIASES = {
+  "Adjusted Fabric Start":        ["Fabric Delivery start", "Fabric Delivery Start"],
+  "Adjusted Fabric End":          ["Fabric Delivery complete", "Fabric Delivery Complete"],
+  "Adjusted PCD":                 ["PCD (Cutting Input)", "PCD [Cutting Input]", "PCD (Cutting input)", "PCD"],
+  "Trims Accessories Date":       ["Sewing trims inhouse", "Sewing Trims Inhouse"],
+  "PP Sample Fabric Delivery Date": ["PP/TAG Sample fabric Delivery", "PP/TAG Sample Fabric Delivery"],
+  "Yarn InHouse  Start":          ["Yarn In-House Start", "Yarn InHouse Start"],
+  "Yarn InHouse  End":            ["Yarn In-House End", "Yarn InHouse End"]
+};
+
+/* Spacing and capitalisation differ between copies of the workbook, so names
+   are matched on their letters and digits alone. */
+function colKey(h){ return String(h == null ? "" : h).toLowerCase().replace(/[^a-z0-9]+/g, ""); }
+
+/* After IDX holds the sheet's own headers, point each role at whichever
+   spelling turned up, so dat(r, "Adjusted PCD") keeps working. */
+function applyColumnAliases(){
+  var byKey = {};
+  HEADERS.forEach(function(h, i){ if(byKey[colKey(h)] == null) byKey[colKey(h)] = i; });
+  Object.keys(COLUMN_ALIASES).forEach(function(canon){
+    if(IDX[canon] != null) return;                       // the sheet still uses the old name
+    var names = [canon].concat(COLUMN_ALIASES[canon]);
+    for(var i = 0; i < names.length; i++){
+      var at = byKey[colKey(names[i])];
+      if(at != null){ IDX[canon] = at; return; }
+    }
+  });
+}
+
+/* The sheet's own label for a role, for anything shown to the reader. */
+function headerFor(canon){
+  return (IDX[canon] != null && HEADERS[IDX[canon]]) ? HEADERS[IDX[canon]] : canon;
+}
+
 var ID_COLUMNS = ["EWO"];
 var AVERAGE_COLUMNS = ["fab st to pcd", "fab dur", "sew dur", "pcd to sew st", "Per Day InHouse"];
 var FILTER_DIMENSIONS = ["Status", "Latest note", "Execution Unit", "Team", "Buyer", "Dept"];
@@ -737,6 +784,7 @@ var HEADERS = [], COLTYPE = {}, COLEMPTY = {}, IDX = {};
 var ROWS = [], FSUM = [], SSUM = [];
 var DELIV = [], DIDX = {}, LOCK = [], LIDX = {}, RFDROWS = [], LOCKMETA = {};
 var OTT = { events: [], pass: 0, fail: 0, checks: 0 };
+var HEADER_BY_KEY = {};
 var asOf = null;
 var visibleCols = [], filtered = [], baseFiltered = [];
 var activeAlert = null, activeTab = "overview", granularity = "day";
@@ -1440,6 +1488,9 @@ function ingest(bundle){
   });
   IDX = {};
   HEADERS.forEach(function(h, i){ if(IDX[h] == null) IDX[h] = i; });
+  HEADER_BY_KEY = {};
+  HEADERS.forEach(function(h, i){ if(HEADER_BY_KEY[colKey(h)] == null) HEADER_BY_KEY[colKey(h)] = i; });
+  applyColumnAliases();
 
   var idIdx = IDX["EWO"];
   ROWS = rows.slice(headerIdx + 1).filter(function(r){
@@ -1616,7 +1667,83 @@ function ottVerdict(v){
   return null;
 }
 
+/* The OTT sheet carries the ACTUAL date each milestone happened, pulled from
+   the ERP. The EWO sheet carries the PLANNED date for the same milestones,
+   under the same column names. Pass or fail is therefore not written down
+   anywhere: it is the comparison between the two.
+
+     actual on or before plan   pass
+     actual after plan          fail
+     either one missing         no verdict, and the event is not counted
+
+   Events are whatever column names the two sheets have in common, so adding a
+   milestone to both sheets is enough to make it appear in the charts. A column
+   named "Actual PCD" still matches a planned "PCD": the word is ignored. */
+function eventKey(h){ return colKey(String(h == null ? "" : h).replace(/actual/ig, "")); }
+
+function buildOttFromActuals(grid){
+  if(!ROWS.length) return null;
+  var header = (grid[0] || []).map(function(h){ return h == null ? "" : String(h).trim(); });
+  var body = grid.slice(1);
+
+  var keyCol = -1;
+  for(var i = 0; i < header.length; i++){ if(colKey(header[i]) === "ewo"){ keyCol = i; break; } }
+  if(keyCol === -1) return null;
+
+  var events = [];
+  header.forEach(function(h, c){
+    if(c === keyCol || !h) return;
+    var at = HEADER_BY_KEY[eventKey(h)];
+    if(at == null) return;
+    events.push({ name: h, col: c, planIdx: at });
+  });
+  if(!events.length) return null;
+
+  var planByEwo = {};
+  ROWS.forEach(function(r){ planByEwo[String(num(r, "EWO"))] = r; });
+
+  var out = { events: [], pass: 0, fail: 0, checks: 0, shape: "actual-vs-plan",
+              rows: body.length, headers: [], samples: [], matched: 0, unmatched: 0 };
+  var tally = {};
+  events.forEach(function(e){ tally[e.name] = { pass: 0, fail: 0 }; });
+
+  body.forEach(function(row){
+    var key = row[keyCol];
+    if(key == null || key === "") return;
+    var plan = planByEwo[String(toNum(key) != null ? toNum(key) : String(key).trim())];
+    if(!plan){ out.unmatched++; return; }
+    out.matched++;
+    events.forEach(function(e){
+      var actual = parseDate(row[e.col]);
+      var planned = parseDate(plan[e.planIdx]);
+      if(actual == null || planned == null) return;     // nothing to compare
+      var v = actual <= planned ? "pass" : "fail";
+      tally[e.name][v]++;
+      out[v]++; out.checks++;
+    });
+  });
+
+  out.events = events.map(function(e){
+    var t = tally[e.name], n = t.pass + t.fail;
+    return { name: e.name, pass: t.pass, fail: t.fail, total: n,
+             passPct: n ? Math.round(1000 * t.pass / n) / 10 : 0 };
+  }).filter(function(e){ return e.total > 0; });
+
+  return out.checks > 0 ? out : null;
+}
+
 function buildOtt(grid){
+  /* Dates against dates is how this workbook works now. The older sheets wrote
+     the words "Pass" and "Fail" into the cells, and those still read correctly,
+     so a file of either kind opens. */
+  if(grid && grid.length > 1){
+    var fromDates = buildOttFromActuals(grid);
+    if(fromDates) return fromDates;
+  }
+  return buildOttFromWords(grid);
+}
+
+function buildOttFromWords(grid){
   var out = { events: [], pass: 0, fail: 0, checks: 0, shape: "none",
               rows: 0, headers: [], samples: [] };
   if(!grid || grid.length < 2) return out;
@@ -2208,10 +2335,13 @@ function renderOtt(){
       why = "<strong>The <code>" + esc(OTT.sheet) + "</code> sheet was read but has no rows under its header.</strong>";
     }else{
       why = "<strong>The <code>" + esc(OTT.sheet) + "</code> sheet has " + fmtInt(OTT.rows)
-          + " rows, but no cell in it reads as pass or fail.</strong>"
-          + (OTT.headers.length ? "<br/>Columns found: " + OTT.headers.map(esc).join(", ") + "." : "")
-          + (OTT.samples.length ? "<br/>Values found: " + OTT.samples.map(esc).join(", ") + "." : "")
-          + "<br/>Send these to whoever maintains the dashboard and the words will be added.";
+          + " rows, but nothing in it could be judged.</strong>"
+          + "<br/>Pass and fail are worked out by comparing each actual date in this sheet with the"
+          + " planned date for the same milestone in the EWO sheet. For that the sheet needs an"
+          + " <code>EWO</code> column, and milestone columns named as they are in the EWO sheet"
+          + " (<code>PCD [Cutting Input]</code>, <code>Fabric Delivery complete</code>, and so on)."
+          + (OTT.headers.length ? "<br/>Columns found here: " + OTT.headers.map(esc).join(", ") + "." : "")
+          + (OTT.samples.length ? "<br/>Values found: " + OTT.samples.map(esc).join(", ") + "." : "");
     }
     els.ottMissing.innerHTML = why;
     els.ottEventHint.textContent = "Waiting for pass or fail results";
@@ -2219,9 +2349,13 @@ function renderOtt(){
     return;
   }
   var evs = OTT.events.slice().sort(function(a, b){ return b.total - a.total; });
-  els.ottEventHint.textContent = "Pass rate per event, " + fmtInt(OTT.checks) + " checks across "
-    + evs.length + " events";
-  els.ottTotalHint.textContent = "Every event check counted once";
+  els.ottEventHint.textContent = OTT.shape === "actual-vs-plan"
+    ? "Actual against planned date, " + fmtInt(OTT.checks) + " checks across " + evs.length
+      + " milestones, " + fmtInt(OTT.matched) + " orders"
+    : "Pass rate per event, " + fmtInt(OTT.checks) + " checks across " + evs.length + " events";
+  els.ottTotalHint.textContent = OTT.shape === "actual-vs-plan"
+    ? "On or before the planned date counts as a pass"
+    : "Every event check counted once";
 
   var el = document.getElementById("ottEventChart");
   if(el){
@@ -2465,8 +2599,10 @@ function renderPivot(){
 /* ---------- detail table ---------- */
 function buildColumnChooser(){
   var previous = visibleCols.slice();
+  var wanted = {};
+  DEFAULT_TABLE_COLUMNS.forEach(function(c){ wanted[colKey(headerFor(c))] = true; });
   visibleCols = HEADERS.filter(function(h){
-    return !COLEMPTY[h] && (previous.length ? previous.indexOf(h) !== -1 : DEFAULT_TABLE_COLUMNS.indexOf(h) !== -1);
+    return !COLEMPTY[h] && (previous.length ? previous.indexOf(h) !== -1 : wanted[colKey(h)] === true);
   });
   if(visibleCols.length === 0){
     visibleCols = HEADERS.filter(function(h){ return !COLEMPTY[h]; }).slice(0, 12);
