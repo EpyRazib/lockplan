@@ -2569,7 +2569,19 @@ function renderOttTab(){
   // Where the actual dates came from, and anything that could not be paired.
   var notes = [];
   if(tnaError) notes.push("<strong>The ERP report could not be read.</strong> " + esc(tnaError));
-  else if(!ERP_TNA_URL) notes.push("<strong>No ERP report is configured.</strong> Put the report address in <code>ERP_TNA_URL</code> in <code>config.js</code>.");
+  else if(!ERP_TNA_URL){
+    /* Say which of the two things went wrong. config.js missing altogether is
+       a different problem from config.js being an older copy that predates
+       this setting, and the fix is different too. */
+    var hasCfg = (typeof window !== "undefined") && !!window.EWO_CONFIG;
+    notes.push("<strong>No ERP report is configured, so there is nothing to show here.</strong><br/>"
+      + (hasCfg
+          ? "The <code>config.js</code> being served has no <code>ERP_TNA_URL</code> in it. It is an older copy: "
+            + "open <code>config.js</code> in a browser tab to see which version the site has."
+          : "<code>config.js</code> did not load at all.")
+      + "<br/>Add <code>ERP_TNA_URL</code> to the <code>config.js</code> already in the repository rather than "
+      + "replacing the file, so the settings in it, <code>CLIENT_ID</code> above all, are not lost.");
+  }
   else notes.push("The calendar is read when the page opens and when you press <strong>Refresh</strong>, not on the five minute check, because the report is large.");
   if(TNA_IGNORED_EVENTS.length){
     if(erpEventWhitelisted()){
