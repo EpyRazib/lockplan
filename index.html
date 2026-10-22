@@ -447,12 +447,12 @@
       <div class="grid2">
         <div class="panel">
           <h3>Fabric flow by month</h3>
-          <div class="hint">Straight from the Fsum sheet, so filters do not change it</div>
+          <div class="hint" id="fabricChartHint">Straight from the Fsum sheet, so filters do not change it</div>
           <div class="chart-box"><canvas id="fabricChart"></canvas></div>
         </div>
         <div class="panel">
           <h3>Sewing hours by month</h3>
-          <div class="hint">Straight from the Ssum sheet, so filters do not change it</div>
+          <div class="hint" id="sewChartHint">Straight from the Ssum sheet, so filters do not change it</div>
           <div class="chart-box"><canvas id="sewChart"></canvas></div>
         </div>
       </div>
@@ -461,11 +461,11 @@
     <!-- ============ CAPACITY ============ -->
     <div class="tabpage" id="page-capacity">
       <div class="kpis eight" id="capKpis"></div>
-      <div class="granbar"><span class="granhint">Each order's quantity is spread evenly across its planned window, exactly as the fab and Sew sheets do. Filters and the Day / Week / Month switch apply.</span></div>
+      <div class="granbar"><span class="granhint">Each order's quantity is spread evenly across its planned window, the same arithmetic the fab and Sew sheets used. Filters and the Day / Week / Month switch apply.</span></div>
       <div class="grid1">
         <div class="panel">
           <h3 data-grantitle2="In-house fabric load per {g}">In-house fabric load per day</h3>
-          <div class="hint">Textile mill knitting load: InHouse kg across Adjusted Fabric Start to End, as the fab sheet builds it</div>
+          <div class="hint" id="fabLoadHint">Textile mill knitting load: InHouse kg spread across the fabric window</div>
           <div class="chart-box wide"><canvas id="fabLoadChart"></canvas></div>
         </div>
         <div class="panel">
@@ -801,6 +801,7 @@ var els = {};
  "signInBtn","signInBtn2","signOutBtn","accountLabel","signinBox","spinner","loadingTitle","loadingText",
  "errorBox","filterGrid","searchInput","dateFieldWrap","dateFrom","dateTo","resetBtn",
  "zoomBack","zoomClose","zoomTitle","zoomHint","zoomBody","liveWrap",
+ "fabricChartHint","sewChartHint","fabLoadHint",
  "granSwitch","granHint","sewUnitGrid","sewUnitHint","ottMissing","ottEventHint","ottTotalHint","sewLoadHint",
  "filterSummary","activeChips","kpiRow","alertRow","attnTable","attnTableTitle","attnTableHint",
  "pivotTable","dataTable","groupBy","colChooser","prevPage","nextPage","pageInfo","pageSize",
@@ -1541,56 +1542,106 @@ function ingest(bundle){
    Unit names are matched to the EWO sheet's Execution Unit loosely, because
    the two sheets disagree on case ("ESL Extension" against "ESL EXTENSION").
    ============================================================ */
-var CAPACITY = { byDay: {}, units: [], unitKeys: {}, days: 0, from: null, to: null };
+var CAPACITY = { byDay: {}, units: [], unitKeys: {}, days: 0, from: null, to: null,
+                 fabricByDay: {}, fabricDays: 0, fabricLabel: "" };
 
 function unitKey(name){ return String(name == null ? "" : name).replace(/\s+/g, " ").trim().toUpperCase(); }
 
+/* The sheet holds more than one table side by side: sewing hours per unit
+   against one date column, and textile fabric capacity in kg against another.
+   Rather than count columns, each date column is treated as the start of a
+   block and the numeric columns after it belong to that block. A date column
+   with nothing numeric behind it, such as a Month label, is ignored. */
+function capacityBlocks(header, body){
+  var sample = Math.min(body.length, 80);
+  var isDate = [], isNum = [];
+  for(var c = 0; c < header.length; c++){
+    var dates = 0, nums = 0;
+    for(var i = 0; i < sample; i++){
+      var v = body[i][c];
+      if(v == null || v === "") continue;
+      if(parseDate(v) != null) dates++;
+      else if(toNum(v) != null) nums++;
+    }
+    // A date written as a number would be ambiguous; dates win when both fit.
+    isDate[c] = dates >= Math.max(3, Math.round(sample * 0.2));
+    isNum[c] = !isDate[c] && nums >= Math.max(3, Math.round(sample * 0.2));
+  }
+
+  var dateCols = [];
+  for(var c2 = 0; c2 < header.length; c2++) if(isDate[c2]) dateCols.push(c2);
+
+  var blocks = [];
+  dateCols.forEach(function(dc, di){
+    var stop = di + 1 < dateCols.length ? dateCols[di + 1] : header.length;
+    var cols = [], totalCol = -1;
+    for(var c3 = dc + 1; c3 < stop; c3++){
+      if(!isNum[c3]) continue;
+      var low = normName(header[c3]);
+      if(low.indexOf("remark") !== -1 || low.indexOf("note") !== -1) continue;
+      if(low === "total"){ totalCol = c3; continue; }
+      cols.push({ name: String(header[c3] || "").trim() || ("Column " + (c3 + 1)), col: c3 });
+    }
+    if(!cols.length && totalCol === -1) return;            // a label column, not a table
+    blocks.push({ dateCol: dc, cols: cols, totalCol: totalCol });
+  });
+  return blocks;
+}
+
 function buildCapacity(grid){
-  var out = { byDay: {}, units: [], unitKeys: {}, days: 0, from: null, to: null };
+  var out = { byDay: {}, units: [], unitKeys: {}, days: 0, from: null, to: null,
+              fabricByDay: {}, fabricDays: 0, fabricLabel: "" };
   if(!grid || grid.length < 2) return out;
   var header = (grid[0] || []).map(function(h){ return h == null ? "" : String(h).trim(); });
   var body = grid.slice(1);
 
-  // The date column is whichever one actually holds dates, not whichever one
-  // is named like it: the header there reads "Capacity / Date" in one file and
-  // may read something else in the next.
-  var dateCol = -1, best = 0;
-  for(var c = 0; c < header.length; c++){
-    var hits = 0;
-    for(var i = 0; i < Math.min(body.length, 60); i++) if(parseDate(body[i][c]) != null) hits++;
-    if(hits > best){ best = hits; dateCol = c; }
-  }
-  if(dateCol === -1) return out;
+  var blocks = capacityBlocks(header, body);
+  if(!blocks.length) return out;
 
-  var totalCol = -1, cols = [];
-  header.forEach(function(h, c){
-    if(c === dateCol || !h) return;
-    var low = normName(h);
-    if(low === "day" || low.indexOf("remark") !== -1 || low.indexOf("note") !== -1) return;
-    if(low === "total"){ totalCol = c; return; }
-    cols.push({ name: h, key: unitKey(h), col: c });
+  /* The sewing table is the one split across several units, or the one with a
+     Total. Whatever single-column table is left is the fabric capacity. */
+  var sewBlock = null, fabBlock = null;
+  blocks.forEach(function(b){
+    if(!sewBlock && (b.totalCol !== -1 || b.cols.length >= 2)){ sewBlock = b; return; }
+    if(!fabBlock) fabBlock = b;
   });
+  if(!sewBlock && fabBlock && fabBlock.cols.length >= 2){ sewBlock = fabBlock; fabBlock = null; }
 
-  body.forEach(function(r){
-    var d = parseDate(r[dateCol]);
-    if(d == null) return;
-    var units = {}, sum = 0, any = false;
-    cols.forEach(function(u){
-      var v = toNum(r[u.col]);
-      if(v == null) return;
-      units[u.key] = (units[u.key] || 0) + v;
-      sum += v; any = true;
+  if(sewBlock){
+    body.forEach(function(r){
+      var d = parseDate(r[sewBlock.dateCol]);
+      if(d == null) return;
+      var units = {}, sum = 0, any = false;
+      sewBlock.cols.forEach(function(u){
+        var v = toNum(r[u.col]);
+        if(v == null) return;
+        var k = unitKey(u.name);
+        units[k] = (units[k] || 0) + v;
+        sum += v; any = true;
+      });
+      var tot = sewBlock.totalCol === -1 ? null : toNum(r[sewBlock.totalCol]);
+      if(!any && tot == null) return;
+      out.byDay[d] = { total: tot == null ? sum : tot, units: units };
+      out.days++;
+      if(out.from == null || d < out.from) out.from = d;
+      if(out.to == null || d > out.to) out.to = d;
     });
-    var tot = totalCol === -1 ? null : toNum(r[totalCol]);
-    if(!any && tot == null) return;
-    out.byDay[d] = { total: tot == null ? sum : tot, units: units };
-    out.days++;
-    if(out.from == null || d < out.from) out.from = d;
-    if(out.to == null || d > out.to) out.to = d;
-  });
+    out.units = sewBlock.cols.map(function(u){ return u.name; });
+    sewBlock.cols.forEach(function(u){ out.unitKeys[unitKey(u.name)] = u.name; });
+  }
 
-  out.units = cols.map(function(u){ return u.name; });
-  cols.forEach(function(u){ out.unitKeys[u.key] = u.name; });
+  if(fabBlock){
+    var fcol = fabBlock.cols.length ? fabBlock.cols[0] : { name: "Capacity", col: fabBlock.totalCol };
+    out.fabricLabel = fcol.name;
+    body.forEach(function(r){
+      var d = parseDate(r[fabBlock.dateCol]);
+      if(d == null) return;
+      var v = toNum(r[fcol.col]);
+      if(v == null) return;
+      out.fabricByDay[d] = (out.fabricByDay[d] || 0) + v;
+      out.fabricDays++;
+    });
+  }
   return out;
 }
 
@@ -1622,6 +1673,21 @@ function capacitySeries(keys, gran, unitKeysWanted){
     var v = capacityOnDay(ms, unitKeysWanted);
     if(v == null) return;
     out[i] += v; seen = true;
+  });
+  return seen ? out : null;
+}
+
+/* Textile knitting capacity per bucket, in kg. There is one figure for the
+   whole mill, not one per garment unit, so a unit filter does not change it. */
+function fabricCapacitySeries(keys, gran){
+  if(!keys.length || !CAPACITY.fabricDays) return null;
+  var out = keys.map(function(){ return 0; });
+  var pos = {}; keys.forEach(function(k, i){ pos[k] = i; });
+  var seen = false;
+  Object.keys(CAPACITY.fabricByDay).forEach(function(msStr){
+    var i = pos[bucketKey(Number(msStr), gran)];
+    if(i == null) return;
+    out[i] += CAPACITY.fabricByDay[msStr]; seen = true;
   });
   return seen ? out : null;
 }
@@ -2500,9 +2566,23 @@ function renderMonthCharts(){
   });
 }
 
+/* The same monthly totals the fab and Sew sheets held, rebuilt from the EWO
+   rows. Those sheets spread each order's quantity evenly across its planned
+   window and then add the days up by month, which is exactly what this does,
+   so the figures match whether the sheets are in the workbook or not. Every
+   order is counted, not just the filtered ones, to keep these two charts the
+   whole-workbook view they have always been. */
+function monthlyFromEwo(startCol, endCol, qtyCol){
+  var sr = spreadSeries(ROWS, startCol, endCol, qtyCol, "month", null, null);
+  return { labels: sr.keys.map(function(k){ return bucketLabel(k, "month"); }),
+           values: sr.series.All || [] };
+}
+
 function renderWorkbookMonthly(){
-  [["fabricChart", FSUM, "Fabric qty", "#F8B000", "rgba(248,176,0,0.14)"],
-   ["sewChart", SSUM, "Sewing hours", "#006040", "rgba(0,96,64,0.10)"]].forEach(function(spec){
+  [["fabricChart", FSUM, "Fabric qty", "#F8B000", "rgba(248,176,0,0.14)",
+    "fabricChartHint", "Adjusted Fabric Start", "Adjusted Fabric End", "InHouse", "Fsum"],
+   ["sewChart", SSUM, "Sewing hours", "#006040", "rgba(0,96,64,0.10)",
+    "sewChartHint", "Adjusted sew start", "Adjusted sew end", "FR hour", "Ssum"]].forEach(function(spec){
     destroyChart(spec[0]);
     var rows = spec[1] || [];
     var monthRe = /^[A-Za-z]+\s?\d{2}$/;
@@ -2515,7 +2595,17 @@ function renderWorkbookMonthly(){
         seen.set(m.trim(), v);
       }
     });
-    if(seen.size === 0) return;
+    var hintEl = els[spec[5]];
+    if(seen.size === 0){
+      // No usable summary sheet: work it out from the orders instead.
+      var built = monthlyFromEwo(spec[6], spec[7], spec[8]);
+      if(hintEl) hintEl.textContent = "Built from the EWO sheet, every order spread across its planned window. "
+        + "The " + spec[9] + " sheet is not in the workbook.";
+      if(!built.labels.length) return;
+      lineChart(spec[0], built, spec[2], spec[3], spec[4]);
+      return;
+    }
+    if(hintEl) hintEl.textContent = "Straight from the " + spec[9] + " sheet, so filters do not change it";
     lineChart(spec[0], { labels: Array.from(seen.keys()), values: Array.from(seen.values()) },
               spec[2], spec[3], spec[4]);
   });
@@ -2870,7 +2960,12 @@ function renderCapacity(){
   var sewRows = rowsInWindow(filtered, "Adjusted sew start", "Adjusted sew end", win);
   var fab = spreadSeries(fabRows, "Adjusted Fabric Start", "Adjusted Fabric End", "InHouse", g, lockedSplit, win);
   var sew = spreadSeries(sewRows, "Adjusted sew start", "Adjusted sew end", "FR hour", g, lockedSplit, win);
-  stackedChart("fabLoadChart", fab.keys, fab.series, g, "kg", ["#006040", "#F8B000"]);
+  var fabCap = fabricCapacitySeries(fab.keys, g);
+  stackedChart("fabLoadChart", fab.keys, fab.series, g, "kg", ["#006040", "#F8B000"], fabCap);
+  els.fabLoadHint.textContent = CAPACITY.fabricDays
+    ? "InHouse kg spread across the fabric window. The blue band is the textile knitting capacity from the Capacity sheet"
+      + (CAPACITY.fabricLabel ? " (" + CAPACITY.fabricLabel + ")" : "") + ", which is the whole mill and so does not change with a unit filter."
+    : "Textile mill knitting load: InHouse kg spread across the fabric window.";
 
   var wantKeys = wantedUnitKeys(sewRows);
   var sewCap = capacitySeries(sew.keys, g, wantKeys);
