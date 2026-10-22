@@ -9,7 +9,7 @@ window.EWO_CONFIG = {
 
   /* Azure portal > App registrations > "Dashboard" > Overview >
      Application (client) ID. Required. */
-  CLIENT_ID: "",
+  CLIENT_ID: "f52fc87b-2ce5-404d-aab3-acb90675308c",
 
   /* Epyllion Group's Directory (tenant) ID. Only Epyllion accounts can sign in. */
   TENANT_ID: "09438fa4-a67e-4666-a9c2-fcc1c2252472",
@@ -63,17 +63,10 @@ window.EWO_CONFIG = {
      from,to in MM/DD/YYYY with the slashes written %2F. Narrowing it is the
      quickest way to make the report answer faster.
      ---------------------------------------------------------- */
-  ERP_TNA_URL: "https://texerp.epylliongroup.com/api/reports/generic-report"
+ ERP_TNA_URL: "https://texerp.epylliongroup.com/api/reports/generic-report"
              + "?token=c2208612-f67b-40a8-ae8b-4b27d028fb94"
              + "&reportName=TNACalenderByDate"
              + "&values=01%2F01%2F2026%2C12%2F31%2F2027",
-
-  /* How long to wait for that report. Measured on this endpoint:
-        01/01/2026 to 12/31/2027   about 107 MB, over 3 minutes
-        10/01/2026 to 12/31/2026   about  22 MB, about 39 seconds
-     The whole factory is in the answer, every order and every event, and the
-     dashboard throws away everything outside the EWO sheet as it reads. A
-     shorter range is the one lever that makes it quick. */
   ERP_TIMEOUT_SECONDS: 300,
 
   /* The events the OTT tab follows, and which EWO sheet column holds the plan
