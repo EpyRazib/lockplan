@@ -242,6 +242,12 @@
   .tabpage.on{display:block;}
   /* Any panel or card opens full screen on a click, and closes on the
      backdrop, the button, or Escape. */
+  .pill{display:inline-block;padding:1px 7px;border-radius:9px;font-size:10.5px;white-space:nowrap;}
+  .pill.pass{background:var(--green-soft);color:var(--green);}
+  .pill.fail{background:#FBE4DC;color:#A33F14;}
+  .pill.overdue{background:#FBE4DC;color:#A33F14;font-weight:600;}
+  .pill.pending{background:var(--gold-soft);color:#8A6D1F;}
+  .pill.na{background:#F0EEE7;color:var(--ink-soft);}
   .zoomable{cursor:zoom-in;}
   .zoom-back{position:fixed;inset:0;background:rgba(26,26,26,0.55);z-index:2000;
              display:none;align-items:center;justify-content:center;padding:28px;}
@@ -301,6 +307,7 @@
   <button class="tab" data-tab="attention">Needs attention <span class="count" id="attnCount">0</span></button>
   <button class="tab" data-tab="timeline">Timeline</button>
   <button class="tab" data-tab="capacity">Capacity</button>
+  <button class="tab" data-tab="ott">OTT</button>
   <button class="tab" data-tab="delivery">Fabric delivery</button>
   <button class="tab" data-tab="summary">Summary</button>
   <button class="tab" data-tab="orders">Orders</button>
@@ -477,6 +484,36 @@
       <h3 class="section-head">Sewing load by unit</h3>
       <div class="section-hint" id="sewUnitHint">One chart per Execution Unit, same spread and same window.</div>
       <div class="grid3" id="sewUnitGrid"></div>
+    </div>
+
+    <!-- ============ OTT ============ -->
+    <div class="tabpage" id="page-ott">
+      <div class="kpis six" id="ottKpis"></div>
+      <div id="ottSourceNote" class="empty-note" style="display:none;"></div>
+      <div class="granbar">
+        <span class="granlabel">Event</span>
+        <select id="ottEventFilter"><option value="">All events</option></select>
+        <span class="granlabel">Status</span>
+        <select id="ottStatusFilter">
+          <option value="">All</option>
+          <option value="Pass">Pass</option>
+          <option value="Fail">Fail</option>
+          <option value="Overdue">Overdue</option>
+          <option value="Pending">Pending</option>
+          <option value="N/A">N/A</option>
+        </select>
+        <span class="granhint" id="ottTableHint"></span>
+      </div>
+      <div class="panel">
+        <h3>Event by event</h3>
+        <div class="hint">Every order on screen against every event the ERP reports. Plan comes from the EWO sheet, Complete from the ERP.</div>
+        <div class="table-wrap"><table id="ottTable"></table></div>
+        <div class="pager">
+          <button class="secondary tiny" id="ottPrev">Previous</button>
+          <span id="ottPageInfo"></span>
+          <button class="secondary tiny" id="ottNext">Next</button>
+        </div>
+      </div>
     </div>
 
     <!-- ============ DELIVERY ============ -->
@@ -676,6 +713,12 @@ var DELIVERY_FILE_PATH = cfg("DELIVERY_FILE_PATH", "");
 var EWO_FILE_PATTERN = cfg("EWO_FILE_PATTERN", "EWO.*Life.*Cycle");
 var DELIVERY_FILE_PATTERN = cfg("DELIVERY_FILE_PATTERN", "Fabric.*Delivery");
 var POLL_SECONDS = cfg("POLL_SECONDS", 300);
+/* The ERP's TNA calendar: one record per order per event, carrying the date it
+   was actually completed. Blank means the dashboard falls back to an OTT sheet
+   in the workbook, if there is one. */
+var ERP_TNA_URL = cfg("ERP_TNA_URL", "");
+var ERP_EVENT_ALIASES = cfg("ERP_EVENT_ALIASES", {});
+var ERP_TIMEOUT_SECONDS = cfg("ERP_TIMEOUT_SECONDS", 300);
 var SHEET_MAIN = "EWO", SHEET_FABRIC = "Fsum", SHEET_SEW = "Ssum";
 
 /* ============================================================
@@ -785,6 +828,10 @@ var ROWS = [], FSUM = [], SSUM = [];
 var DELIV = [], DIDX = {}, LOCK = [], LIDX = {}, RFDROWS = [], LOCKMETA = {};
 var OTT = { events: [], pass: 0, fail: 0, checks: 0 };
 var HEADER_BY_KEY = {};
+/* Rows the ERP returned, the signature of that answer so an unchanged reply
+   costs nothing, and the per-order per-event lines the OTT tab draws. */
+var TNA = [], tnaSig = null, tnaError = null, tnaAt = null, OTTLINES = [], ottPage = 0;
+var cachedOttGrid = [], cachedOttSheet = null, cachedSheetNames = [];
 var asOf = null;
 var visibleCols = [], filtered = [], baseFiltered = [];
 var activeAlert = null, activeTab = "overview", granularity = "day";
@@ -802,6 +849,8 @@ var els = {};
  "errorBox","filterGrid","searchInput","dateFieldWrap","dateFrom","dateTo","resetBtn",
  "zoomBack","zoomClose","zoomTitle","zoomHint","zoomBody","liveWrap",
  "fabricChartHint","sewChartHint","fabLoadHint",
+ "ottKpis","ottSourceNote","ottEventFilter","ottStatusFilter","ottTableHint","ottTable",
+ "ottPrev","ottNext","ottPageInfo",
  "granSwitch","granHint","sewUnitGrid","sewUnitHint","ottMissing","ottEventHint","ottTotalHint","sewLoadHint",
  "filterSummary","activeChips","kpiRow","alertRow","attnTable","attnTableTitle","attnTableHint",
  "pivotTable","dataTable","groupBy","colChooser","prevPage","nextPage","pageInfo","pageSize",
@@ -1402,11 +1451,15 @@ async function load(opts){
     var found = await locateWorkbooks(token);
     var sig = found.ewo.eTag + "|" + (found.delivery ? found.delivery.eTag : "-");
 
+    /* The ERP calendar moves on its own schedule, so it is checked every time,
+       not only when the workbook changes. A failure here is reported on the OTT
+       tab and nowhere else: the rest of the dashboard does not depend on it. */
     if(sig === lastSignature && ROWS.length){
       setStatus(opts.quiet ? "Up to date" : "Checked, the files have not changed", "live");
       showDashboard();
       clearError();
       paintFreshness();
+      if(await refreshTna(opts)) renderAll();   // same workbook, newer ERP answer
       return true;
     }
 
@@ -1435,6 +1488,9 @@ async function load(opts){
     var isUpdate = lastSignature !== null;
     lastSignature = sig;
     ingest(bundle);
+    /* After ingest, so the orders are known and the report can be cut down to
+       them as it is read. */
+    if(await refreshTna(opts)) renderAll();
     sourceLabel = found.ewo.name + (found.delivery ? " + " + found.delivery.name : "");
     showDashboard();
     clearError();
@@ -1513,9 +1569,12 @@ function ingest(bundle){
   RFDROWS = rt.rows;
   RFDROWS.idxKg = rt.idx["Kg"] != null ? rt.idx["Kg"] : 0;
   LOCKMETA = bundle.LockMeta || {};
-  OTT = buildOtt(bundle.ActualEv);
-  OTT.sheet = bundle.OttSheet || null;
-  OTT.sheetNames = bundle.SheetNames || [];
+  cachedOttGrid = bundle.ActualEv || [];
+  cachedOttSheet = bundle.OttSheet || null;
+  cachedSheetNames = bundle.SheetNames || [];
+  OTT = buildOtt(cachedOttGrid);
+  OTT.sheet = cachedOttSheet;
+  OTT.sheetNames = cachedSheetNames;
   CAPACITY = buildCapacity(bundle.Capacity);
   buildDeliveredIndex();
   if(asOf == null){
@@ -1733,6 +1792,203 @@ function ottVerdict(v){
   return null;
 }
 
+/* ============================================================
+   The ERP's TNA calendar
+
+   One record per order per event: EWONo, EventDescription, EventDate,
+   CompleteDate, RevisionDate, ResponsibleDepertment. The dashboard reads it
+   straight from the report endpoint, so the actual dates are as current as the
+   ERP is, with no export step in between.
+   ============================================================ */
+async function fetchTna(){
+  if(!ERP_TNA_URL) return null;
+  var res = await fetchWithTimeout(ERP_TNA_URL, { headers: { "Accept": "application/json" } },
+                                   ERP_TIMEOUT_SECONDS * 1000, "The ERP report");
+  if(!res.ok){
+    var body = "";
+    try{
+      // An error page is usually HTML; only the words in it are worth showing.
+      body = (await res.text()).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 160);
+    }catch(e){}
+    throw new Error("The ERP report answered " + res.status + (body ? ". " + body : ""));
+  }
+  var data = await res.json();
+  if(!Array.isArray(data)) throw new Error("The ERP report did not return a list of records.");
+  return data;
+}
+
+/* The report is for the whole factory: around a quarter of a million records
+   covering every order and fifty odd events, most of which this dashboard has
+   no plan date for. Holding all of that as JavaScript objects would cost more
+   memory than the browser can spare, so it is cut down to the orders on the
+   EWO sheet and the events that have a plan column, and only the fields used,
+   the moment it arrives. The discarded names are remembered so the OTT tab can
+   say what it ignored. */
+var TNA_IGNORED_EVENTS = [];
+
+function trimTna(raw){
+  TNA_IGNORED_EVENTS = [];
+  if(!raw || !raw.length || !ROWS.length) return [];
+  var keep = {};
+  ROWS.forEach(function(r){ keep[String(num(r, "EWO"))] = true; });
+  var known = {}, ignored = {}, out = [];
+  for(var i = 0; i < raw.length; i++){
+    var rec = raw[i];
+    var ewo = String(rec.EWONo == null ? "" : rec.EWONo).trim();
+    if(!keep[ewo]) continue;
+    var ev = String(rec.EventDescription == null ? "" : rec.EventDescription).trim();
+    if(!ev) continue;
+    if(known[ev] === undefined){
+      known[ev] = planColumnForEvent(ev) != null;
+      if(!known[ev]) ignored[ev] = true;
+    }
+    if(!known[ev]) continue;
+    out.push({
+      EWONo: ewo, EventDescription: ev,
+      EventDate: rec.EventDate, CompleteDate: rec.CompleteDate, RevisionDate: rec.RevisionDate,
+      ResponsibleDepertment: rec.ResponsibleDepertment,
+      OTTStatus: rec.OTTStatus, ErpStatus: rec.Status
+    });
+  }
+  TNA_IGNORED_EVENTS = Object.keys(ignored).sort();
+  return out;
+}
+
+/* Enough of the answer to tell whether it changed, without keeping two copies
+   of it in memory to compare. */
+function tnaSignature(rows){
+  if(!rows) return "none";
+  var n = rows.length, acc = 0;
+  for(var i = 0; i < n; i++){
+    var r = rows[i];
+    var t = String(r.CompleteDate || "") + "|" + String(r.RevisionDate || "");
+    for(var c = 0; c < t.length; c++) acc = (acc * 31 + t.charCodeAt(c)) % 2147483647;
+  }
+  return n + ":" + acc;
+}
+
+/* Which EWO sheet column holds the plan date for an ERP event.
+
+   When config.js lists events in ERP_EVENT_ALIASES, that list decides both
+   which events are followed and what each one is measured against: the report
+   carries 53 event types per order and only a handful are the planning
+   department's milestones. With no list, names are paired automatically,
+   ignoring spacing, case and punctuation. */
+function erpEventWhitelisted(){
+  for(var k in ERP_EVENT_ALIASES) if(Object.prototype.hasOwnProperty.call(ERP_EVENT_ALIASES, k)) return true;
+  return false;
+}
+
+function planColumnForEvent(name){
+  var viaConfig = ERP_EVENT_ALIASES[name];
+  if(viaConfig == null && erpEventWhitelisted()){
+    // Be forgiving about how the name was typed into config.js.
+    var wantKey = eventKey(name);
+    for(var k in ERP_EVENT_ALIASES){
+      if(!Object.prototype.hasOwnProperty.call(ERP_EVENT_ALIASES, k)) continue;
+      if(eventKey(k) === wantKey){ viaConfig = ERP_EVENT_ALIASES[k]; break; }
+    }
+    if(viaConfig == null) return null;            // not on the list, not followed
+  }
+  if(viaConfig != null){
+    if(IDX[viaConfig] != null) return IDX[viaConfig];
+    var byKey = HEADER_BY_KEY[colKey(viaConfig)];  // the column name may be typed loosely too
+    return byKey == null ? null : byKey;
+  }
+  var at = HEADER_BY_KEY[eventKey(name)];
+  return at == null ? null : at;
+}
+
+/* Events are listed in the order config.js names them, which is the order the
+   work actually happens in. Anything not on the list sorts to the end. */
+function erpEventRank(name){
+  var i = 0, want = eventKey(name);
+  for(var k in ERP_EVENT_ALIASES){
+    if(!Object.prototype.hasOwnProperty.call(ERP_EVENT_ALIASES, k)) continue;
+    if(eventKey(k) === want) return i;
+    i++;
+  }
+  return 9999;
+}
+
+function ottStatus(plan, complete){
+  if(plan == null) return "N/A";
+  if(complete == null) return TODAY > plan ? "Overdue" : "Pending";
+  return complete <= plan ? "Pass" : "Fail";
+}
+
+/* One line per order per event, which is what the tab lists and what the
+   charts count. Only orders the EWO sheet knows are included, because without
+   a plan date there is nothing to judge against. */
+function buildOttLines(){
+  OTTLINES = [];
+  if(!TNA.length || !ROWS.length) return;
+  var byEwo = {};
+  ROWS.forEach(function(r){ byEwo[String(num(r, "EWO"))] = r; });
+  var planCol = {}, unknown = {};
+  TNA.forEach(function(rec){
+    var ewo = String(rec.EWONo == null ? "" : rec.EWONo).trim();
+    var order = byEwo[ewo];
+    if(!order) return;
+    var ev = String(rec.EventDescription == null ? "" : rec.EventDescription).trim();
+    if(!ev) return;
+    if(planCol[ev] === undefined){
+      planCol[ev] = planColumnForEvent(ev);
+      if(planCol[ev] == null) unknown[ev] = true;
+    }
+    var col = planCol[ev];
+    var plan = col == null ? null : dat(order, HEADERS[col]);
+    var complete = parseDate(rec.CompleteDate);
+    var revision = parseDate(rec.RevisionDate);
+    OTTLINES.push({
+      ewo: ewo, order: order, event: ev,
+      plan: plan, complete: complete, revision: revision,
+      erpPlan: parseDate(rec.EventDate),
+      erpStatus: String(rec.OTTStatus == null ? "" : rec.OTTStatus).trim(),
+      erpWording: String(rec.ErpStatus == null ? "" : rec.ErpStatus).trim(),
+      dept: String(rec.ResponsibleDepertment == null ? "" : rec.ResponsibleDepertment).trim(),
+      status: ottStatus(plan, complete),
+      days: (plan != null && complete != null) ? Math.round((complete - plan) / DAY) : null,
+      mapped: col != null
+    });
+  });
+  // Events that survived the trim but still have no plan column.
+  OTTLINES.unknownEvents = Object.keys(unknown);
+  // Order by order, and within an order by where the event sits in the cycle.
+  OTTLINES.sort(function(a, b){
+    if(a.ewo !== b.ewo) return a.ewo < b.ewo ? -1 : 1;
+    var ra = erpEventRank(a.event), rb = erpEventRank(b.event);
+    if(ra !== rb) return ra - rb;
+    return a.event < b.event ? -1 : (a.event > b.event ? 1 : 0);
+  });
+}
+
+/* The same tally the two Overview charts want, taken from the lines. */
+function buildOttFromTna(){
+  if(!OTTLINES.length) return null;
+  var tally = {}, order = [], out = { events: [], pass: 0, fail: 0, checks: 0,
+    shape: "erp-tna", rows: TNA.length, headers: [], samples: [], matched: 0, unmatched: 0,
+    overdue: 0, pending: 0, na: 0 };
+  var seenEwo = {};
+  OTTLINES.forEach(function(l){
+    if(!seenEwo[l.ewo]){ seenEwo[l.ewo] = true; out.matched++; }
+    if(l.status === "Overdue") out.overdue++;
+    else if(l.status === "Pending") out.pending++;
+    else if(l.status === "N/A"){ out.na++; return; }
+    if(l.status !== "Pass" && l.status !== "Fail") return;
+    if(!tally[l.event]){ tally[l.event] = { pass: 0, fail: 0 }; order.push(l.event); }
+    tally[l.event][l.status === "Pass" ? "pass" : "fail"]++;
+    out[l.status === "Pass" ? "pass" : "fail"]++;
+    out.checks++;
+  });
+  out.events = order.map(function(name){
+    var t = tally[name], n = t.pass + t.fail;
+    return { name: name, pass: t.pass, fail: t.fail, total: n,
+             passPct: n ? Math.round(1000 * t.pass / n) / 10 : 0 };
+  });
+  return out.checks > 0 ? out : null;
+}
+
 /* The OTT sheet carries the ACTUAL date each milestone happened, pulled from
    the ERP. The EWO sheet carries the PLANNED date for the same milestones,
    under the same column names. Pass or fail is therefore not written down
@@ -1798,10 +2054,46 @@ function buildOttFromActuals(grid){
   return out.checks > 0 ? out : null;
 }
 
+/* Reads the ERP calendar when it is worth the wait: the first time, and on a
+   deliberate Refresh. Not on the quiet five minute check, because the report
+   runs to a hundred megabytes and takes minutes to arrive. Returns true when
+   the dashboard should be redrawn. */
+async function refreshTna(opts){
+  if(!ERP_TNA_URL) return false;
+  if(opts && opts.quiet && tnaSig) return false;
+  if(!(opts && opts.quiet)) setStatus("Reading the ERP calendar, this can take a minute...", "busy");
+  try{
+    var raw = await fetchTna();
+    var trimmed = trimTna(raw);
+    raw = null;                                   // let the big array go
+    var freshSig = tnaSignature(trimmed);
+    var changed = freshSig !== tnaSig;
+    TNA = trimmed;
+    tnaSig = freshSig;
+    tnaAt = new Date().toISOString();
+    tnaError = null;
+    if(!changed) return false;
+    rebuildOtt();
+    return true;
+  }catch(e){
+    tnaError = e.message;
+    return TNA.length === 0;
+  }
+}
+
+function rebuildOtt(){
+  OTT = buildOtt(cachedOttGrid);
+  OTT.sheet = cachedOttSheet;
+  OTT.sheetNames = cachedSheetNames;
+}
+
 function buildOtt(grid){
-  /* Dates against dates is how this workbook works now. The older sheets wrote
-     the words "Pass" and "Fail" into the cells, and those still read correctly,
-     so a file of either kind opens. */
+  /* The ERP is the source when it is configured and answering. Failing that,
+     an OTT sheet of actual dates in the workbook; failing that, an older sheet
+     with the words Pass and Fail written in. */
+  buildOttLines();
+  var fromErp = buildOttFromTna();
+  if(fromErp) return fromErp;
   if(grid && grid.length > 1){
     var fromDates = buildOttFromActuals(grid);
     if(fromDates) return fromDates;
@@ -2222,8 +2514,120 @@ function renderAll(){
   renderAlerts();
   renderTab(activeTab);
 }
+var OTT_PAGE_SIZE = 200;
+
+/* The lines for the orders currently on screen, narrowed further by the tab's
+   own event and status pickers. */
+function ottVisibleLines(){
+  var keep = {};
+  filtered.forEach(function(r){ keep[String(num(r, "EWO"))] = true; });
+  var ev = els.ottEventFilter.value, st = els.ottStatusFilter.value;
+  return OTTLINES.filter(function(l){
+    if(!keep[l.ewo]) return false;
+    if(ev && l.event !== ev) return false;
+    if(st && l.status !== st) return false;
+    return true;
+  });
+}
+
+function renderOttTab(){
+  // The event picker lists whatever the ERP actually sent, busiest first.
+  var counts = {};
+  OTTLINES.forEach(function(l){ counts[l.event] = (counts[l.event] || 0) + 1; });
+  var evs = Object.keys(counts).sort(function(a, b){
+    var ra = erpEventRank(a), rb = erpEventRank(b);
+    if(ra !== rb) return ra - rb;
+    return counts[b] - counts[a];
+  });
+  var keepEv = els.ottEventFilter.value;
+  els.ottEventFilter.innerHTML = '<option value="">All events</option>'
+    + evs.map(function(e){ return '<option value="' + esc(e) + '">' + esc(e) + ' (' + fmtInt(counts[e]) + ')</option>'; }).join("");
+  if(keepEv && evs.indexOf(keepEv) !== -1) els.ottEventFilter.value = keepEv;
+
+  var lines = ottVisibleLines();
+  var tally = { Pass: 0, Fail: 0, Overdue: 0, Pending: 0, "N/A": 0 };
+  var lateDays = 0, lateCount = 0, orders = {};
+  lines.forEach(function(l){
+    tally[l.status]++;
+    orders[l.ewo] = true;
+    if(l.status === "Fail" && l.days != null){ lateDays += l.days; lateCount++; }
+  });
+  var judged = tally.Pass + tally.Fail;
+  var tiles = [
+    ["Orders", fmtInt(Object.keys(orders).length), fmtInt(lines.length) + " event lines"],
+    ["On time", judged ? Math.round(1000 * tally.Pass / judged) / 10 + "%" : "n/a",
+      fmtInt(tally.Pass) + " of " + fmtInt(judged) + " completed events"],
+    ["Fail", fmtInt(tally.Fail), lateCount ? "average " + fmt1(lateDays / lateCount) + " days late" : "none late"],
+    ["Overdue", fmtInt(tally.Overdue), "planned date passed, not completed"],
+    ["Pending", fmtInt(tally.Pending), "not completed, still ahead"],
+    ["No plan", fmtInt(tally["N/A"]), "the EWO sheet has no date for this event"]
+  ];
+  els.ottKpis.innerHTML = tiles.map(function(t){
+    return '<div class="kpi"><div class="label">' + esc(t[0]) + '</div><div class="value">' + esc(t[1])
+      + '</div><div class="foot">' + esc(t[2]) + '</div></div>'; }).join("");
+
+  // Where the actual dates came from, and anything that could not be paired.
+  var notes = [];
+  if(tnaError) notes.push("<strong>The ERP report could not be read.</strong> " + esc(tnaError));
+  else if(!ERP_TNA_URL) notes.push("<strong>No ERP report is configured.</strong> Put the report address in <code>ERP_TNA_URL</code> in <code>config.js</code>.");
+  else notes.push("The calendar is read when the page opens and when you press <strong>Refresh</strong>, not on the five minute check, because the report is large.");
+  if(TNA_IGNORED_EVENTS.length){
+    if(erpEventWhitelisted()){
+      notes.push("Following the " + fmtInt(Object.keys(ERP_EVENT_ALIASES).length)
+        + " events listed in <code>ERP_EVENT_ALIASES</code>. The other "
+        + fmtInt(TNA_IGNORED_EVENTS.length) + " the ERP reports are not shown.");
+    }else{
+      var shown = TNA_IGNORED_EVENTS.slice(0, 12).map(esc).join(", ");
+      notes.push("The ERP reports " + fmtInt(TNA_IGNORED_EVENTS.length)
+        + " events the EWO sheet has no plan column for, so they are left out: <strong>" + shown
+        + (TNA_IGNORED_EVENTS.length > 12 ? ", and " + fmtInt(TNA_IGNORED_EVENTS.length - 12) + " more" : "")
+        + "</strong>. Pair any that belong to a column under a different name in"
+        + " <code>ERP_EVENT_ALIASES</code> in <code>config.js</code>.");
+    }
+  }
+  els.ottSourceNote.innerHTML = notes.join("<br/><br/>");
+  els.ottSourceNote.style.display = notes.length ? "" : "none";
+
+  var pages = Math.max(1, Math.ceil(lines.length / OTT_PAGE_SIZE));
+  if(ottPage >= pages) ottPage = pages - 1;
+  if(ottPage < 0) ottPage = 0;
+  var slice = lines.slice(ottPage * OTT_PAGE_SIZE, (ottPage + 1) * OTT_PAGE_SIZE);
+
+  els.ottTableHint.textContent = fmtInt(lines.length) + " event lines"
+    + (TNA.length ? " from " + fmtInt(TNA.length) + " ERP records" : "")
+    + (tnaAt ? ", read " + ago(tnaAt) : "");
+  els.ottPageInfo.textContent = "Page " + (ottPage + 1) + " of " + pages
+    + (lines.length ? " · lines " + fmtInt(ottPage * OTT_PAGE_SIZE + 1) + " to "
+       + fmtInt(ottPage * OTT_PAGE_SIZE + slice.length) : "");
+  els.ottPrev.disabled = ottPage === 0;
+  els.ottNext.disabled = ottPage >= pages - 1;
+
+  var cls = { "Pass": "pass", "Fail": "fail", "Overdue": "overdue", "Pending": "pending", "N/A": "na" };
+  var head = '<thead><tr><th>EWO</th><th>Buyer</th><th>Unit</th><th>Event</th><th>Plan</th>'
+    + '<th>Complete</th><th>Revised</th><th class="num">Days</th><th>Department</th>'
+    + '<th>Status</th><th>ERP plan</th><th>ERP says</th></tr></thead>';
+  var body = '<tbody>' + slice.map(function(l){
+    return '<tr><td>' + esc(l.ewo) + '</td>'
+      + '<td>' + esc(txt(l.order, "Buyer")) + '</td>'
+      + '<td>' + esc(txt(l.order, "Execution Unit")) + '</td>'
+      + '<td>' + esc(l.event) + '</td>'
+      + '<td>' + (l.plan != null ? esc(fmtDate(l.plan)) : "") + '</td>'
+      + '<td>' + (l.complete != null ? esc(fmtDate(l.complete)) : "") + '</td>'
+      + '<td>' + (l.revision != null ? esc(fmtDate(l.revision)) : "") + '</td>'
+      + '<td class="num">' + (l.days == null ? "" : (l.days > 0 ? "+" + l.days : l.days)) + '</td>'
+      + '<td>' + esc(l.dept) + '</td>'
+      + '<td><span class="pill ' + cls[l.status] + '">' + esc(l.status) + '</span></td>'
+      + '<td>' + (l.erpPlan != null ? esc(fmtDate(l.erpPlan)) : "") + '</td>'
+      + '<td>' + esc(l.erpWording || l.erpStatus) + '</td></tr>';
+  }).join("") + '</tbody>';
+
+  els.ottTable.innerHTML = lines.length ? head + body
+    : '<tbody><tr><td class="empty-note">No event lines for the orders on screen.</td></tr></tbody>';
+}
+
 function renderTab(name){
   if(name === "overview") renderDimensionCharts();
+  else if(name === "ott") renderOttTab();
   else if(name === "attention") renderAttnTable();
   else if(name === "timeline"){ renderMonthCharts(); renderWorkbookMonthly(); }
   else if(name === "capacity") renderCapacity();
@@ -3651,6 +4055,12 @@ els.pageSize.addEventListener("change", function(){ page = 0; renderTable(); });
 els.prevPage.addEventListener("click", function(){ page--; renderTable(); });
 els.nextPage.addEventListener("click", function(){ page++; renderTable(); });
 els.csvBtn.addEventListener("click", exportCsv);
+[els.ottEventFilter, els.ottStatusFilter].forEach(function(el){
+  el.addEventListener("change", function(){ ottPage = 0; renderOttTab(); });
+});
+els.ottPrev.addEventListener("click", function(){ ottPage--; renderOttTab(); });
+els.ottNext.addEventListener("click", function(){ ottPage++; renderOttTab(); });
+
 els.refreshBtn.addEventListener("click", function(){
   flashStatus(true);
   load({ interactive: true }).then(function(){ flashStatus(false); });
