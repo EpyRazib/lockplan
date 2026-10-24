@@ -831,6 +831,7 @@ var HEADER_BY_KEY = {};
 /* Rows the ERP returned, the signature of that answer so an unchanged reply
    costs nothing, and the per-order per-event lines the OTT tab draws. */
 var TNA = [], tnaSig = null, tnaError = null, tnaAt = null, OTTLINES = [], ottPage = 0;
+var tnaSource = null;                      // "sheet" or "erp"
 var cachedOttGrid = [], cachedOttSheet = null, cachedSheetNames = [];
 var asOf = null;
 var visibleCols = [], filtered = [], baseFiltered = [];
@@ -1265,8 +1266,13 @@ function extractMonthly(ws){
   return out;
 }
 
-var DELIVERY_COLUMNS = ["DeliveryDate", "ExportOrderNo", "BookingNo", "Buyer", "DeliveryType",
-                        "BeneficieryUnit", "ExecutionUnit", "FabricType", "DeliveryQtyKg"];
+/* Every column the Delivery sheet may carry. Any that is absent is simply
+   skipped, so one list serves the old layout and the new one. The header sits
+   under a strip of grand totals, which the reader below steps over. */
+var DELIVERY_COLUMNS = ["DeliveryDate", "ExportOrderNo", "BookingNo", "Buyer", "BuyerTeam",
+                        "DeliveryType", "BeneficieryUnit", "ExecutionUnit",
+                        "FabricConstruction", "FabricComposition", "FabricType",
+                        "DeliveryORReturnPlace", "UOM", "DeliveryQtyKg", "DeliveryQtyPcs"];
 function extractDelivery(ws){
   var rows = sheetRows(ws);
   var hi = rows.slice(0, 10).findIndex(function(r){
@@ -1368,12 +1374,17 @@ function bundleFromWorkbooks(ewoBuf, dlvBuf){
     Delivery: [], LockPlan: [], RFD: [], LockMeta: {}
   };
   if(dlvBuf){
-    var wb2 = XLSX.read(new Uint8Array(dlvBuf), { type: "array", cellDates: true, sheets: ["Delivery", "Locked Fabric", "RFD", "LockRepo"] });
+    var wb2 = XLSX.read(new Uint8Array(dlvBuf), { type: "array", cellDates: true,
+      sheets: ["Delivery", "Locked Fabric", "RFD", "LockRepo", "OTT"] });
     var d = sheetByName(wb2, "Delivery"), l = sheetByName(wb2, "Locked Fabric"), r = sheetByName(wb2, "RFD"), m = sheetByName(wb2, "LockRepo");
     bundle.Delivery = d ? extractDelivery(d) : [];
     bundle.LockPlan = l ? extractLockPlan(l) : [];
     bundle.RFD = r ? extractRfd(r) : [];
     bundle.LockMeta = m ? extractLockMeta(m) : {};
+    /* The ERP's TNA export, kept here as a sheet rather than pulled from the
+       report endpoint, which takes minutes to answer. */
+    var o = sheetByName(wb2, "OTT");
+    bundle.OttTna = o ? extractGrid(o, ["ewono"]) : [];
   }
   return bundle;
 }
@@ -1569,6 +1580,19 @@ function ingest(bundle){
   RFDROWS = rt.rows;
   RFDROWS.idxKg = rt.idx["Kg"] != null ? rt.idx["Kg"] : 0;
   LOCKMETA = bundle.LockMeta || {};
+  /* An OTT sheet in the delivery workbook is the source when it has rows. It
+     is current as of the file's own save time, and it spares everyone the wait
+     on the ERP report. */
+  var sheetTna = tnaFromSheet(bundle.OttTna);
+  if(sheetTna.length){
+    TNA = trimTna(sheetTna);
+    tnaSource = "sheet";
+    tnaSig = tnaSignature(TNA);
+    tnaError = null;
+    tnaAt = null;
+  }else if(tnaSource === "sheet"){
+    TNA = []; tnaSource = null; tnaSig = null;
+  }
   cachedOttGrid = bundle.ActualEv || [];
   cachedOttSheet = bundle.OttSheet || null;
   cachedSheetNames = bundle.SheetNames || [];
@@ -1854,6 +1878,41 @@ function trimTna(raw){
   return out;
 }
 
+/* The OTT sheet is the ERP report saved into the workbook, so it has the same
+   columns and is turned into the same records. Reading it costs nothing next
+   to asking the ERP for a hundred megabytes. */
+function tnaFromSheet(grid){
+  if(!grid || grid.length < 2) return [];
+  var header = (grid[0] || []).map(function(h){ return h == null ? "" : String(h).trim(); });
+  var at = {};
+  header.forEach(function(h, i){ if(h && at[colKey(h)] == null) at[colKey(h)] = i; });
+  function pick(row, names){
+    for(var i = 0; i < names.length; i++){
+      var c = at[colKey(names[i])];
+      if(c != null && row[c] != null && row[c] !== "") return row[c];
+    }
+    return null;
+  }
+  if(at["ewono"] == null && at["ewo"] == null) return [];
+  var out = [];
+  for(var r = 1; r < grid.length; r++){
+    var row = grid[r] || [];
+    var ewo = pick(row, ["EWONo", "EWO"]);
+    if(ewo == null || ewo === "") continue;
+    out.push({
+      EWONo: ewo,
+      EventDescription: pick(row, ["EventDescription", "Event"]),
+      EventDate: pick(row, ["EventDate"]),
+      CompleteDate: pick(row, ["CompleteDate"]),
+      RevisionDate: pick(row, ["RevisionDate"]),
+      ResponsibleDepertment: pick(row, ["ResponsibleDepertment", "ResponsibleDepartment", "Department"]),
+      OTTStatus: pick(row, ["OTTStatus"]),
+      ErpStatus: pick(row, ["Status"])
+    });
+  }
+  return out;
+}
+
 /* Enough of the answer to tell whether it changed, without keeping two copies
    of it in memory to compare. */
 function tnaSignature(rows){
@@ -2060,6 +2119,7 @@ function buildOttFromActuals(grid){
    the dashboard should be redrawn. */
 async function refreshTna(opts){
   if(!ERP_TNA_URL) return false;
+  if(tnaSource === "sheet") return false;       // the workbook already has it
   if(opts && opts.quiet && tnaSig) return false;
   if(!(opts && opts.quiet)) setStatus("Reading the ERP calendar, this can take a minute...", "busy");
   try{
@@ -2568,7 +2628,11 @@ function renderOttTab(){
 
   // Where the actual dates came from, and anything that could not be paired.
   var notes = [];
-  if(tnaError) notes.push("<strong>The ERP report could not be read.</strong> " + esc(tnaError));
+  if(tnaSource === "sheet"){
+    notes.push("Actual dates come from the <code>OTT</code> sheet in the fabric delivery workbook,"
+      + " so they are as current as that file's last save. The ERP report endpoint is not called.");
+  }
+  else if(tnaError) notes.push("<strong>The ERP report could not be read.</strong> " + esc(tnaError));
   else if(!ERP_TNA_URL){
     /* Say which of the two things went wrong. config.js missing altogether is
        a different problem from config.js being an older copy that predates
@@ -2582,7 +2646,7 @@ function renderOttTab(){
       + "<br/>Add <code>ERP_TNA_URL</code> to the <code>config.js</code> already in the repository rather than "
       + "replacing the file, so the settings in it, <code>CLIENT_ID</code> above all, are not lost.");
   }
-  else notes.push("The calendar is read when the page opens and when you press <strong>Refresh</strong>, not on the five minute check, because the report is large.");
+  else if(tnaSource !== "sheet") notes.push("The calendar is read when the page opens and when you press <strong>Refresh</strong>, not on the five minute check, because the report is large.");
   if(TNA_IGNORED_EVENTS.length){
     if(erpEventWhitelisted()){
       notes.push("Following the " + fmtInt(Object.keys(ERP_EVENT_ALIASES).length)
@@ -2606,8 +2670,8 @@ function renderOttTab(){
   var slice = lines.slice(ottPage * OTT_PAGE_SIZE, (ottPage + 1) * OTT_PAGE_SIZE);
 
   els.ottTableHint.textContent = fmtInt(lines.length) + " event lines"
-    + (TNA.length ? " from " + fmtInt(TNA.length) + " ERP records" : "")
-    + (tnaAt ? ", read " + ago(tnaAt) : "");
+    + (TNA.length ? " from " + fmtInt(TNA.length) + " records" : "")
+    + (tnaSource === "sheet" ? " in the OTT sheet" : (tnaAt ? ", read from the ERP " + ago(tnaAt) : ""));
   els.ottPageInfo.textContent = "Page " + (ottPage + 1) + " of " + pages
     + (lines.length ? " · lines " + fmtInt(ottPage * OTT_PAGE_SIZE + 1) + " to "
        + fmtInt(ottPage * OTT_PAGE_SIZE + slice.length) : "");
