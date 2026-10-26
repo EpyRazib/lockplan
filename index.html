@@ -244,19 +244,26 @@
      backdrop, the button, or Escape. */
   /* ---- strip plan ---- */
   .gantt{position:relative;overflow:auto;max-height:70vh;border:1px solid var(--line);background:#fff;}
-  .g-row{display:flex;align-items:stretch;min-height:26px;border-bottom:1px solid var(--line-soft);}
+  /* width:max-content matters: a block inside a horizontally scrolling box is
+     only as wide as the visible area by default, so the header's green would
+     stop dead partway along the grid. */
+  .g-row{display:flex;align-items:stretch;min-height:26px;width:max-content;min-width:100%;
+         border-bottom:1px solid var(--line-soft);}
   .g-row:last-child{border-bottom:0;}
   .g-head{position:sticky;top:0;z-index:4;background:var(--green);color:#fff;font-size:10.5px;}
   .g-tot{position:sticky;z-index:3;background:var(--paper);font-weight:600;}
   .g-tot.fab{top:26px;}
   .g-tot.sew{top:52px;}
-  .g-left{position:sticky;left:0;z-index:2;display:flex;flex:none;background:#fff;
-          border-right:2px solid var(--line);}
-  .g-head .g-left{background:var(--green);z-index:5;}
-  .g-tot .g-left{background:var(--paper);}
-  .g-left .c{flex:none;padding:4px 7px;font-size:11px;white-space:nowrap;overflow:hidden;
-             text-overflow:ellipsis;border-right:1px solid var(--line-soft);}
-  .g-left .c.num{text-align:right;font-variant-numeric:tabular-nums;}
+  .g-freeze{position:sticky;left:0;z-index:2;display:flex;flex:none;background:#fff;
+            border-right:2px solid var(--green);}
+  .g-rest{display:flex;flex:none;background:#fff;border-right:2px solid var(--line);}
+  .g-head .g-freeze, .g-head .g-rest{background:var(--green);}
+  .g-head .g-freeze{z-index:5;}
+  .g-tot .g-freeze, .g-tot .g-rest{background:var(--paper);}
+  .g-row:nth-child(even) .g-rest{background-color:#FCFBF8;}
+  .g-freeze .c, .g-rest .c{flex:none;padding:4px 7px;font-size:11px;white-space:nowrap;
+             overflow:hidden;text-overflow:ellipsis;border-right:1px solid var(--line-soft);}
+  .g-freeze .c.num, .g-rest .c.num{text-align:right;font-variant-numeric:tabular-nums;}
   .g-track{position:relative;flex:none;}
   .g-row:nth-child(even) .g-track{background-color:rgba(0,0,0,0.012);}
   .g-day{position:absolute;top:0;bottom:0;border-right:1px solid var(--line-soft);
@@ -266,6 +273,10 @@
   .g-day.mstart{border-left:1px solid var(--line);}
   .g-val{position:absolute;top:0;bottom:0;font-size:9.5px;text-align:center;overflow:hidden;
          padding-top:6px;font-variant-numeric:tabular-nums;}
+  /* How full the day is against the Capacity sheet. */
+  .g-val.over-yellow{background:#FFF0C2;}
+  .g-val.over-orange{background:#FFD9A8;}
+  .g-val.over-red{background:#F7BBA6;font-weight:700;}
   .g-bar{position:absolute;height:11px;border-radius:2px;}
   .g-bar.fab{top:3px;background:#4BA3D3;}
   .g-bar.sew{top:14px;background:#10316B;}
@@ -275,6 +286,9 @@
   .g-legend .sw.fab{background:#4BA3D3;}
   .g-legend .sw.sew{background:#10316B;}
   .g-legend .sw.today{background:var(--rust);width:3px;height:12px;}
+  .g-legend .sw.y{background:#FFF0C2;}
+  .g-legend .sw.o{background:#FFD9A8;}
+  .g-legend .sw.r{background:#F7BBA6;}
   .pill{display:inline-block;padding:1px 7px;border-radius:9px;font-size:10.5px;white-space:nowrap;}
   .pill.pass{background:var(--green-soft);color:var(--green);}
   .pill.fail{background:#FBE4DC;color:#A33F14;}
@@ -495,6 +509,9 @@
           <span><i class="sw fab"></i>Fabric window, Fab Qty spread evenly</span>
           <span><i class="sw sew"></i>Sewing window, Order Qty spread evenly</span>
           <span><i class="sw today"></i>Today</span>
+          <span><i class="sw y"></i>90-100% of capacity</span>
+          <span><i class="sw o"></i>over capacity</span>
+          <span><i class="sw r"></i>more than 110%</span>
         </div>
       </div>
     </div>
@@ -524,6 +541,18 @@
     <div class="tabpage" id="page-ott">
       <div class="kpis six" id="ottKpis"></div>
       <div id="ottSourceNote" class="empty-note" style="display:none;"></div>
+      <div class="grid2">
+        <div class="panel">
+          <h3>Where each event stands</h3>
+          <div class="hint" id="ottMixHint">Every event line for the orders on screen, counted by what happened to it</div>
+          <div class="chart-box tall"><canvas id="ottMixChart"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3>How late, when late</h3>
+          <div class="hint" id="ottLateHint">Days past plan on the events that were completed late</div>
+          <div class="chart-box tall"><canvas id="ottLateChart"></canvas></div>
+        </div>
+      </div>
       <div class="granbar">
         <span class="granlabel">Event</span>
         <select id="ottEventFilter"><option value="">All events</option></select>
@@ -886,6 +915,7 @@ var els = {};
  "ottKpis","ottSourceNote","ottEventFilter","ottStatusFilter","ottTableHint","ottTable",
  "ottPrev","ottNext","ottPageInfo",
  "ganttScroll","ganttHint","zoomIn","zoomOut","gotoToday","gRowsPer","gPrev","gNext","gPageInfo",
+ "ottMixHint","ottLateHint",
  "granSwitch","granHint","sewUnitGrid","sewUnitHint","ottMissing","ottEventHint","ottTotalHint","sewLoadHint",
  "filterSummary","activeChips","kpiRow","alertRow","attnTable","attnTableTitle","attnTableHint",
  "pivotTable","dataTable","groupBy","colChooser","prevPage","nextPage","pageInfo","pageSize",
@@ -928,11 +958,15 @@ function parseDate(v){
   if(!m) return null;
   return Date.UTC(+m[1], +m[2] - 1, +m[3]);
 }
+/* The one date format the dashboard uses, everywhere: 18-Jun-26. The only
+   exceptions are the From and To boxes, which are the browser's own date
+   pickers and follow the reader's Windows setting. */
 function fmtDate(ms){
   if(ms == null) return "";
   var d = new Date(ms);
-  return d.getUTCDate() + " " + MONTH_ABBR[d.getUTCMonth()] + " " + String(d.getUTCFullYear()).slice(2);
+  return pad2(d.getUTCDate()) + "-" + MONTH_ABBR[d.getUTCMonth()] + "-" + String(d.getUTCFullYear()).slice(2);
 }
+function pad2(n){ return (n < 10 ? "0" : "") + n; }
 function monthKey(ms){
   var d = new Date(ms);
   return d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0");
@@ -2607,16 +2641,22 @@ var ganttPage = 0;
 var ganttKeepScroll = null;
 
 /* The columns down the left, as the strip plan sheet has them. */
+/* The first four stay put while the grid scrolls sideways; the rest ride along
+   with it. freeze marks where the frozen block ends. */
 var GANTT_COLUMNS = [
-  { name: "Buyer",          w: 110 },
-  { name: "Team",           w: 56 },
-  { name: "Dept",           w: 92 },
-  { name: "EWO",            w: 72, num: true },
+  { name: "Buyer",          w: 110, freeze: true },
+  { name: "Team",           w: 56,  freeze: true },
+  { name: "Dept",           w: 92,  freeze: true },
+  { name: "EWO",            w: 72,  freeze: true, num: true },
   { name: "Execution Unit", w: 96 },
   { name: "Status",         w: 94 },
-  { name: "Order Qty",      w: 78, num: true },
-  { name: "Fab Qty",        w: 78, num: true }
+  { name: "Order Qty",      w: 78,  num: true },
+  { name: "Fab Qty",        w: 78,  num: true }
 ];
+function ganttFrozenWidth(){
+  return GANTT_COLUMNS.filter(function(c){ return c.freeze; })
+                      .reduce(function(a, c){ return a + c.w; }, 0);
+}
 function ganttLeftWidth(){
   return GANTT_COLUMNS.reduce(function(a, c){ return a + c.w; }, 0);
 }
@@ -2663,6 +2703,17 @@ function ganttTotals(rows, range, startCol, endCol, qtyCol){
   return out;
 }
 
+/* Capacity laid out along the same days as the grid. Pass a day map for the
+   fabric side, or null and a set of unit keys for the sewing side. */
+function ganttCapacity(range, dayMap, unitKeysWanted){
+  var out = new Array(range.days);
+  for(var i = 0; i < range.days; i++){
+    var ms = range.from + i * DAY;
+    out[i] = dayMap ? (dayMap[ms] == null ? null : dayMap[ms]) : capacityOnDay(ms, unitKeysWanted);
+  }
+  return out;
+}
+
 function ganttBar(range, colW, startCol, endCol, r, cls, label){
   var a = dat(r, startCol), b = dat(r, endCol);
   if(a == null || b == null || b < a) return "";
@@ -2688,11 +2739,40 @@ function renderGantt(){
     return;
   }
 
+  /* With a From and To set, the orders that actually fall in that window are
+     listed first; the rest follow, so the page on screen is the one being
+     asked about rather than whatever happened to sort first. */
+  var win = dateWindow();
+  var ordered = filtered;
+  if(win){
+    var inRange = [], outside = [];
+    filtered.forEach(function(r){
+      var touches = false;
+      [["Adjusted Fabric Start", "Adjusted Fabric End"], ["Adjusted sew start", "Adjusted sew end"]]
+        .forEach(function(pair){
+          var a = dat(r, pair[0]), b = dat(r, pair[1]);
+          if(a == null || b == null || b < a) return;
+          if(win.from != null && b < win.from) return;
+          if(win.to != null && a > win.to) return;
+          touches = true;
+        });
+      (touches ? inRange : outside).push(r);
+    });
+    function firstDay(r){
+      var a = dat(r, "Adjusted Fabric Start"), b = dat(r, "Adjusted sew start");
+      if(a == null) return b == null ? Infinity : b;
+      if(b == null) return a;
+      return a < b ? a : b;
+    }
+    inRange.sort(function(x, y){ return firstDay(x) - firstDay(y); });
+    ordered = inRange.concat(outside);
+  }
+
   var per = parseInt(els.gRowsPer.value, 10) || 100;
-  var pages = Math.max(1, Math.ceil(filtered.length / per));
+  var pages = Math.max(1, Math.ceil(ordered.length / per));
   if(ganttPage >= pages) ganttPage = pages - 1;
   if(ganttPage < 0) ganttPage = 0;
-  var slice = filtered.slice(ganttPage * per, (ganttPage + 1) * per);
+  var slice = ordered.slice(ganttPage * per, (ganttPage + 1) * per);
 
   var leftW = ganttLeftWidth(), trackW = range.days * colW;
   var fabTot = ganttTotals(filtered, range, "Adjusted Fabric Start", "Adjusted Fabric End", "Fab Qty");
@@ -2703,12 +2783,17 @@ function renderGantt(){
   var every = colW >= 26 ? 1 : (colW >= 12 ? 7 : 0);   // 0 means month starts only
   var html = [];
 
-  function leftCells(vals, headRow){
-    return '<div class="g-left" style="width:' + leftW + 'px">'
-      + GANTT_COLUMNS.map(function(c, i){
-          return '<div class="c' + (c.num ? " num" : "") + '" style="width:' + c.w + 'px">'
-            + (vals[i] == null ? "" : esc(String(vals[i]))) + '</div>';
-        }).join("") + '</div>';
+  var frozenW = ganttFrozenWidth();
+  function cellsFor(vals, which){
+    return GANTT_COLUMNS.map(function(c, i){
+      if(!!c.freeze !== which) return "";
+      return '<div class="c' + (c.num ? " num" : "") + '" style="width:' + c.w + 'px">'
+        + (vals[i] == null ? "" : esc(String(vals[i]))) + '</div>';
+    }).join("");
+  }
+  function leftCells(vals){
+    return '<div class="g-freeze" style="width:' + frozenW + 'px">' + cellsFor(vals, true) + '</div>'
+         + '<div class="g-rest" style="width:' + (leftW - frozenW) + 'px">' + cellsFor(vals, false) + '</div>';
   }
 
   // header: the dates
@@ -2728,13 +2813,36 @@ function renderGantt(){
   html.push('<div class="g-row g-head">' + leftCells(GANTT_COLUMNS.map(function(c){ return c.name; }), true)
     + '<div class="g-track" style="width:' + trackW + 'px">' + head.join("") + '</div></div>');
 
-  // the two totals rows
-  function totalsRow(cls, label, arr){
+  /* Capacity for the same days, so a day that is too full can say so. The
+     sewing row counts pieces but the floor is booked in hours, so the load
+     compared against capacity is the FR hour spread, not the piece count. The
+     tooltip shows both so nobody has to guess which number is being judged. */
+  var fabCap = CAPACITY.fabricDays ? ganttCapacity(range, CAPACITY.fabricByDay) : null;
+  var sewCap = CAPACITY.days ? ganttCapacity(range, null, wantedUnitKeys(filtered)) : null;
+  var sewHours = sewCap ? ganttTotals(filtered, range, "Adjusted sew start", "Adjusted sew end", "FR hour") : null;
+
+  function loadClass(load, cap){
+    if(cap == null || cap <= 0) return "";
+    var pct = 100 * load / cap;
+    if(pct > 110) return " over-red";
+    if(pct > 100) return " over-orange";
+    if(pct > 90) return " over-yellow";
+    return "";
+  }
+
+  function totalsRow(cls, label, arr, cap, judgeArr, unitWord){
     var cells = [];
     for(var d = 0; d < arr.length; d++){
-      if(arr[d] <= 0) continue;
-      cells.push('<div class="g-val" style="left:' + (d * colW) + 'px;width:' + colW + 'px" title="'
-        + esc(label + " " + fmtDate(range.from + d * DAY) + ": " + fmtInt(arr[d])) + '">'
+      if(arr[d] <= 0 && (!cap || !cap[d])) continue;
+      var judged = judgeArr ? judgeArr[d] : arr[d];
+      var c = cap ? cap[d] : null;
+      var tip = label + " " + fmtDate(range.from + d * DAY) + ": " + fmtInt(arr[d]);
+      if(c != null){
+        tip += " · " + fmtInt(judged) + " of " + fmtInt(c) + " " + unitWord
+             + (c > 0 ? " (" + Math.round(100 * judged / c) + "%)" : "");
+      }
+      cells.push('<div class="g-val' + loadClass(judged, c) + '" style="left:' + (d * colW)
+        + 'px;width:' + colW + 'px" title="' + esc(tip) + '">'
         + (colW >= 18 ? fmtInt(arr[d]) : "") + '</div>');
     }
     var sum = arr.reduce(function(a, b){ return a + b; }, 0);
@@ -2742,8 +2850,8 @@ function renderGantt(){
       + leftCells([label, "", "", "", "", "", "", fmtInt(sum)])
       + '<div class="g-track" style="width:' + trackW + 'px">' + cells.join("") + '</div></div>';
   }
-  html.push(totalsRow("fab", "Fabric Total", fabTot));
-  html.push(totalsRow("sew", "Sewing Total", sewTot));
+  html.push(totalsRow("fab", "Fabric Total", fabTot, fabCap, null, "kg"));
+  html.push(totalsRow("sew", "Sewing Total", sewTot, sewCap, sewHours, "hours"));
 
   // one row per order
   slice.forEach(function(r){
@@ -2767,7 +2875,7 @@ function renderGantt(){
 
   els.gPageInfo.textContent = "Page " + (ganttPage + 1) + " of " + pages
     + " · orders " + fmtInt(ganttPage * per + 1) + " to " + fmtInt(ganttPage * per + slice.length)
-    + " of " + fmtInt(filtered.length);
+    + " of " + fmtInt(ordered.length) + (win ? ", those in the range first" : "");
   els.gPrev.disabled = ganttPage === 0;
   els.gNext.disabled = ganttPage >= pages - 1;
   els.granHint.textContent = fmtDate(range.from) + " to " + fmtDate(range.to)
@@ -2800,6 +2908,82 @@ function ottVisibleLines(){
     if(st && l.status !== st) return false;
     return true;
   });
+}
+
+var OTT_STATUS_COLOUR = { "Pass": "#006040", "Fail": "#E8907A", "Overdue": "#C7511F",
+                          "Pending": "#F8B000", "N/A": "#D9D6CC" };
+
+/* Two pictures of the same lines: what state each milestone is in, event by
+   event, and how far past the plan the late ones ran. The first answers "where
+   are we stuck", the second "how bad is it when we slip". */
+function renderOttCharts(lines){
+  destroyChart("ottMixChart");
+  destroyChart("ottLateChart");
+
+  var order = [], tally = {};
+  lines.forEach(function(l){
+    if(!tally[l.event]){ tally[l.event] = { Pass: 0, Fail: 0, Overdue: 0, Pending: 0, "N/A": 0 }; order.push(l.event); }
+    tally[l.event][l.status]++;
+  });
+  order.sort(function(a, b){ return erpEventRank(a) - erpEventRank(b); });
+
+  var mixEl = document.getElementById("ottMixChart");
+  if(mixEl && order.length){
+    var states = ["Pass", "Fail", "Overdue", "Pending", "N/A"];
+    charts.ottMixChart = new Chart(mixEl, {
+      type: "bar",
+      data: { labels: order,
+        datasets: states.map(function(st){
+          return { label: st, data: order.map(function(e){ return tally[e][st]; }),
+                   backgroundColor: OTT_STATUS_COLOUR[st], borderWidth: 0 };
+        }) },
+      options: { indexAxis: "y", responsive: true, maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: { legend: { position: "bottom", labels: { font: MONO, boxWidth: 12 } },
+          tooltip: { callbacks: { label: function(c){
+            return c.dataset.label + ": " + fmtInt(c.parsed.x) + " orders"; } } } },
+        scales: { x: { stacked: true, ticks: { font: MONO }, grid: GRID },
+                  y: { stacked: true, ticks: { font: MONO }, grid: { display: false } } } }
+    });
+  }
+  els.ottMixHint.textContent = order.length
+    ? fmtInt(lines.length) + " event lines across " + order.length + " milestones"
+    : "Nothing to count for the orders on screen";
+
+  /* Late events bucketed by how late. Anything inside a week is one thing, a
+     month late is quite another, so the buckets widen as they go. */
+  var buckets = [[1, 3, "1 to 3 days"], [4, 7, "4 to 7 days"], [8, 14, "8 to 14 days"],
+                 [15, 30, "15 to 30 days"], [31, 1e9, "over 30 days"]];
+  var counts = buckets.map(function(){ return 0; });
+  var late = 0, worst = 0;
+  lines.forEach(function(l){
+    if(l.status !== "Fail" || l.days == null || l.days <= 0) return;
+    late++;
+    if(l.days > worst) worst = l.days;
+    for(var i = 0; i < buckets.length; i++){
+      if(l.days >= buckets[i][0] && l.days <= buckets[i][1]){ counts[i]++; break; }
+    }
+  });
+  var lateEl = document.getElementById("ottLateChart");
+  if(lateEl && late){
+    charts.ottLateChart = new Chart(lateEl, {
+      type: "bar",
+      data: { labels: buckets.map(function(b){ return b[2]; }),
+              datasets: [{ label: "Events", data: counts,
+                           backgroundColor: ["#F8B000", "#E8907A", "#C7511F", "#A33F14", "#6B2A0D"],
+                           borderWidth: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false },
+          tooltip: { callbacks: { label: function(c){
+            return fmtInt(c.parsed.y) + " event" + (c.parsed.y === 1 ? "" : "s")
+              + " (" + Math.round(100 * c.parsed.y / late) + "% of the late ones)"; } } } },
+        scales: { x: { ticks: { font: MONO }, grid: { display: false } },
+                  y: { ticks: { font: MONO }, grid: GRID } } }
+    });
+  }
+  els.ottLateHint.textContent = late
+    ? fmtInt(late) + " events finished late, the worst by " + fmtInt(worst) + " days"
+    : "Nothing on screen finished late";
 }
 
 function renderOttTab(){
@@ -2842,19 +3026,15 @@ function renderOttTab(){
      came from and which events are followed are settled facts, not news, and
      a standing paragraph about them is just something to read past. */
   var notes = [];
-  if(tnaError && tnaSource !== "sheet") notes.push("<strong>The ERP report could not be read.</strong> " + esc(tnaError));
-  else if(!ERP_TNA_URL){
-    /* Say which of the two things went wrong. config.js missing altogether is
-       a different problem from config.js being an older copy that predates
-       this setting, and the fix is different too. */
-    var hasCfg = (typeof window !== "undefined") && !!window.EWO_CONFIG;
-    notes.push("<strong>No ERP report is configured, so there is nothing to show here.</strong><br/>"
-      + (hasCfg
-          ? "The <code>config.js</code> being served has no <code>ERP_TNA_URL</code> in it. It is an older copy: "
-            + "open <code>config.js</code> in a browser tab to see which version the site has."
-          : "<code>config.js</code> did not load at all.")
-      + "<br/>Add <code>ERP_TNA_URL</code> to the <code>config.js</code> already in the repository rather than "
-      + "replacing the file, so the settings in it, <code>CLIENT_ID</code> above all, are not lost.");
+  if(tnaError && tnaSource !== "sheet"){
+    notes.push("<strong>The ERP report could not be read.</strong> " + esc(tnaError));
+  }else if(!TNA.length && !ERP_TNA_URL){
+    /* Nothing from a sheet and no endpoint either: there is genuinely no
+       source of actual dates. */
+    notes.push("<strong>No source of actual dates.</strong><br/>"
+      + "Put an <code>OTT</code> sheet in the fabric delivery workbook with"
+      + " <code>EWONo</code>, <code>EventDescription</code> and <code>CompleteDate</code> columns,"
+      + " or set <code>ERP_TNA_URL</code> in <code>config.js</code> to read the ERP report live.");
   }
 
   // Only worth saying when no list is in force, because then an unpaired name
@@ -2890,6 +3070,8 @@ function renderOttTab(){
        + fmtInt(ottPage * OTT_PAGE_SIZE + slice.length) : "");
   els.ottPrev.disabled = ottPage === 0;
   els.ottNext.disabled = ottPage >= pages - 1;
+
+  renderOttCharts(lines);
 
   var cls = { "Pass": "pass", "Fail": "fail", "Overdue": "overdue", "Pending": "pending", "N/A": "na" };
   var head = '<thead><tr><th>EWO</th><th>Buyer</th><th>Unit</th><th>Event</th><th>Plan</th>'
@@ -3220,6 +3402,17 @@ function lineChart(canvasId, series, label, colour, fill, gran){
         y: { ticks: { font: MONO }, grid: GRID } } }
   });
 }
+
+var PIVOT_MEASURES = [
+  { name: "Orders",      get: function(g){ return g.length; },            fmt: fmtInt },
+  { name: "Order Qty",   get: function(g){ return sum(g, "Order Qty"); }, fmt: fmtInt },
+  { name: "Fab Qty",     get: function(g){ return sum(g, "Fab Qty"); },   fmt: fmtInt },
+  { name: "In-house",    get: function(g){ return sum(g, "InHouse"); },   fmt: fmtInt },
+  { name: "Outside",     get: function(g){ return sum(g, "OutSide"); },   fmt: fmtInt },
+  { name: "FR hour",     get: function(g){ return sum(g, "FR hour"); },   fmt: fmtInt },
+  { name: "Avg fab dur", get: function(g){ return avg(g, "fab dur"); },   fmt: fmt1 },
+  { name: "Avg sew dur", get: function(g){ return avg(g, "sew dur"); },   fmt: fmt1 }
+];
 
 function buildGroupBy(){
   var dims = FILTER_DIMENSIONS.filter(function(d){ return IDX[d] != null && !COLEMPTY[d]; });
