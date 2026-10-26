@@ -353,7 +353,7 @@
   <button class="tab on" data-tab="overview">Overview</button>
   <button class="tab" data-tab="attention">Needs attention <span class="count" id="attnCount">0</span></button>
   <button class="tab" data-tab="timeline">Timeline</button>
-  <button class="tab" data-tab="capacity">Capacity</button>
+  <button class="tab" data-tab="capacity">Capacity with Load</button>
   <button class="tab" data-tab="ott">OTT</button>
   <button class="tab" data-tab="delivery">Fabric delivery</button>
   <button class="tab" data-tab="summary">Summary</button>
@@ -487,6 +487,14 @@
           <button class="segbtn" id="zoomIn" title="Wider days">+</button>
         </div>
         <button class="secondary tiny" id="gotoToday">Today</button>
+        <span class="granlabel">Show days</span>
+        <select id="gFlag">
+          <option value="">All days</option>
+          <option value="any">Only 90%+ of capacity</option>
+          <option value="yellow">Only 90-100%</option>
+          <option value="orange">Only over capacity</option>
+          <option value="red">Only over 110%</option>
+        </select>
         <span class="granlabel">Rows</span>
         <select id="gRowsPer">
           <option value="50">50</option>
@@ -503,6 +511,7 @@
         <div class="hint" id="ganttHint">
           One row per order. The pale bar is the fabric window, the dark bar the sewing window.
           The two totals rows add up every filtered order, not just the page on screen.
+          Roll the wheel over the grid to zoom; hold Shift and roll to scroll the rows.
         </div>
         <div class="gantt" id="ganttScroll"></div>
         <div class="g-legend">
@@ -581,10 +590,7 @@
 
     <!-- ============ DELIVERY ============ -->
     <div class="tabpage" id="page-delivery">
-      <div id="deliveryEmpty" class="empty-note" style="display:none;">
-        The fabric delivery workbook has not been published yet. Add the
-        <code>ONEDRIVE_SHARE_URL_2</code> secret and run the Action once.
-      </div>
+      <div id="deliveryEmpty" class="empty-note" style="display:none;"></div>
       <div id="deliveryBody">
         <div class="granbar">
           <span class="granlabel">Report as of</span>
@@ -893,6 +899,7 @@ var HEADER_BY_KEY = {};
 /* Rows the ERP returned, the signature of that answer so an unchanged reply
    costs nothing, and the per-order per-event lines the OTT tab draws. */
 var TNA = [], tnaSig = null, tnaError = null, tnaAt = null, OTTLINES = [], ottPage = 0;
+var DELIVERY_SHEETS = [];
 var tnaSource = null;                      // "sheet" or "erp"
 var cachedOttGrid = [], cachedOttSheet = null, cachedSheetNames = [];
 var asOf = null;
@@ -914,7 +921,7 @@ var els = {};
  "fabLoadHint",
  "ottKpis","ottSourceNote","ottEventFilter","ottStatusFilter","ottTableHint","ottTable",
  "ottPrev","ottNext","ottPageInfo",
- "ganttScroll","ganttHint","zoomIn","zoomOut","gotoToday","gRowsPer","gPrev","gNext","gPageInfo",
+ "ganttScroll","ganttHint","zoomIn","zoomOut","gotoToday","gRowsPer","gPrev","gNext","gPageInfo","gFlag",
  "ottMixHint","ottLateHint",
  "granSwitch","granHint","sewUnitGrid","sewUnitHint","ottMissing","ottEventHint","ottTotalHint","sewLoadHint",
  "filterSummary","activeChips","kpiRow","alertRow","attnTable","attnTableTitle","attnTableHint",
@@ -1442,6 +1449,7 @@ function bundleFromWorkbooks(ewoBuf, dlvBuf){
        report endpoint, which takes minutes to answer. */
     var o = sheetByName(wb2, "OTT");
     bundle.OttTna = o ? extractGrid(o, ["ewono"]) : [];
+    bundle.DeliverySheets = wb2.SheetNames.slice(0);
   }
   return bundle;
 }
@@ -1635,6 +1643,7 @@ function ingest(bundle){
   RFDROWS = rt.rows;
   RFDROWS.idxKg = rt.idx["Kg"] != null ? rt.idx["Kg"] : 0;
   LOCKMETA = bundle.LockMeta || {};
+  DELIVERY_SHEETS = bundle.DeliverySheets || [];
   /* An OTT sheet in the delivery workbook is the source when it has rows. It
      is current as of the file's own save time, and it spares everyone the wait
      on the ERP report. */
@@ -2635,10 +2644,12 @@ function renderAll(){
    The grid is drawn with one absolutely placed bar per window rather than a
    cell per day, so a year of columns costs the same as a week.
    ============================================================ */
-var GANTT_ZOOMS = [3, 5, 8, 12, 18, 26, 36];
-var ganttZoom = 3;                       // index into GANTT_ZOOMS
+var GANTT_ZOOMS = [2, 3, 4, 6, 8, 11, 14, 18, 22, 28, 34, 42, 52, 64];
+var ganttZoom = 5;                       // index into GANTT_ZOOMS
 var ganttPage = 0;
 var ganttKeepScroll = null;
+var ganttParked = false;                 // has the view been placed yet
+var ganttFlag = "";                      // "", "yellow", "orange", "red", "any"
 
 /* The columns down the left, as the strip plan sheet has them. */
 /* The first four stay put while the grid scrolls sideways; the rest ride along
@@ -2714,17 +2725,50 @@ function ganttCapacity(range, dayMap, unitKeysWanted){
   return out;
 }
 
-function ganttBar(range, colW, startCol, endCol, r, cls, label){
+/* A window drawn across the columns that are on show. With every day visible
+   that is one block; with a colour filter on it becomes one block per run of
+   visible days, so a bar never implies days that are not being displayed. */
+function ganttBar(range, colW, days, atCol, startCol, endCol, r, cls, label){
   var a = dat(r, startCol), b = dat(r, endCol);
   if(a == null || b == null || b < a) return "";
   if(b < range.from || a > range.to) return "";
-  var from = a < range.from ? range.from : a;
-  var to = b > range.to ? range.to : b;
-  var i0 = Math.round((from - range.from) / DAY);
-  var span = Math.round((to - from) / DAY) + 1;
-  return '<div class="g-bar ' + cls + '" style="left:' + (i0 * colW) + 'px;width:'
-    + Math.max(2, span * colW - 1) + 'px" title="' + esc(label + ": " + fmtDate(a) + " to " + fmtDate(b)
-    + " (" + span + " day" + (span === 1 ? "" : "s") + ")") + '"></div>';
+  var i0 = Math.round(((a < range.from ? range.from : a) - range.from) / DAY);
+  var i1 = Math.round(((b > range.to ? range.to : b) - range.from) / DAY);
+  var tip = esc(label + ": " + fmtDate(a) + " to " + fmtDate(b)
+    + " (" + (Math.round((b - a) / DAY) + 1) + " days)");
+  var out = [], runStart = null, prev = null;
+  function flush(){
+    if(runStart == null) return;
+    var x = atCol[runStart] * colW, wdt = (atCol[prev] - atCol[runStart] + 1) * colW;
+    out.push('<div class="g-bar ' + cls + '" style="left:' + x + 'px;width:'
+      + Math.max(2, wdt - 1) + 'px" title="' + tip + '"></div>');
+    runStart = null;
+  }
+  for(var d = i0; d <= i1; d++){
+    if(atCol[d] == null){ flush(); continue; }
+    if(runStart == null) runStart = d;
+    else if(atCol[d] !== atCol[prev] + 1){ flush(); runStart = d; }
+    prev = d;
+  }
+  flush();
+  return out.join("");
+}
+
+/* Ranks the tint classes so "any" and a specific colour can both be tested. */
+function loadClass(load, cap){
+  if(cap == null || cap <= 0) return "";
+  var pct = 100 * load / cap;
+  if(pct > 110) return " over-red";
+  if(pct > 100) return " over-orange";
+  if(pct > 90) return " over-yellow";
+  return "";
+}
+
+function flagRank(cls){
+  if(cls === " over-red") return 3;
+  if(cls === " over-orange") return 2;
+  if(cls === " over-yellow") return 1;
+  return 0;
 }
 
 function renderGantt(){
@@ -2774,13 +2818,36 @@ function renderGantt(){
   if(ganttPage < 0) ganttPage = 0;
   var slice = ordered.slice(ganttPage * per, (ganttPage + 1) * per);
 
-  var leftW = ganttLeftWidth(), trackW = range.days * colW;
+  var leftW = ganttLeftWidth();
   var fabTot = ganttTotals(filtered, range, "Adjusted Fabric Start", "Adjusted Fabric End", "Fab Qty");
   var sewTot = ganttTotals(filtered, range, "Adjusted sew start", "Adjusted sew end", "Order Qty");
 
-  /* How often a date label fits. At three pixels a day only the first of the
-     month has room; at thirty-six every day does. */
-  var every = colW >= 26 ? 1 : (colW >= 12 ? 7 : 0);   // 0 means month starts only
+  /* Capacity for the same days, so a day that is too full can say so. The
+     sewing row counts pieces but the floor is booked in hours, so the load
+     compared against capacity is the FR hour spread, not the piece count. The
+     tooltip shows both so nobody has to guess which number is being judged. */
+  var fabCap = CAPACITY.fabricDays ? ganttCapacity(range, CAPACITY.fabricByDay) : null;
+  var sewCap = CAPACITY.days ? ganttCapacity(range, null, wantedUnitKeys(filtered)) : null;
+  var sewHours = sewCap ? ganttTotals(filtered, range, "Adjusted sew start", "Adjusted sew end", "FR hour") : null;
+
+  /* Which days are drawn. Normally all of them; with a colour picked, only the
+     days that carry that flag, pulled together side by side so a month of
+     trouble reads in one glance instead of hunting across the grid. */
+  var days = [];
+  for(var di = 0; di < range.days; di++){
+    if(!ganttFlag){ days.push(di); continue; }
+    var f = Math.max(flagRank(loadClass(fabTot[di], fabCap ? fabCap[di] : null)),
+                     flagRank(loadClass(sewHours ? sewHours[di] : 0, sewCap ? sewCap[di] : null)));
+    if(ganttFlag === "any" ? f > 0 : f === flagRank(" over-" + ganttFlag)) days.push(di);
+  }
+  var atCol = {};                          // day index -> column position
+  days.forEach(function(d, i){ atCol[d] = i; });
+  var trackW = days.length * colW;
+
+  /* How often a date label fits. At two pixels a day only the first of the
+     month has room; at thirty-plus every day does. A filtered view labels
+     every column, since the days are no longer consecutive. */
+  var every = (ganttFlag || colW >= 26) ? 1 : (colW >= 11 ? 7 : 0);
   var html = [];
 
   var frozenW = ganttFrozenWidth();
@@ -2798,42 +2865,27 @@ function renderGantt(){
 
   // header: the dates
   var head = [];
-  for(var d = 0; d < range.days; d++){
+  days.forEach(function(d, i){
     var ms = range.from + d * DAY;
     var dt = new Date(ms);
     var dow = dt.getUTCDay();
     var first = dt.getUTCDate() === 1;
     var show = first || (every === 1) || (every === 7 && dow === 6);
     var cls = "g-day" + (dow === 5 ? " wknd" : "") + (first ? " mstart" : "");
-    head.push('<div class="' + cls + '" style="left:' + (d * colW) + 'px;width:' + colW + 'px">'
-      + (show ? (every === 1 ? dt.getUTCDate() + "-" + MONTH_ABBR[dt.getUTCMonth()]
+    head.push('<div class="' + cls + '" style="left:' + (i * colW) + 'px;width:' + colW + 'px" title="'
+      + esc(fmtDate(ms)) + '">'
+      + (show ? (every === 1 ? pad2(dt.getUTCDate()) + "-" + MONTH_ABBR[dt.getUTCMonth()]
                              : (first ? MONTH_ABBR[dt.getUTCMonth()] + " " + String(dt.getUTCFullYear()).slice(2)
                                       : dt.getUTCDate())) : "") + '</div>');
-  }
+  });
   html.push('<div class="g-row g-head">' + leftCells(GANTT_COLUMNS.map(function(c){ return c.name; }), true)
     + '<div class="g-track" style="width:' + trackW + 'px">' + head.join("") + '</div></div>');
 
-  /* Capacity for the same days, so a day that is too full can say so. The
-     sewing row counts pieces but the floor is booked in hours, so the load
-     compared against capacity is the FR hour spread, not the piece count. The
-     tooltip shows both so nobody has to guess which number is being judged. */
-  var fabCap = CAPACITY.fabricDays ? ganttCapacity(range, CAPACITY.fabricByDay) : null;
-  var sewCap = CAPACITY.days ? ganttCapacity(range, null, wantedUnitKeys(filtered)) : null;
-  var sewHours = sewCap ? ganttTotals(filtered, range, "Adjusted sew start", "Adjusted sew end", "FR hour") : null;
-
-  function loadClass(load, cap){
-    if(cap == null || cap <= 0) return "";
-    var pct = 100 * load / cap;
-    if(pct > 110) return " over-red";
-    if(pct > 100) return " over-orange";
-    if(pct > 90) return " over-yellow";
-    return "";
-  }
-
   function totalsRow(cls, label, arr, cap, judgeArr, unitWord){
-    var cells = [];
-    for(var d = 0; d < arr.length; d++){
-      if(arr[d] <= 0 && (!cap || !cap[d])) continue;
+    var cells = [], sum = 0;
+    days.forEach(function(d, i){
+      sum += arr[d];
+      if(arr[d] <= 0 && (!cap || !cap[d])) return;
       var judged = judgeArr ? judgeArr[d] : arr[d];
       var c = cap ? cap[d] : null;
       var tip = label + " " + fmtDate(range.from + d * DAY) + ": " + fmtInt(arr[d]);
@@ -2841,11 +2893,10 @@ function renderGantt(){
         tip += " · " + fmtInt(judged) + " of " + fmtInt(c) + " " + unitWord
              + (c > 0 ? " (" + Math.round(100 * judged / c) + "%)" : "");
       }
-      cells.push('<div class="g-val' + loadClass(judged, c) + '" style="left:' + (d * colW)
+      cells.push('<div class="g-val' + loadClass(judged, c) + '" style="left:' + (i * colW)
         + 'px;width:' + colW + 'px" title="' + esc(tip) + '">'
         + (colW >= 18 ? fmtInt(arr[d]) : "") + '</div>');
-    }
-    var sum = arr.reduce(function(a, b){ return a + b; }, 0);
+    });
     return '<div class="g-row g-tot ' + cls + '">'
       + leftCells([label, "", "", "", "", "", "", fmtInt(sum)])
       + '<div class="g-track" style="width:' + trackW + 'px">' + cells.join("") + '</div></div>';
@@ -2860,8 +2911,8 @@ function renderGantt(){
                 fmtInt(num(r, "Order Qty") || 0), fmtInt(num(r, "Fab Qty") || 0)];
     html.push('<div class="g-row">' + leftCells(vals)
       + '<div class="g-track" style="width:' + trackW + 'px">'
-      + ganttBar(range, colW, "Adjusted Fabric Start", "Adjusted Fabric End", r, "fab", "Fabric")
-      + ganttBar(range, colW, "Adjusted sew start", "Adjusted sew end", r, "sew", "Sewing")
+      + ganttBar(range, colW, days, atCol, "Adjusted Fabric Start", "Adjusted Fabric End", r, "fab", "Fabric")
+      + ganttBar(range, colW, days, atCol, "Adjusted sew start", "Adjusted sew end", r, "sew", "Sewing")
       + '</div></div>');
   });
 
@@ -2882,17 +2933,40 @@ function renderGantt(){
     + " · " + fmtInt(range.days) + " days at " + colW + "px";
 
   if(ganttKeepScroll != null){ wrap.scrollLeft = ganttKeepScroll; ganttKeepScroll = null; }
+  else if(!ganttParked){
+    /* First look: start five days before today, so the recent past is on screen
+       next to what is coming. */
+    ganttParked = true;
+    ganttScrollTo(TODAY - 5 * DAY);
+  }
+}
+
+/* Puts a given day at the left edge of the grid, as near as the columns allow. */
+function ganttScrollTo(ms){
+  var wrap = els.ganttScroll;
+  if(!wrap) return;
+  var range = ganttRange(filtered);
+  if(!range) return;
+  var target = ms < range.from ? range.from : (ms > range.to ? range.to : ms);
+  var di = Math.round((target - range.from) / DAY);
+  var cells = wrap.querySelectorAll(".g-head .g-day");
+  if(!cells.length) return;
+  /* With a colour filter on, the columns are not consecutive days, so the
+     position is found from the column whose own date is nearest. */
+  var colW = GANTT_ZOOMS[ganttZoom];
+  var best = 0, bestGap = Infinity;
+  for(var i = 0; i < cells.length; i++){
+    var left = parseFloat(cells[i].style.left) || 0;
+    var dayAt = Math.round(left / colW);
+    var gap = Math.abs(dayAt - di);
+    if(ganttFlag){ gap = Math.abs(i - di); }
+    if(gap < bestGap){ bestGap = gap; best = left; }
+  }
+  wrap.scrollLeft = Math.max(0, (ganttFlag ? best : di * colW) - 8);
 }
 
 /* Puts today near the left edge of the visible grid. */
-function ganttScrollToToday(){
-  var wrap = els.ganttScroll;
-  var range = ganttRange(filtered);
-  if(!wrap || !range || TODAY < range.from || TODAY > range.to) return;
-  var colW = GANTT_ZOOMS[ganttZoom];
-  var ti = Math.round((TODAY - range.from) / DAY);
-  wrap.scrollLeft = Math.max(0, ti * colW - 120);
-}
+function ganttScrollToToday(){ ganttScrollTo(TODAY - 5 * DAY); }
 
 var OTT_PAGE_SIZE = 200;
 
@@ -3526,8 +3600,13 @@ function statusBadge(status){
 function cellHtml(r, name){
   if(name === "Status") return statusBadge(txt(r, name));
   var t = COLTYPE[name];
-  if(t === "date"){ var d = dat(r, name); return d == null ? esc(txt(r, name)) : esc(fmtDate(d)); }
   if(t === "number"){ var v = num(r, name); return v == null ? "" : esc(fmtInt(v)); }
+  /* Try the date first whatever the column was classified as. A column holding
+     mostly the word "InStock" with a few real dates is typed as text, and its
+     dates would otherwise print raw as 2026-06-18 while every other table
+     shows 18-Jun-26. */
+  var d = dat(r, name);
+  if(d != null) return esc(fmtDate(d));
   return esc(txt(r, name));
 }
 
@@ -4015,7 +4094,24 @@ function renderDelivery(){
   var have = LOCK.length > 0 || DELIV.length > 0;
   els.deliveryEmpty.style.display = have ? "none" : "block";
   els.deliveryBody.style.display = have ? "block" : "none";
-  if(!have) return;
+  if(!have){
+    /* Blank is not an answer. Say whether the workbook arrived at all, and if
+       it did, which sheets were in it, so the gap is obvious. */
+    var msg;
+    if(!DELIVERY_SHEETS.length){
+      msg = "<strong>The fabric delivery workbook was not loaded.</strong><br/>"
+          + "Check <code>DELIVERY_FILE_PATH</code> in <code>config.js</code>, and that the file is"
+          + " shared with the dashboard app the same way the EWO workbook is.";
+    }else{
+      msg = "<strong>The fabric delivery workbook loaded, but none of the sheets this tab needs"
+          + " were in it.</strong><br/>It wants <code>Delivery</code> for the deliveries and"
+          + " <code>Locked Fabric</code>, <code>RFD</code> and <code>LockRepo</code> for the"
+          + " weekly figures.<br/>Sheets found: <strong>" + DELIVERY_SHEETS.map(esc).join(", ")
+          + "</strong>.";
+    }
+    els.deliveryEmpty.innerHTML = msg;
+    return;
+  }
 
   var join = orderJoin();
   var lock = join ? LOCK.filter(function(r){ return join(ln(r, "EWO"), lt(r, "Buyer"), lt(r, "Unit")); }) : LOCK;
@@ -4443,13 +4539,42 @@ els.pageSize.addEventListener("change", function(){ page = 0; renderTable(); });
 els.prevPage.addEventListener("click", function(){ page--; renderTable(); });
 els.nextPage.addEventListener("click", function(){ page++; renderTable(); });
 els.csvBtn.addEventListener("click", exportCsv);
-els.zoomIn.addEventListener("click", function(){
-  if(ganttZoom < GANTT_ZOOMS.length - 1){ ganttZoom++; renderGantt(); ganttScrollToToday(); }
-});
-els.zoomOut.addEventListener("click", function(){
-  if(ganttZoom > 0){ ganttZoom--; renderGantt(); ganttScrollToToday(); }
-});
+/* Zooming around a fixed point: whatever column sits under anchorX stays
+   under it afterwards, so the eye does not lose its place. Without an anchor
+   the middle of the view is held instead. */
+function ganttSetZoom(next, anchorX){
+  next = Math.max(0, Math.min(GANTT_ZOOMS.length - 1, next));
+  if(next === ganttZoom) return;
+  var wrap = els.ganttScroll;
+  var oldW = GANTT_ZOOMS[ganttZoom];
+  var leftW = ganttFrozenWidth();
+  var x = anchorX == null ? wrap.clientWidth / 2 : anchorX;
+  var atCol = (wrap.scrollLeft + x - leftW) / oldW;      // column under the pointer
+  ganttZoom = next;
+  ganttKeepScroll = 0;                                   // stop the renderer re-parking
+  renderGantt();
+  var newW = GANTT_ZOOMS[ganttZoom];
+  wrap.scrollLeft = Math.max(0, atCol * newW + leftW - x);
+}
+
+els.zoomIn.addEventListener("click", function(){ ganttSetZoom(ganttZoom + 1, null); });
+els.zoomOut.addEventListener("click", function(){ ganttSetZoom(ganttZoom - 1, null); });
 els.gotoToday.addEventListener("click", ganttScrollToToday);
+els.gFlag.addEventListener("change", function(){
+  ganttFlag = els.gFlag.value;
+  ganttKeepScroll = 0;
+  renderGantt();
+});
+
+/* The wheel zooms while the pointer is over the grid, which is how every plan
+   board people already use behaves. Shift plus wheel scrolls the rows instead,
+   for anyone who wants to read down a long list. */
+els.ganttScroll.addEventListener("wheel", function(e){
+  if(e.shiftKey) return;                                 // let it scroll
+  e.preventDefault();
+  var rect = els.ganttScroll.getBoundingClientRect();
+  ganttSetZoom(ganttZoom + (e.deltaY < 0 ? 1 : -1), e.clientX - rect.left);
+}, { passive: false });
 els.gRowsPer.addEventListener("change", function(){ ganttPage = 0; renderGantt(); });
 els.gPrev.addEventListener("click", function(){
   ganttKeepScroll = els.ganttScroll.scrollLeft; ganttPage--; renderGantt();
