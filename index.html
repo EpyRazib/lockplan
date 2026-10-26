@@ -601,15 +601,16 @@
         <div class="kpis ten" id="delKpis"></div>
 
         <!-- ---- the weekly KPI meeting layout, as the planning team sees it ---- -->
-        <h3 class="section-head">Weekly KPI meeting with textile cluster</h3>
+        <h3 class="section-head needs-plan">Weekly KPI meeting with textile cluster</h3>
+        <div id="noPlanNote" class="empty-note" style="display:none;"></div>
         <div class="section-hint">The same two blocks, trend, tables and gauge as the LockRepo sheet, rebuilt from the rows and answering to the filters</div>
         <div class="grid2">
-          <div class="panel">
+          <div class="panel needs-plan">
             <h3>Fabric delivery status</h3>
             <div class="hint">Against the month target</div>
             <div class="table-wrap"><table id="statusTable" class="report"></table></div>
           </div>
-          <div class="panel">
+          <div class="panel needs-plan">
             <h3>Fabric lock T&amp;A plan performance</h3>
             <div class="hint">Against the lock plan</div>
             <div class="table-wrap"><table id="lockTable" class="report"></table></div>
@@ -621,7 +622,7 @@
             <div class="hint">Delivery to lock-plan bookings due by the report date, against all fresh delivery</div>
             <div class="chart-box tall"><canvas id="trendChart"></canvas></div>
           </div>
-          <div class="panel">
+          <div class="panel needs-plan">
             <h3>Plan against actual, cumulative</h3>
             <div class="hint">Lock plan required by day, against fresh delivery to those orders</div>
             <div class="chart-box tall"><canvas id="cumChart"></canvas></div>
@@ -629,17 +630,17 @@
         </div>
 
         <div class="grid3">
-          <div class="panel">
+          <div class="panel needs-plan">
             <h3>Achieved</h3>
             <div class="hint">Till-date actual as a share of till-date planned</div>
             <div class="chart-box"><canvas id="achievedChart"></canvas></div>
           </div>
-          <div class="panel">
+          <div class="panel needs-plan">
             <h3 data-grantitle4="Fabric delivery plan per {g}">Fabric delivery plan per day</h3>
             <div class="hint">InHouse kg across the fabric window, locked orders against unlocked, as the fab sheet builds it</div>
             <div class="chart-box"><canvas id="planLockChart"></canvas></div>
           </div>
-          <div class="panel">
+          <div class="panel needs-plan">
             <h3 data-grantitle5="Fabric delivery actual per {g}">Fabric delivery actual per day</h3>
             <div class="hint">Fresh delivery kg, split by whether the order is locked</div>
             <div class="chart-box"><canvas id="actualLockChart"></canvas></div>
@@ -652,7 +653,7 @@
             <div class="hint">Fresh delivery, re-delivery and returns, from the Delivery sheet</div>
             <div class="chart-box tall"><canvas id="delDailyChart"></canvas></div>
           </div>
-          <div class="panel">
+          <div class="panel needs-plan">
             <h3>Plan against actual by unit</h3>
             <div class="hint">Required till the report date, against delivered, as the weekly KPI defines it</div>
             <div class="chart-box tall"><canvas id="unitPvaChart"></canvas></div>
@@ -660,7 +661,7 @@
         </div>
 
         <div class="grid3">
-          <div class="panel">
+          <div class="panel needs-plan">
             <h3>Plan against actual by buyer</h3>
             <div class="hint">Largest twelve by requirement</div>
             <div class="chart-box tall"><canvas id="buyerPvaChart"></canvas></div>
@@ -677,17 +678,17 @@
           </div>
         </div>
 
-        <div class="panel">
+        <div class="panel needs-plan">
           <h3>Weekly KPI, by buyer</h3>
           <div class="hint" id="kpiBuyerHint">Same columns and rules as the LockRepo sheet, so the totals match the published report</div>
           <div class="table-wrap short"><table id="kpiBuyerTable"></table></div>
         </div>
-        <div class="panel">
+        <div class="panel needs-plan">
           <h3>Weekly KPI, by garments unit</h3>
           <div class="hint">Same rules, grouped by unit</div>
           <div class="table-wrap short"><table id="kpiUnitTable"></table></div>
         </div>
-        <div class="panel">
+        <div class="panel needs-plan">
           <h3>Bookings behind plan</h3>
           <div class="hint" id="deficitHint">Largest shortfalls first. Click a heading to sort.</div>
           <div class="table-wrap short"><table id="deficitTable"></table></div>
@@ -927,7 +928,7 @@ var els = {};
  "filterSummary","activeChips","kpiRow","alertRow","attnTable","attnTableTitle","attnTableHint",
  "pivotTable","dataTable","groupBy","colChooser","prevPage","nextPage","pageInfo","pageSize",
  "detailHint","tabBar","attnCount","capKpis","delKpis","asOfDate","asOfReset",
- "asOfHint","kpiBuyerTable","kpiUnitTable","deficitTable","deficitHint","deliveryEmpty",
+ "asOfHint","kpiBuyerTable","kpiUnitTable","deficitTable","deficitHint","deliveryEmpty","noPlanNote",
  "deliveryBody","kpiBuyerHint","statusTable","lockTable","trendChart","achievedChart"
 ].forEach(function(id){ els[id] = document.getElementById(id); });
 
@@ -1270,6 +1271,20 @@ function cellValue(v){
 }
 function normName(h){ return h == null ? "" : String(h).replace(/\s+/g, " ").trim().toLowerCase(); }
 function sheetRows(ws){ return XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null, blankrows: false }); }
+/* Sheets get renamed. Rather than one exact name, each role has a list of
+   patterns tried in order, so Fab_Delivery, Fabric Delivery and Delivery all
+   answer to the same role. An exact name still wins over a pattern. */
+function sheetLike(wb, exact, patterns){
+  var hit = sheetByName(wb, exact);
+  if(hit) return hit;
+  for(var i = 0; i < patterns.length; i++){
+    for(var j = 0; j < wb.SheetNames.length; j++){
+      if(patterns[i].test(wb.SheetNames[j])) return wb.Sheets[wb.SheetNames[j]];
+    }
+  }
+  return null;
+}
+
 function sheetByName(wb, name){
   var key = wb.SheetNames.find(function(n){ return n.toLowerCase() === name.toLowerCase(); });
   return key ? wb.Sheets[key] : null;
@@ -1439,8 +1454,13 @@ function bundleFromWorkbooks(ewoBuf, dlvBuf){
   };
   if(dlvBuf){
     var wb2 = XLSX.read(new Uint8Array(dlvBuf), { type: "array", cellDates: true,
-      sheets: ["Delivery", "Locked Fabric", "RFD", "LockRepo", "OTT"] });
-    var d = sheetByName(wb2, "Delivery"), l = sheetByName(wb2, "Locked Fabric"), r = sheetByName(wb2, "RFD"), m = sheetByName(wb2, "LockRepo");
+      /* No sheet list here: the names vary between copies of this workbook, so
+         it is opened whole and the sheets are picked out by pattern below. */
+      });
+    var d = sheetLike(wb2, "Delivery", [/^fab[_ ]?delivery$/i, /deliver/i]),
+        l = sheetLike(wb2, "Locked Fabric", [/lock.*fab/i, /fab.*lock/i]),
+        r = sheetLike(wb2, "RFD", [/^rfd/i]),
+        m = sheetLike(wb2, "LockRepo", [/lock.?repo/i, /repo/i]);
     bundle.Delivery = d ? extractDelivery(d) : [];
     bundle.LockPlan = l ? extractLockPlan(l) : [];
     bundle.RFD = r ? extractRfd(r) : [];
@@ -4118,16 +4138,53 @@ function renderDelivery(){
   var deliv = join ? DELIV.filter(function(r){ return join(dn(r, "ExportOrderNo"), dt_(r, "Buyer"), dt_(r, "BeneficieryUnit")); }) : DELIV;
   var asOfMs = asOf || TODAY;
 
-  // ---- the report window: the lock month ----
+  /* Everything in the weekly KPI block is measured against the lock plan. When
+     the workbook carries only deliveries, those panels have nothing to stand
+     on, so they step aside and the tab reports what the deliveries themselves
+     say rather than a screen of zeroes. */
+  var hasPlan = LOCK.length > 0;
+  document.querySelectorAll("#page-delivery .needs-plan").forEach(function(el){
+    el.style.display = hasPlan ? "" : "none";
+  });
+  els.noPlanNote.style.display = hasPlan ? "none" : "";
+  if(!hasPlan){
+    els.noPlanNote.innerHTML = "<strong>Deliveries only.</strong> The weekly KPI figures compare"
+      + " deliveries against the fabric lock plan, which lives in the <code>Locked Fabric</code>,"
+      + " <code>RFD</code> and <code>LockRepo</code> sheets. This workbook has"
+      + (DELIVERY_SHEETS.length ? " <strong>" + DELIVERY_SHEETS.map(esc).join(", ") + "</strong>" : " none of them")
+      + ", so those panels are hidden and what follows is built from the delivery records alone.";
+  }
+
+  // ---- the report window ----
   var from = parseDate(LOCKMETA.reportFrom);
   if(from == null && lock.length){
     from = Math.min.apply(null, lock.map(function(r){ return ld(r, "LockStart") || Infinity; }));
   }
+  if((from == null || !isFinite(from)) && deliv.length){
+    /* No plan to take the month from. The From and To boxes in the filter bar
+       decide it when they are set; otherwise the whole span of deliveries is
+       shown, because hiding most of the file behind an invisible default is
+       how a tab comes to look empty. */
+    var win = dateWindow();
+    var first = null, last = null;
+    deliv.forEach(function(r){
+      var d = dd(r, "DeliveryDate");
+      if(d == null) return;
+      if(first == null || d < first) first = d;
+      if(last == null || d > last) last = d;
+    });
+    from = (win && win.from != null) ? win.from : first;
+    var to = (win && win.to != null) ? win.to : last;
+    if(to != null) asOfMs = to;
+  }
   if(from == null || !isFinite(from)) from = asOfMs;
   var monthEnd = (function(){ var d = new Date(from); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0); })();
 
-  els.asOfHint.textContent = "Lock month from " + fmtDate(from) + ". Delivered and RFD figures are as of the last export"
-    + (LOCKMETA.reportTo ? ", the published report was as of " + fmtDate(parseDate(LOCKMETA.reportTo)) + "." : ".");
+  els.asOfHint.textContent = hasPlan
+    ? "Lock month from " + fmtDate(from) + ". Delivered and RFD figures are as of the last export"
+      + (LOCKMETA.reportTo ? ", the published report was as of " + fmtDate(parseDate(LOCKMETA.reportTo)) + "." : ".")
+    : "Deliveries from " + fmtDate(from) + " to " + fmtDate(asOfMs)
+      + ". Set From and To in the filter bar above to narrow this.";
 
   // ---- weekly KPI groupings ----
   var byUnit = kpiGroup(lock, function(r){ return lt(r, "Unit"); }, asOfMs);
@@ -4161,6 +4218,36 @@ function renderDelivery(){
   var dayWord = useSheetDays ? " working days" : " days";
   var target = toNum(LOCKMETA.monthTarget);
   var pct = tot.req > 0 ? Math.round(100 * tot.actual / tot.req) : 0;
+
+  /* Without a plan there is no "required" or "achieved" to report, so the
+     tiles describe the deliveries instead: how much came in, of what kind,
+     from whom, and at what daily rate. */
+  if(!hasPlan){
+    var buyers = {}, units = {}, types = {}, kgAll = 0;
+    deliv.forEach(function(r){
+      var d = dd(r, "DeliveryDate"); if(d == null || d < from || d > asOfMs) return;
+      kgAll += dn(r, "DeliveryQtyKg");
+      var b = dt_(r, "Buyer"); if(b) buyers[b] = true;
+      var u = dt_(r, "BeneficieryUnit"); if(u) units[u] = true;
+      var t = dt_(r, "FabricType"); if(t) types[t] = true;
+    });
+    var dtiles = [
+      ["Delivery lines", fmtInt(lines), fmtDate(from) + " to " + fmtDate(asOfMs)],
+      ["Fresh delivery", fmtInt(fresh), "kg"],
+      ["Re-delivery", fmtInt(redeliv), "kg"],
+      ["Returns", fmtInt(-returns), "kg"],
+      ["Net received", fmtInt(fresh + redeliv - returns), "fresh plus re-delivery, less returns"],
+      ["Daily average", fmtInt(fresh / Math.max(1, daysDone)), "kg over " + daysDone + dayWord],
+      ["Buyers", fmtInt(Object.keys(buyers).length), "with a delivery in the window"],
+      ["Receiving units", fmtInt(Object.keys(units).length), ""],
+      ["Fabric types", fmtInt(Object.keys(types).length), ""],
+      ["All quantity", fmtInt(kgAll), "kg on every line, whatever the type"]
+    ];
+    els.delKpis.innerHTML = dtiles.map(function(t){
+      return '<div class="kpi"><div class="label">' + esc(t[0]) + '</div><div class="value">' + esc(t[1])
+        + '</div><div class="foot">' + esc(t[2]) + '</div></div>'; }).join("");
+  }
+
   var tiles = [
     ["Month target", target ? fmtInt(target) : "n/a", target ? "kg, from the KPI sheet" : "not in the sheet"],
     ["Lock plan for month", fmtInt(planTotal), lock.length + " bookings"],
@@ -4173,9 +4260,11 @@ function renderDelivery(){
     ["Daily average so far", fmtInt(fresh / daysDone), daysDone + dayWord],
     ["Needed per day to hit plan", daysLeft ? fmtInt(Math.max(0, planTotal - fresh) / daysLeft) : "n/a", daysLeft + dayWord + " left"]
   ];
-  els.delKpis.innerHTML = tiles.map(function(t){
-    return '<div class="kpi"><div class="label">' + esc(t[0]) + '</div><div class="value">' + esc(t[1])
-      + '</div><div class="foot">' + esc(t[2]) + '</div></div>'; }).join("");
+  if(hasPlan){
+    els.delKpis.innerHTML = tiles.map(function(t){
+      return '<div class="kpi"><div class="label">' + esc(t[0]) + '</div><div class="value">' + esc(t[1])
+        + '</div><div class="foot">' + esc(t[2]) + '</div></div>'; }).join("");
+  }
 
   // ---- cumulative plan against actual across the lock month ----
   var days = []; for(var d = from; d <= monthEnd; d += DAY) days.push(d);
