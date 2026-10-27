@@ -250,10 +250,12 @@
   .g-row{display:flex;align-items:stretch;min-height:26px;width:max-content;min-width:100%;
          border-bottom:1px solid var(--line-soft);}
   .g-row:last-child{border-bottom:0;}
-  .g-head{position:sticky;top:0;z-index:4;background:var(--green);color:#fff;font-size:10.5px;}
-  .g-tot{position:sticky;z-index:3;background:var(--paper);font-weight:600;}
-  .g-tot.fab{top:26px;}
-  .g-tot.sew{top:52px;}
+  /* Order down the page: Fabric Total, Production Hour Total, then the column
+     headings. Each sticks under the one above it. */
+  .g-tot{position:sticky;z-index:4;background:var(--paper);font-weight:600;}
+  .g-tot.fab{top:0;}
+  .g-tot.sew{top:26px;}
+  .g-head{position:sticky;top:52px;z-index:3;background:var(--green);color:#fff;font-size:10.5px;}
   .g-freeze{position:sticky;left:0;z-index:2;display:flex;flex:none;background:#fff;
             border-right:2px solid var(--green);}
   .g-rest{display:flex;flex:none;background:#fff;border-right:2px solid var(--line);}
@@ -278,17 +280,42 @@
   .g-val.over-orange{background:#FFD9A8;}
   .g-val.over-red{background:#F7BBA6;font-weight:700;}
   .g-bar{position:absolute;height:11px;border-radius:2px;}
-  .g-bar.fab{top:3px;background:#4BA3D3;}
-  .g-bar.sew{top:14px;background:#10316B;}
+  .g-bar.fab{top:3px;background:#4BA3D3;}          /* fabric: sky blue */
+  .g-bar.sew{top:14px;background:#E8820C;}          /* production hours: orange */
   .g-today{position:absolute;top:0;width:2px;background:var(--rust);z-index:1;pointer-events:none;}
   .g-legend{display:flex;gap:18px;align-items:center;margin-top:10px;font-size:11px;color:var(--ink-soft);}
   .g-legend .sw{display:inline-block;width:14px;height:9px;border-radius:2px;margin-right:6px;vertical-align:middle;}
   .g-legend .sw.fab{background:#4BA3D3;}
-  .g-legend .sw.sew{background:#10316B;}
+  .g-legend .sw.sew{background:#E8820C;}
   .g-legend .sw.today{background:var(--rust);width:3px;height:12px;}
   .g-legend .sw.y{background:#FFF0C2;}
   .g-legend .sw.o{background:#FFD9A8;}
   .g-legend .sw.r{background:#F7BBA6;}
+  /* ---- multi-select filter ---- */
+  .ms{position:relative;}
+  .ms-btn{width:100%;text-align:left;background:#fff;border:1px solid var(--line);color:var(--ink);
+          font:inherit;font-size:12px;padding:6px 22px 6px 8px;cursor:pointer;white-space:nowrap;
+          overflow:hidden;text-overflow:ellipsis;}
+  .ms-btn:after{content:"";position:absolute;right:8px;top:14px;border:4px solid transparent;
+                border-top-color:var(--ink-soft);}
+  .ms.on .ms-btn{border-color:var(--green);box-shadow:0 0 0 2px rgba(0,96,64,0.12);}
+  .ms-btn.has{font-weight:600;color:var(--green);}
+  .ms-pop{display:none;position:absolute;z-index:60;top:100%;left:0;min-width:210px;max-width:320px;
+          background:#fff;border:1px solid var(--line);box-shadow:0 6px 18px rgba(0,0,0,0.12);padding:6px;}
+  .ms.open .ms-pop{display:block;}
+  .ms-search{width:100%;font:inherit;font-size:11.5px;padding:4px 6px;border:1px solid var(--line);
+             margin-bottom:5px;}
+  .ms-list{max-height:230px;overflow:auto;}
+  .ms-list label{display:flex;align-items:center;gap:6px;padding:3px 4px;font-size:11.5px;
+                 cursor:pointer;white-space:nowrap;}
+  .ms-list label:hover{background:var(--green-soft);}
+  .ms-list input{margin:0;flex:none;}
+  .ms-list .n{margin-left:auto;color:var(--ink-soft);font-size:10.5px;}
+  .ms-foot{display:flex;gap:6px;justify-content:space-between;border-top:1px solid var(--line-soft);
+           margin-top:5px;padding-top:5px;}
+  .ms-foot button{font:inherit;font-size:11px;background:none;border:1px solid var(--line);
+                  padding:2px 8px;cursor:pointer;color:var(--ink);}
+  .ms-foot button:hover{border-color:var(--green);color:var(--green);}
   .pill{display:inline-block;padding:1px 7px;border-radius:9px;font-size:10.5px;white-space:nowrap;}
   .pill.pass{background:var(--green-soft);color:var(--green);}
   .pill.fail{background:#FBE4DC;color:#A33F14;}
@@ -332,7 +359,7 @@
     <div class="rule"></div>
     <div>
       <h1>EWO Life Cycle Dashboard</h1>
-      <div class="subtitle">Business Planning Department</div>
+      <div class="subtitle">Department of Business Planning</div>
     </div>
   </div>
   <div class="status">
@@ -516,7 +543,7 @@
         <div class="gantt" id="ganttScroll"></div>
         <div class="g-legend">
           <span><i class="sw fab"></i>Fabric window, Fab Qty spread evenly</span>
-          <span><i class="sw sew"></i>Sewing window, Order Qty spread evenly</span>
+          <span><i class="sw sew"></i>Production window, FR hour spread evenly</span>
           <span><i class="sw today"></i>Today</span>
           <span><i class="sw y"></i>90-100% of capacity</span>
           <span><i class="sw o"></i>over capacity</span>
@@ -550,18 +577,6 @@
     <div class="tabpage" id="page-ott">
       <div class="kpis six" id="ottKpis"></div>
       <div id="ottSourceNote" class="empty-note" style="display:none;"></div>
-      <div class="grid2">
-        <div class="panel">
-          <h3>Where each event stands</h3>
-          <div class="hint" id="ottMixHint">Every event line for the orders on screen, counted by what happened to it</div>
-          <div class="chart-box tall"><canvas id="ottMixChart"></canvas></div>
-        </div>
-        <div class="panel">
-          <h3>How late, when late</h3>
-          <div class="hint" id="ottLateHint">Days past plan on the events that were completed late</div>
-          <div class="chart-box tall"><canvas id="ottLateChart"></canvas></div>
-        </div>
-      </div>
       <div class="granbar">
         <span class="granlabel">Event</span>
         <select id="ottEventFilter"><option value="">All events</option></select>
@@ -575,6 +590,18 @@
           <option value="N/A">N/A</option>
         </select>
         <span class="granhint" id="ottTableHint"></span>
+      </div>
+      <div class="grid2">
+        <div class="panel">
+          <h3>Where each event stands</h3>
+          <div class="hint" id="ottMixHint">Every event line for the orders on screen, counted by what happened to it</div>
+          <div class="chart-box tall"><canvas id="ottMixChart"></canvas></div>
+        </div>
+        <div class="panel">
+          <h3>How late, when late</h3>
+          <div class="hint" id="ottLateHint">Days past plan on the events that were completed late</div>
+          <div class="chart-box tall"><canvas id="ottLateChart"></canvas></div>
+        </div>
       </div>
       <div class="panel">
         <h3>Event by event</h3>
@@ -1480,13 +1507,26 @@ function bundleFromWorkbooks(ewoBuf, dlvBuf){
    ============================================================ */
 var lastSignature = null, generatedAt = null, pollTimer = null, freshTimer = null, sourceLabel = "";
 var CACHE_KEY = "ewo-dashboard-cache-v1";
-/* Bump this whenever the dashboard starts reading a sheet, or a column, it did
-   not read before. The workbook can be untouched, so its eTag still matches
-   and the stored copy still looks current, while being the wrong SHAPE: parsed
-   by older code that never saw those sheets. Without this, a reader whose
-   browser holds a cached copy sees none of the new charts and no error either,
-   which is indistinguishable from the update not having been uploaded. */
+/* The stored copy is keyed by the workbook's eTag AND by the code that read
+   it. A workbook can sit untouched while the reading changes underneath: a
+   sheet renamed from Delivery to Fab_Delivery is found by the new code and not
+   by the old, yet the eTag is identical, so the stale parse would be served
+   for ever. Relying on someone to bump a number by hand failed twice, so the
+   number is computed from the source of the parsing itself: edit any of it and
+   every stored copy becomes invalid on the next load, automatically. */
 var CACHE_VERSION = 4;
+
+function parserFingerprint(){
+  var parts = [bundleFromWorkbooks, sheetLike, sheetByName, extractGrid, extractMain,
+               extractDelivery, extractLockPlan, extractRfd, extractLockMeta,
+               tnaFromSheet, buildCapacity, cellValue];
+  var t = String(CACHE_VERSION) + JSON.stringify(DELIVERY_COLUMNS);
+  for(var i = 0; i < parts.length; i++) t += parts[i].toString();
+  var h = 5381;
+  for(var c = 0; c < t.length; c++) h = ((h * 33) ^ t.charCodeAt(c)) >>> 0;
+  return "v" + CACHE_VERSION + "-" + h.toString(36);
+}
+var PARSER_FP = null;                      // worked out once, on first use
 var loadInFlight = false;
 
 /* Puts the dashboard back on screen. Every path that finishes a load has to
@@ -1503,12 +1543,16 @@ function readCache(){
     var raw = localStorage.getItem(CACHE_KEY);
     if(!raw) return null;
     var c = JSON.parse(raw);
-    if(!c || c.v !== CACHE_VERSION) return null;      // parsed by an older build
+    if(PARSER_FP == null) PARSER_FP = parserFingerprint();
+    if(!c || c.v !== PARSER_FP) return null;          // parsed by different code
     return c;
   }catch(e){ return null; }
 }
 function writeCache(sig, bundle){
-  try{ localStorage.setItem(CACHE_KEY, JSON.stringify({ v: CACHE_VERSION, sig: sig, at: new Date().toISOString(), bundle: bundle })); }
+  try{
+    if(PARSER_FP == null) PARSER_FP = parserFingerprint();
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ v: PARSER_FP, sig: sig, at: new Date().toISOString(), bundle: bundle }));
+  }
   catch(e){ /* quota exceeded on a small browser profile: fine, we just re-download next time */ }
 }
 
@@ -2107,20 +2151,23 @@ function buildOttFromTna(){
     shape: "erp-tna", rows: TNA.length, headers: [], samples: [], matched: 0, unmatched: 0,
     overdue: 0, pending: 0, na: 0 };
   var seenEwo = {};
+  /* Three outcomes count towards on-time: done in time, done late, and not
+     done at all although the date has passed. Pending and no-plan lines are
+     not judgements and stay out of the percentage. */
   OTTLINES.forEach(function(l){
     if(!seenEwo[l.ewo]){ seenEwo[l.ewo] = true; out.matched++; }
-    if(l.status === "Overdue") out.overdue++;
-    else if(l.status === "Pending") out.pending++;
-    else if(l.status === "N/A"){ out.na++; return; }
-    if(l.status !== "Pass" && l.status !== "Fail") return;
-    if(!tally[l.event]){ tally[l.event] = { pass: 0, fail: 0 }; order.push(l.event); }
-    tally[l.event][l.status === "Pass" ? "pass" : "fail"]++;
-    out[l.status === "Pass" ? "pass" : "fail"]++;
+    if(l.status === "Pending"){ out.pending++; return; }
+    if(l.status === "N/A"){ out.na++; return; }
+    if(l.status !== "Pass" && l.status !== "Fail" && l.status !== "Overdue") return;
+    if(!tally[l.event]){ tally[l.event] = { pass: 0, fail: 0, overdue: 0 }; order.push(l.event); }
+    var k = l.status === "Pass" ? "pass" : (l.status === "Fail" ? "fail" : "overdue");
+    tally[l.event][k]++;
+    out[k === "overdue" ? "overdue" : k]++;
     out.checks++;
   });
   out.events = order.map(function(name){
-    var t = tally[name], n = t.pass + t.fail;
-    return { name: name, pass: t.pass, fail: t.fail, total: n,
+    var t = tally[name], n = t.pass + t.fail + t.overdue;
+    return { name: name, pass: t.pass, fail: t.fail, overdue: t.overdue, total: n,
              passPct: n ? Math.round(1000 * t.pass / n) / 10 : 0 };
   });
   return out.checks > 0 ? out : null;
@@ -2319,19 +2366,22 @@ function buildOttFromWords(grid){
 function snapshotFilters(){
   var s = { dims: {}, q: els.searchInput.value,
             from: els.dateFrom.value, to: els.dateTo.value };
-  Object.keys(dimSelects).forEach(function(k){ s.dims[k] = dimSelects[k].value; });
+  Object.keys(dimSel).forEach(function(k){ s.dims[k] = (dimSel[k] || []).slice(); });
   return s;
 }
 function restoreFilters(s){
   els.searchInput.value = s.q || "";
   els.dateFrom.value = s.from || "";
   els.dateTo.value = s.to || "";
+  /* Keep only the values the reloaded workbook still has, so a buyer that
+     disappeared does not silently filter everything away. */
   Object.keys(s.dims).forEach(function(k){
-    if(dimSelects[k] && s.dims[k]){
-      var has = Array.prototype.some.call(dimSelects[k].options, function(o){ return o.value === s.dims[k]; });
-      if(has) dimSelects[k].value = s.dims[k];
-    }
+    if(!dimWraps[k] || !s.dims[k] || !s.dims[k].length) return;
+    var present = {};
+    ROWS.forEach(function(r){ var v = txt(r, k); if(v !== "") present[v] = true; });
+    dimSel[k] = s.dims[k].filter(function(v){ return present[v]; });
   });
+  refreshDimLists();
 }
 
 function findHeaderRow(rows){
@@ -2372,45 +2422,148 @@ function isAveraged(name){
 /* ============================================================
    Filters
    ============================================================ */
-var dimSelects = {};
+/* Each dimension is a dropdown of checkboxes rather than one-of-many, and the
+   values it offers are only those still reachable once the OTHER dimensions
+   have had their say. Pick Team M1 and the Buyer list shrinks to the buyers
+   who have an M1 order; nothing offered leads to an empty screen. */
+var dimWraps = {};                 // dimension -> the .ms element
+var dimSel = {};                   // dimension -> array of chosen values, empty means all
 
 function buildFilters(){
-  Object.keys(dimSelects).forEach(function(k){
-    var wrap = dimSelects[k].parentNode;
-    if(wrap && wrap.parentNode) wrap.parentNode.removeChild(wrap);
+  Object.keys(dimWraps).forEach(function(k){
+    var fld = dimWraps[k].parentNode;
+    if(fld && fld.parentNode) fld.parentNode.removeChild(fld);
   });
-  dimSelects = {};
+  dimWraps = {};
 
   FILTER_DIMENSIONS.forEach(function(name){
     if(IDX[name] == null || COLEMPTY[name]) return;
-    var values = Array.from(new Set(ROWS.map(function(r){ return txt(r, name); })
-      .filter(function(v){ return v !== ""; }))).sort();
-    if(values.length < 2) return;
+    var distinct = {};
+    ROWS.forEach(function(r){ var v = txt(r, name); if(v !== "") distinct[v] = true; });
+    if(Object.keys(distinct).length < 2) return;
 
-    var wrap = document.createElement("div");
-    wrap.className = "fld";
-    var id = "f_" + name.replace(/\W+/g, "_");
-    wrap.innerHTML = '<label for="' + id + '">' + esc(FILTER_LABELS[name] || name) + '</label>'
-      + '<select id="' + id + '"><option value="">All</option>'
-      + values.map(function(v){ return '<option value="' + esc(v) + '">' + esc(v) + '</option>'; }).join("")
-      + '</select>';
-    els.filterGrid.insertBefore(wrap, els.dateFieldWrap);
-    var sel = wrap.querySelector("select");
-    sel.addEventListener("change", function(){ page = 0; applyFilters(); });
-    dimSelects[name] = sel;
+    var fld = document.createElement("div");
+    fld.className = "fld";
+    fld.innerHTML = '<label>' + esc(FILTER_LABELS[name] || name) + '</label>'
+      + '<div class="ms" data-dim="' + esc(name) + '">'
+      + '<button type="button" class="ms-btn">All</button>'
+      + '<div class="ms-pop">'
+      + '<input class="ms-search" type="text" placeholder="Search..." />'
+      + '<div class="ms-list"></div>'
+      + '<div class="ms-foot"><button type="button" class="ms-all">Select all</button>'
+      + '<button type="button" class="ms-clear">Clear</button></div>'
+      + '</div></div>';
+    els.filterGrid.insertBefore(fld, els.dateFieldWrap);
+    dimWraps[name] = fld.querySelector(".ms");
+    if(!dimSel[name]) dimSel[name] = [];
   });
 
+  // A dimension that vanished between loads must not keep filtering unseen.
+  Object.keys(dimSel).forEach(function(k){ if(!dimWraps[k]) delete dimSel[k]; });
+  refreshDimLists();
+}
+
+/* Rows that pass everything except one dimension, which is what that
+   dimension's own list of choices must be drawn from. */
+function rowsExcept(skipDim){
+  var f = currentFilters();
+  var keys = Object.keys(f.dims).filter(function(k){ return k !== skipDim; });
+  return ROWS.filter(function(r){ return passesBaseFilters(r, f, keys); });
+}
+
+function refreshDimLists(){
+  Object.keys(dimWraps).forEach(function(name){
+    var ms = dimWraps[name];
+    var chosen = dimSel[name] || [];
+    var counts = {};
+    rowsExcept(name).forEach(function(r){
+      var v = txt(r, name);
+      if(v !== "") counts[v] = (counts[v] || 0) + 1;
+    });
+    // Anything already ticked stays listed even if the other filters now
+    // exclude it, otherwise a choice could never be undone.
+    chosen.forEach(function(v){ if(counts[v] == null) counts[v] = 0; });
+    var values = Object.keys(counts).sort(function(a, b){
+      if(counts[b] !== counts[a]) return counts[b] - counts[a];
+      return a < b ? -1 : 1;
+    });
+
+    var needle = (ms.querySelector(".ms-search").value || "").toLowerCase();
+    ms.querySelector(".ms-list").innerHTML = values
+      .filter(function(v){ return !needle || v.toLowerCase().indexOf(needle) !== -1; })
+      .map(function(v){
+        return '<label><input type="checkbox" value="' + esc(v) + '"'
+          + (chosen.indexOf(v) !== -1 ? " checked" : "")
+          + (counts[v] === 0 ? " data-gone=\"1\"" : "") + '/>'
+          + '<span>' + esc(v) + '</span><span class="n">' + fmtInt(counts[v]) + '</span></label>';
+      }).join("") || '<div class="n" style="padding:6px;">Nothing left to choose</div>';
+
+    var btn = ms.querySelector(".ms-btn");
+    btn.textContent = chosen.length === 0 ? "All"
+      : (chosen.length === 1 ? chosen[0] : chosen[0] + " +" + (chosen.length - 1));
+    btn.title = chosen.length ? chosen.join(", ") : "All";
+    btn.className = "ms-btn" + (chosen.length ? " has" : "");
+    ms.classList.toggle("on", chosen.length > 0);
+  });
+}
+
+/* One listener for the whole filter bar. */
+els.filterGrid.addEventListener("click", function(e){
+  var ms = e.target.closest ? e.target.closest(".ms") : null;
+  if(!ms){ closeAllDims(); return; }
+  var name = ms.getAttribute("data-dim");
+
+  if(e.target.closest(".ms-btn")){
+    var wasOpen = ms.classList.contains("open");
+    closeAllDims();
+    if(!wasOpen) ms.classList.add("open");
+    return;
+  }
+  if(e.target.closest(".ms-clear")){ dimSel[name] = []; afterDimChange(); return; }
+  if(e.target.closest(".ms-all")){
+    dimSel[name] = Array.prototype.map.call(ms.querySelectorAll(".ms-list input"),
+                                           function(i){ return i.value; });
+    afterDimChange();
+    return;
+  }
+  if(e.target.tagName === "INPUT" && e.target.type === "checkbox"){
+    var v = e.target.value, at = dimSel[name].indexOf(v);
+    if(e.target.checked){ if(at === -1) dimSel[name].push(v); }
+    else if(at !== -1) dimSel[name].splice(at, 1);
+    afterDimChange();
+  }
+});
+
+els.filterGrid.addEventListener("input", function(e){
+  if(e.target.classList.contains("ms-search")) refreshDimLists();
+});
+
+document.addEventListener("click", function(e){
+  if(!e.target.closest || !e.target.closest(".ms")) closeAllDims();
+});
+
+function closeAllDims(){
+  Object.keys(dimWraps).forEach(function(k){ dimWraps[k].classList.remove("open"); });
+}
+
+function afterDimChange(){
+  page = 0;
+  refreshDimLists();
+  applyFilters();
 }
 
 function currentFilters(){
   var f = { q: els.searchInput.value.trim().toLowerCase(), dims: {} };
-  Object.keys(dimSelects).forEach(function(k){ if(dimSelects[k].value) f.dims[k] = dimSelects[k].value; });
+  Object.keys(dimSel).forEach(function(k){
+    if(dimSel[k] && dimSel[k].length) f.dims[k] = dimSel[k];
+  });
   return f;
 }
 
 function passesBaseFilters(r, f, dimKeys){
   for(var i = 0; i < dimKeys.length; i++){
-    if(txt(r, dimKeys[i]) !== f.dims[dimKeys[i]]) return false;
+    var want = f.dims[dimKeys[i]];
+    if(want && want.indexOf(txt(r, dimKeys[i])) === -1) return false;
   }
   if(f.q){
     var hay = "";
@@ -2448,7 +2601,8 @@ function sortFiltered(){
 
 function resetAll(){
   els.searchInput.value = "";
-  Object.keys(dimSelects).forEach(function(k){ dimSelects[k].value = ""; });
+  Object.keys(dimSel).forEach(function(k){ dimSel[k] = []; });
+  Object.keys(dimWraps).forEach(function(k){ dimWraps[k].querySelector(".ms-search").value = ""; });
   els.dateFrom.value = ""; els.dateTo.value = "";
   activeAlert = null; sortCol = null; page = 0;
   applyFilters();
@@ -2681,7 +2835,7 @@ var GANTT_COLUMNS = [
   { name: "EWO",            w: 72,  freeze: true, num: true },
   { name: "Execution Unit", w: 96 },
   { name: "Status",         w: 94 },
-  { name: "Order Qty",      w: 78,  num: true },
+  { name: "FR hour",        w: 84,  num: true },
   { name: "Fab Qty",        w: 78,  num: true }
 ];
 function ganttFrozenWidth(){
@@ -2840,7 +2994,9 @@ function renderGantt(){
 
   var leftW = ganttLeftWidth();
   var fabTot = ganttTotals(filtered, range, "Adjusted Fabric Start", "Adjusted Fabric End", "Fab Qty");
-  var sewTot = ganttTotals(filtered, range, "Adjusted sew start", "Adjusted sew end", "Order Qty");
+  /* Hours, not pieces: the floor is booked in hours and the Capacity sheet is
+     in hours, so the row and the colour behind it now measure the same thing. */
+  var sewTot = ganttTotals(filtered, range, "Adjusted sew start", "Adjusted sew end", "FR hour");
 
   /* Capacity for the same days, so a day that is too full can say so. The
      sewing row counts pieces but the floor is booked in hours, so the load
@@ -2848,7 +3004,7 @@ function renderGantt(){
      tooltip shows both so nobody has to guess which number is being judged. */
   var fabCap = CAPACITY.fabricDays ? ganttCapacity(range, CAPACITY.fabricByDay) : null;
   var sewCap = CAPACITY.days ? ganttCapacity(range, null, wantedUnitKeys(filtered)) : null;
-  var sewHours = sewCap ? ganttTotals(filtered, range, "Adjusted sew start", "Adjusted sew end", "FR hour") : null;
+  var sewHours = sewTot;                       // the row and the judgement are one and the same
 
   /* Which days are drawn. Normally all of them; with a colour picked, only the
      days that carry that flag, pulled together side by side so a month of
@@ -2882,6 +3038,14 @@ function renderGantt(){
     return '<div class="g-freeze" style="width:' + frozenW + 'px">' + cellsFor(vals, true) + '</div>'
          + '<div class="g-rest" style="width:' + (leftW - frozenW) + 'px">' + cellsFor(vals, false) + '</div>';
   }
+  /* A totals row has one thing to say on the left, so the label runs across the
+     frozen block instead of being clipped by the Buyer column. */
+  function leftLabel(label, right){
+    return '<div class="g-freeze" style="width:' + frozenW + 'px">'
+         + '<div class="c" style="width:' + frozenW + 'px">' + esc(label) + '</div></div>'
+         + '<div class="g-rest" style="width:' + (leftW - frozenW) + 'px">'
+         + '<div class="c num" style="width:' + (leftW - frozenW) + 'px">' + esc(right) + '</div></div>';
+  }
 
   // header: the dates
   var head = [];
@@ -2898,8 +3062,8 @@ function renderGantt(){
                              : (first ? MONTH_ABBR[dt.getUTCMonth()] + " " + String(dt.getUTCFullYear()).slice(2)
                                       : dt.getUTCDate())) : "") + '</div>');
   });
-  html.push('<div class="g-row g-head">' + leftCells(GANTT_COLUMNS.map(function(c){ return c.name; }), true)
-    + '<div class="g-track" style="width:' + trackW + 'px">' + head.join("") + '</div></div>');
+  var headRow = '<div class="g-row g-head">' + leftCells(GANTT_COLUMNS.map(function(c){ return c.name; }))
+    + '<div class="g-track" style="width:' + trackW + 'px">' + head.join("") + '</div></div>';
 
   function totalsRow(cls, label, arr, cap, judgeArr, unitWord){
     var cells = [], sum = 0;
@@ -2918,17 +3082,21 @@ function renderGantt(){
         + (colW >= 18 ? fmtInt(arr[d]) : "") + '</div>');
     });
     return '<div class="g-row g-tot ' + cls + '">'
-      + leftCells([label, "", "", "", "", "", "", fmtInt(sum)])
+      + leftLabel(label, fmtInt(sum))
       + '<div class="g-track" style="width:' + trackW + 'px">' + cells.join("") + '</div></div>';
   }
+  /* The two load rows sit above the column headings, where the eye lands
+     first: the question is almost always "how full is that day", and only then
+     "which order". */
   html.push(totalsRow("fab", "Fabric Total", fabTot, fabCap, null, "kg"));
-  html.push(totalsRow("sew", "Sewing Total", sewTot, sewCap, sewHours, "hours"));
+  html.push(totalsRow("sew", "Production Hour Total", sewTot, sewCap, null, "hours"));
+  html.push(headRow);
 
   // one row per order
   slice.forEach(function(r){
     var vals = [txt(r, "Buyer"), txt(r, "Team"), txt(r, "Dept"), num(r, "EWO"),
                 txt(r, "Execution Unit"), txt(r, "Status"),
-                fmtInt(num(r, "Order Qty") || 0), fmtInt(num(r, "Fab Qty") || 0)];
+                fmtInt(num(r, "FR hour") || 0), fmtInt(num(r, "Fab Qty") || 0)];
     html.push('<div class="g-row">' + leftCells(vals)
       + '<div class="g-track" style="width:' + trackW + 'px">'
       + ganttBar(range, colW, days, atCol, "Adjusted Fabric Start", "Adjusted Fabric End", r, "fab", "Fabric")
@@ -3023,7 +3191,7 @@ function renderOttCharts(lines){
 
   var mixEl = document.getElementById("ottMixChart");
   if(mixEl && order.length){
-    var states = ["Pass", "Fail", "Overdue", "Pending", "N/A"];
+    var states = ["Pass", "Fail", "Overdue"];
     charts.ottMixChart = new Chart(mixEl, {
       type: "bar",
       data: { labels: order,
@@ -3040,8 +3208,11 @@ function renderOttCharts(lines){
                   y: { stacked: true, ticks: { font: MONO }, grid: { display: false } } } }
     });
   }
+  var judgedMix = 0;
+  order.forEach(function(e){ judgedMix += tally[e].Pass + tally[e].Fail + tally[e].Overdue; });
   els.ottMixHint.textContent = order.length
-    ? fmtInt(lines.length) + " event lines across " + order.length + " milestones"
+    ? fmtInt(judgedMix) + " judged lines across " + order.length
+      + " milestones. Pending and no-plan lines are left out."
     : "Nothing to count for the orders on screen";
 
   /* Late events bucketed by how late. Anything inside a week is one thing, a
@@ -3102,11 +3273,13 @@ function renderOttTab(){
     orders[l.ewo] = true;
     if(l.status === "Fail" && l.days != null){ lateDays += l.days; lateCount++; }
   });
-  var judged = tally.Pass + tally.Fail;
+  /* Pass against pass plus fail plus overdue: an event nobody has finished
+     after its date has gone is as much a miss as one finished late. */
+  var judged = tally.Pass + tally.Fail + tally.Overdue;
   var tiles = [
     ["Orders", fmtInt(Object.keys(orders).length), fmtInt(lines.length) + " event lines"],
     ["On time", judged ? Math.round(1000 * tally.Pass / judged) / 10 + "%" : "n/a",
-      fmtInt(tally.Pass) + " of " + fmtInt(judged) + " completed events"],
+      fmtInt(tally.Pass) + " of " + fmtInt(judged) + " pass, fail or overdue"],
     ["Fail", fmtInt(tally.Fail), lateCount ? "average " + fmt1(lateDays / lateCount) + " days late" : "none late"],
     ["Overdue", fmtInt(tally.Overdue), "planned date passed, not completed"],
     ["Pending", fmtInt(tally.Pending), "not completed, still ahead"],
@@ -3205,8 +3378,11 @@ function renderFilterSummary(){
     + " of " + ROWS.length.toLocaleString() + " orders (" + pct + "%)";
 
   var chips = [];
-  Object.keys(dimSelects).forEach(function(k){
-    if(dimSelects[k].value) chips.push(['', (FILTER_LABELS[k] || k) + ": " + dimSelects[k].value]);
+  Object.keys(dimSel).forEach(function(k){
+    var v = dimSel[k] || [];
+    if(!v.length) return;
+    chips.push(['', (FILTER_LABELS[k] || k) + ": "
+      + (v.length <= 3 ? v.join(", ") : v.slice(0, 3).join(", ") + " and " + (v.length - 3) + " more")]);
   });
   if(els.searchInput.value.trim()) chips.push(['', 'search "' + els.searchInput.value.trim() + '"']);
   if(els.dateFrom.value || els.dateTo.value){
@@ -3398,14 +3574,16 @@ function renderOtt(){
         datasets: [
           { label: "Pass %", data: evs.map(function(e){ return e.passPct; }),
             backgroundColor: "#006040", borderWidth: 0 },
-          { label: "Fail %", data: evs.map(function(e){ return Math.round((100 - e.passPct) * 10) / 10; }),
-            backgroundColor: "#E8907A", borderWidth: 0 }
+          { label: "Fail %", data: evs.map(function(e){ return e.total ? Math.round(1000 * e.fail / e.total) / 10 : 0; }),
+            backgroundColor: "#E8907A", borderWidth: 0 },
+          { label: "Overdue %", data: evs.map(function(e){ return e.total ? Math.round(1000 * (e.overdue || 0) / e.total) / 10 : 0; }),
+            backgroundColor: "#C7511F", borderWidth: 0 }
         ] },
       options: { indexAxis: "y", responsive: true, maintainAspectRatio: false,
         plugins: { legend: { position: "bottom", labels: { font: MONO, boxWidth: 12 } },
           tooltip: { callbacks: { label: function(c){
             var e = evs[c.dataIndex];
-            var n = c.datasetIndex === 0 ? e.pass : e.fail;
+            var n = c.datasetIndex === 0 ? e.pass : (c.datasetIndex === 1 ? e.fail : (e.overdue || 0));
             return c.dataset.label + ": " + c.parsed.x + "% (" + fmtInt(n) + " of " + fmtInt(e.total) + ")";
           } } } },
         scales: { x: { stacked: true, max: 100, ticks: { font: MONO, callback: function(v){ return v + "%"; } }, grid: GRID },
@@ -3417,8 +3595,9 @@ function renderOtt(){
   if(pe){
     charts.ottPieChart = new Chart(pe, {
       type: "doughnut",
-      data: { labels: ["Pass", "Fail"],
-              datasets: [{ data: [OTT.pass, OTT.fail], backgroundColor: ["#006040", "#E8907A"],
+      data: { labels: ["Pass", "Fail", "Overdue"],
+              datasets: [{ data: [OTT.pass, OTT.fail, OTT.overdue || 0],
+                           backgroundColor: ["#006040", "#E8907A", "#C7511F"],
                            borderColor: "#fff", borderWidth: 2 }] },
       options: { responsive: true, maintainAspectRatio: false, cutout: "58%",
         plugins: { legend: { position: "bottom", labels: { font: MONO, boxWidth: 12 } },
@@ -3690,6 +3869,8 @@ function csvCell(v){
   return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
 function exportCsv(){
+  // On the OTT tab the interesting rows are the event lines, not the orders.
+  if(activeTab === "ott") return exportOttCsv();
   var cols = visibleCols;
   var lines = [cols.map(csvCell).join(",")];
   filtered.forEach(function(r){
@@ -3708,6 +3889,29 @@ function exportCsv(){
   var a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = "ewo-export-" + new Date().toISOString().slice(0, 10) + ".csv";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+/* The event lines as they appear on the OTT tab, filters and all. */
+function exportOttCsv(){
+  var lines = ottVisibleLines();
+  var head = ["EWO", "Buyer", "Team", "Dept", "Execution Unit", "Lock Status", "Event",
+              "Plan", "Complete", "Revised", "Days", "Department", "Status"];
+  var out = [head.map(csvCell).join(",")];
+  function d(v){ return v == null ? "" : new Date(v).toISOString().slice(0, 10); }
+  lines.forEach(function(l){
+    out.push([csvCell(l.ewo), csvCell(txt(l.order, "Buyer")), csvCell(txt(l.order, "Team")),
+              csvCell(txt(l.order, "Dept")), csvCell(txt(l.order, "Execution Unit")),
+              csvCell(txt(l.order, "Status")), csvCell(l.event),
+              csvCell(d(l.plan)), csvCell(d(l.complete)), csvCell(d(l.revision)),
+              (l.days == null ? "" : l.days), csvCell(l.dept), csvCell(l.status)].join(","));
+  });
+  var blob = new Blob(["\ufeff" + out.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "ott-events-" + new Date().toISOString().slice(0, 10) + ".csv";
   document.body.appendChild(a);
   a.click();
   setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
@@ -4013,7 +4217,8 @@ function orderJoin(){
   ROWS.forEach(function(r){ known[String(num(r, "EWO"))] = true; });
 
   var f = currentFilters();
-  var buyerF = f.dims["Buyer"] || "", unitF = f.dims["Execution Unit"] || "";
+  /* Now that a dimension can hold several values, these are lists. */
+  var buyerF = f.dims["Buyer"] || [], unitF = f.dims["Execution Unit"] || [];
   var otherDims = Object.keys(f.dims).filter(function(k){ return k !== "Buyer" && k !== "Execution Unit"; });
   var onlyDirect = !f.q && !activeAlert && otherDims.length === 0;
 
@@ -4021,8 +4226,8 @@ function orderJoin(){
     var key = String(ewo);
     if(known[key]) return !!set[key];
     if(!onlyDirect) return false;
-    if(buyerF && String(buyer || "").trim() !== buyerF) return false;
-    if(unitF && String(unit || "").trim() !== unitF) return false;
+    if(buyerF.length && buyerF.indexOf(String(buyer || "").trim()) === -1) return false;
+    if(unitF.length && unitF.indexOf(String(unit || "").trim()) === -1) return false;
     return true;
   };
 }
