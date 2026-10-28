@@ -110,6 +110,14 @@
 
   /* ---------- filters ---------- */
   .filters{background:#fff;border:1px solid var(--line);border-top:2px solid var(--gold);padding:14px 16px;margin-bottom:18px;}
+  /* With the switch on, the filter bar rides under the tabs instead of
+     scrolling away, so a filter can be changed without going back to the top.
+     The tabs stay put either way. */
+  body.freeze-filters .filters{position:sticky;top:var(--tabh,38px);z-index:25;
+                               box-shadow:0 4px 10px rgba(0,0,0,0.05);}
+  .freeze-opt{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-soft);
+              text-transform:none;letter-spacing:0;cursor:pointer;white-space:nowrap;}
+  .freeze-opt input{margin:0;}
   .filter-grid{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
   .fld{display:flex;flex-direction:column;gap:3px;}
   .fld label{font-size:10px;color:var(--ink-soft);letter-spacing:0.04em;text-transform:uppercase;}
@@ -380,9 +388,9 @@
   <button class="tab on" data-tab="overview">Overview</button>
   <button class="tab" data-tab="attention">Needs attention <span class="count" id="attnCount">0</span></button>
   <button class="tab" data-tab="timeline">Timeline</button>
-  <button class="tab" data-tab="capacity">Capacity with Load</button>
+  <button class="tab" data-tab="capacity">Capacity vs Load</button>
   <button class="tab" data-tab="ott">OTT</button>
-  <button class="tab" data-tab="delivery">Fabric delivery</button>
+  <button class="tab" data-tab="delivery">Load vs Actual</button>
   <button class="tab" data-tab="summary">Summary</button>
   <button class="tab" data-tab="orders">Orders</button>
 </div>
@@ -418,9 +426,9 @@
           <label for="dateTo">To</label>
           <input type="date" id="dateTo" />
         </div>
-        <div class="fld" style="flex:1 1 220px;">
+        <div class="fld">
           <label>&nbsp;</label>
-          <div class="hint" style="margin:0;">Each chart reads this range against its own dates: fabric charts by the fabric window, sewing charts by the sewing window.</div>
+          <button class="secondary tiny" id="resetBtn">Reset all</button>
         </div>
         <div class="fld">
           <label>Charts by</label>
@@ -432,7 +440,9 @@
         </div>
         <div class="fld">
           <label>&nbsp;</label>
-          <button class="secondary tiny" id="resetBtn">Reset all</button>
+          <label class="freeze-opt" title="Keep the tabs and this filter bar on screen while the page scrolls">
+            <input type="checkbox" id="freezeTop" checked /> Freeze filters
+          </label>
         </div>
       </div>
       <div class="filter-note">
@@ -502,6 +512,10 @@
         <h3 id="attnTableTitle">Flagged orders</h3>
         <div class="hint" id="attnTableHint"></div>
         <div class="table-wrap short"><table id="attnTable"></table></div>
+        <details class="cols" id="attnColWrap">
+          <summary>Choose columns</summary>
+          <div class="colgrid" id="attnColChooser"></div>
+        </details>
       </div>
     </div>
 
@@ -912,10 +926,12 @@ function workingDaysBetween(from, to){
   for(var d = from; d <= to; d += DAY) if(isWorkingDay(d)) n++;
   return n;
 }
-var DEFAULT_TABLE_COLUMNS = ["EWO", "Status", "Buyer", "Team", "Execution Unit", "Dept",
-  "Order Qty", "Fab Qty", "InHouse", "OutSide", "Order Bank Date", "Adjusted Fabric Start",
-  "Adjusted Fabric End", "Adjusted PCD", "Adjusted sew start", "Adjusted sew end",
-  "fab dur", "sew dur", "Latest note"];
+/* What the Orders tab shows before anyone touches the chooser. Written with
+   the dashboard's own column names, so a workbook using either the old or the
+   new sheet headings opens on the same set. */
+var DEFAULT_TABLE_COLUMNS = ["Order Bank Date", "Status", "Latest note", "EWO", "Team", "Buyer",
+  "Dept", "Execution Unit", "Order Qty", "Min FRD", "Fabric Quantity [Textile]",
+  "Adjusted Fabric Start", "Adjusted Fabric End", "Adjusted PCD", "Adjusted sew start"];
 /* ============================================================ */
 
 var charts = {};
@@ -950,6 +966,7 @@ var els = {};
  "ottKpis","ottSourceNote","ottEventFilter","ottStatusFilter","ottTableHint","ottTable",
  "ottPrev","ottNext","ottPageInfo",
  "ganttScroll","ganttHint","zoomIn","zoomOut","gotoToday","gRowsPer","gPrev","gNext","gPageInfo","gFlag",
+ "freezeTop","attnColChooser","attnColWrap",
  "ottMixHint","ottLateHint",
  "granSwitch","granHint","sewUnitGrid","sewUnitHint","ottMissing","ottEventHint","ottTotalHint","sewLoadHint",
  "filterSummary","activeChips","kpiRow","alertRow","attnTable","attnTableTitle","attnTableHint",
@@ -1738,6 +1755,7 @@ function ingest(bundle){
   buildFilters();
   restoreFilters(keptFilters);
   buildColumnChooser();
+  buildAttnChooser();
   buildGroupBy();
   applyFilters();
 }
@@ -2605,6 +2623,9 @@ function resetAll(){
   Object.keys(dimWraps).forEach(function(k){ dimWraps[k].querySelector(".ms-search").value = ""; });
   els.dateFrom.value = ""; els.dateTo.value = "";
   activeAlert = null; sortCol = null; page = 0;
+  ganttFlag = ""; if(els.gFlag) els.gFlag.value = "";
+  closeAllDims();
+  refreshDimLists();          // without this the buttons keep their old labels
   applyFilters();
 }
 
@@ -2757,8 +2778,42 @@ function renderAlerts(){
 var ATTN_COLUMNS = ["EWO","Status","Buyer","Team","Execution Unit","Order Qty",
   "Adjusted Fabric Start","Adjusted Fabric End","Adjusted PCD","Adjusted sew start","Max FRD"];
 
+/* The flagged-orders table has its own column choice, kept apart from the
+   Orders tab so each can be set up for the job it is doing. */
+var attnCols = [];
+
+function buildAttnChooser(){
+  var previous = attnCols.slice();
+  var wanted = {};
+  ATTN_COLUMNS.forEach(function(c){ wanted[colKey(headerFor(c))] = true; });
+  attnCols = HEADERS.filter(function(h){
+    return !COLEMPTY[h] && (previous.length ? previous.indexOf(h) !== -1 : wanted[colKey(h)] === true);
+  });
+  if(!attnCols.length) attnCols = HEADERS.filter(function(h){ return !COLEMPTY[h]; }).slice(0, 10);
+
+  els.attnColChooser.innerHTML = HEADERS.map(function(h){
+    return '<label' + (COLEMPTY[h] ? ' class="empty"' : "") + '>'
+      + '<input type="checkbox" data-col="' + esc(h) + '"'
+      + (attnCols.indexOf(h) !== -1 ? " checked" : "") + ' />'
+      + '<span>' + esc(h) + esc(COLEMPTY[h] ? " (empty)" : "") + '</span></label>';
+  }).join("");
+
+  Array.prototype.forEach.call(els.attnColChooser.querySelectorAll("input"), function(cb){
+    cb.addEventListener("change", function(){
+      var name = cb.getAttribute("data-col");
+      if(cb.checked){
+        var w = attnCols.concat([name]);
+        attnCols = HEADERS.filter(function(h){ return w.indexOf(h) !== -1; });
+      }else{
+        attnCols = attnCols.filter(function(h){ return h !== name; });
+      }
+      renderAttnTable();
+    });
+  });
+}
+
 function renderAttnTable(){
-  var cols = ATTN_COLUMNS.filter(function(c){ return IDX[c] != null; });
+  var cols = attnCols.length ? attnCols : ATTN_COLUMNS.filter(function(c){ return IDX[c] != null; });
   els.attnTableTitle.textContent = activeAlert ? ALERTS_BY_KEY[activeAlert].title : "All shown orders";
   els.attnTableHint.textContent = activeAlert
     ? ALERTS_BY_KEY[activeAlert].detail + ". " + fmtInt(filtered.length) + " orders."
@@ -2902,14 +2957,19 @@ function ganttCapacity(range, dayMap, unitKeysWanted){
 /* A window drawn across the columns that are on show. With every day visible
    that is one block; with a colour filter on it becomes one block per run of
    visible days, so a bar never implies days that are not being displayed. */
-function ganttBar(range, colW, days, atCol, startCol, endCol, r, cls, label){
+function ganttBar(range, colW, days, atCol, startCol, endCol, r, cls, label, qtyCol, unitWord){
   var a = dat(r, startCol), b = dat(r, endCol);
   if(a == null || b == null || b < a) return "";
   if(b < range.from || a > range.to) return "";
   var i0 = Math.round(((a < range.from ? range.from : a) - range.from) / DAY);
   var i1 = Math.round(((b > range.to ? range.to : b) - range.from) / DAY);
-  var tip = esc(label + ": " + fmtDate(a) + " to " + fmtDate(b)
-    + " (" + (Math.round((b - a) / DAY) + 1) + " days)");
+  var span = Math.round((b - a) / DAY) + 1;
+  /* The number a planner wants off a bar is not the total but the rate: how
+     much of this order lands on each day it covers. */
+  var q = qtyCol ? num(r, qtyCol) : null;
+  var tip = esc(label + ": " + fmtDate(a) + " to " + fmtDate(b) + " (" + span + " days)"
+    + (q != null && q > 0 ? "  ·  " + fmtInt(q / span) + " " + unitWord + " per day, "
+       + fmtInt(q) + " in total" : ""));
   var out = [], runStart = null, prev = null;
   function flush(){
     if(runStart == null) return;
@@ -3099,8 +3159,10 @@ function renderGantt(){
                 fmtInt(num(r, "FR hour") || 0), fmtInt(num(r, "Fab Qty") || 0)];
     html.push('<div class="g-row">' + leftCells(vals)
       + '<div class="g-track" style="width:' + trackW + 'px">'
-      + ganttBar(range, colW, days, atCol, "Adjusted Fabric Start", "Adjusted Fabric End", r, "fab", "Fabric")
-      + ganttBar(range, colW, days, atCol, "Adjusted sew start", "Adjusted sew end", r, "sew", "Sewing")
+      + ganttBar(range, colW, days, atCol, "Adjusted Fabric Start", "Adjusted Fabric End", r, "fab",
+                 "Fabric quantity", "Fab Qty", "kg")
+      + ganttBar(range, colW, days, atCol, "Adjusted sew start", "Adjusted sew end", r, "sew",
+                 "Producible hour", "FR hour", "hours")
       + '</div></div>');
   });
 
@@ -3202,8 +3264,20 @@ function renderOttCharts(lines){
       options: { indexAxis: "y", responsive: true, maintainAspectRatio: false,
         interaction: { mode: "index", intersect: false },
         plugins: { legend: { position: "bottom", labels: { font: MONO, boxWidth: 12 } },
-          tooltip: { callbacks: { label: function(c){
-            return c.dataset.label + ": " + fmtInt(c.parsed.x) + " orders"; } } } },
+          tooltip: { callbacks: {
+            label: function(c){
+              var t = tally[order[c.dataIndex]];
+              var n = t.Pass + t.Fail + t.Overdue;
+              return c.dataset.label + ": " + fmtInt(c.parsed.x)
+                + (n ? " (" + Math.round(1000 * c.parsed.x / n) / 10 + "%)" : "");
+            },
+            footer: function(items){
+              if(!items.length) return "";
+              var t = tally[order[items[0].dataIndex]];
+              var n = t.Pass + t.Fail + t.Overdue;
+              return n ? "On time " + Math.round(1000 * t.Pass / n) / 10 + "%  ("
+                + fmtInt(t.Pass) + " of " + fmtInt(n) + ")" : "Nothing judged yet";
+            } } } },
         scales: { x: { stacked: true, ticks: { font: MONO }, grid: GRID },
                   y: { stacked: true, ticks: { font: MONO }, grid: { display: false } } } }
     });
@@ -3754,8 +3828,13 @@ function renderPivot(){
 
 function buildColumnChooser(){
   var previous = visibleCols.slice();
+  /* The default list is written with the dashboard's own column names, so it
+     is matched through the alias layer: "Adjusted Fabric Start" picks out
+     "Fabric Delivery start" in a workbook that renamed it. */
+  var wanted = {};
+  DEFAULT_TABLE_COLUMNS.forEach(function(c){ wanted[colKey(headerFor(c))] = true; });
   visibleCols = HEADERS.filter(function(h){
-    return !COLEMPTY[h] && (previous.length ? previous.indexOf(h) !== -1 : DEFAULT_TABLE_COLUMNS.indexOf(h) !== -1);
+    return !COLEMPTY[h] && (previous.length ? previous.indexOf(h) !== -1 : wanted[colKey(h)] === true);
   });
   if(visibleCols.length === 0){
     visibleCols = HEADERS.filter(function(h){ return !COLEMPTY[h]; }).slice(0, 12);
@@ -3869,8 +3948,9 @@ function csvCell(v){
   return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
 function exportCsv(){
-  // On the OTT tab the interesting rows are the event lines, not the orders.
+  // Each tab exports what it is showing.
   if(activeTab === "ott") return exportOttCsv();
+  if(activeTab === "timeline") return exportStripCsv();
   var cols = visibleCols;
   var lines = [cols.map(csvCell).join(",")];
   filtered.forEach(function(r){
@@ -3892,6 +3972,59 @@ function exportCsv(){
   document.body.appendChild(a);
   a.click();
   setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+/* The strip plan as a sheet: the order columns, then one column per day. Each
+   order contributes a Fabric row and a Producible hour row, carrying the same
+   per-day figures the bars stand for, with the two totals rows on top. Opened
+   in Excel it is the strip plan, not a picture of it. */
+function exportStripCsv(){
+  var range = ganttRange(filtered);
+  if(!range){ return; }
+  var colsLeft = GANTT_COLUMNS.map(function(c){ return c.name; });
+  var dayLabels = [];
+  for(var d = 0; d < range.days; d++) dayLabels.push(fmtDate(range.from + d * DAY));
+
+  var fabTot = ganttTotals(filtered, range, "Adjusted Fabric Start", "Adjusted Fabric End", "Fab Qty");
+  var sewTot = ganttTotals(filtered, range, "Adjusted sew start", "Adjusted sew end", "FR hour");
+
+  var out = [["Measure"].concat(colsLeft).concat(dayLabels).map(csvCell).join(",")];
+  function round1(v){ return v ? Math.round(v * 10) / 10 : ""; }
+
+  out.push(["Fabric Total", "", "", "", "", "", "", "", ""]
+    .concat(fabTot.map(round1)).map(csvCell).join(","));
+  out.push(["Production Hour Total", "", "", "", "", "", "", "", ""]
+    .concat(sewTot.map(round1)).map(csvCell).join(","));
+
+  function spreadRow(r, startCol, endCol, qtyCol){
+    var a = dat(r, startCol), b = dat(r, endCol), q = num(r, qtyCol);
+    if(a == null || b == null || b < a || q == null || q <= 0) return null;
+    var per = q / (Math.round((b - a) / DAY) + 1);
+    var cells = [];
+    for(var i = 0; i < range.days; i++){
+      var ms = range.from + i * DAY;
+      cells.push(ms >= a && ms <= b ? round1(per) : "");
+    }
+    return cells;
+  }
+
+  filtered.forEach(function(r){
+    var left = [txt(r, "Buyer"), txt(r, "Team"), txt(r, "Dept"), num(r, "EWO"),
+                txt(r, "Execution Unit"), txt(r, "Status"),
+                num(r, "FR hour") || 0, num(r, "Fab Qty") || 0];
+    var fab = spreadRow(r, "Adjusted Fabric Start", "Adjusted Fabric End", "Fab Qty");
+    if(fab) out.push(["Fabric kg"].concat(left).concat(fab).map(csvCell).join(","));
+    var sew = spreadRow(r, "Adjusted sew start", "Adjusted sew end", "FR hour");
+    if(sew) out.push(["Producible hour"].concat(left).concat(sew).map(csvCell).join(","));
+  });
+
+  var blob = new Blob(["\ufeff" + out.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+  var a2 = document.createElement("a");
+  a2.href = URL.createObjectURL(blob);
+  a2.download = "strip-plan-" + new Date().toISOString().slice(0, 10) + ".csv";
+  document.body.appendChild(a2);
+  a2.click();
+  setTimeout(function(){ URL.revokeObjectURL(a2.href); a2.remove(); }, 1000);
 }
 
 /* The event lines as they appear on the OTT tab, filters and all. */
@@ -4882,6 +5015,27 @@ els.gNext.addEventListener("click", function(){
 });
 els.ottPrev.addEventListener("click", function(){ ottPage--; renderOttTab(); });
 els.ottNext.addEventListener("click", function(){ ottPage++; renderOttTab(); });
+
+/* The tabs are always pinned; the filter bar joins them when the switch is on.
+   Its exact height is measured rather than guessed, because the bar wraps onto
+   two lines on a narrow screen. */
+function applyFreeze(){
+  var on = els.freezeTop.checked;
+  document.body.classList.toggle("freeze-filters", on);
+  var tabs = document.getElementById("tabBar");
+  if(tabs) document.documentElement.style.setProperty("--tabh", tabs.offsetHeight + "px");
+  try{ localStorage.setItem("ewo-freeze-filters", on ? "1" : "0"); }catch(e){}
+}
+els.freezeTop.addEventListener("change", applyFreeze);
+try{
+  var savedFreeze = localStorage.getItem("ewo-freeze-filters");
+  if(savedFreeze === "0") els.freezeTop.checked = false;
+}catch(e){}
+applyFreeze();
+window.addEventListener("resize", function(){
+  clearTimeout(window.__fz);
+  window.__fz = setTimeout(applyFreeze, 200);
+});
 
 els.refreshBtn.addEventListener("click", function(){
   flashStatus(true);
