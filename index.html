@@ -116,10 +116,15 @@
   /* Pinned in order down the page: the title bar, the tabs, the filters. The
      title bar gives up some of its height once it is pinned, because at that
      point it is a label, not a headline. */
-  body.freeze-filters .topbar{position:sticky;top:0;z-index:40;padding:8px 24px;}
-  body.freeze-filters .topbar .brand img{height:26px;}
-  body.freeze-filters .topbar .brand h1{font-size:15px;}
-  body.freeze-filters .topbar .subtitle{display:none;}
+  body.freeze-filters .topbar{position:sticky;top:0;z-index:40;}
+  /* Compact only once the page has actually moved. A sticky element has no
+     "stuck" state in CSS, so the state comes from a scroll listener; without
+     it the header was permanently shrunk and the subtitle never shown. */
+  body.freeze-filters.scrolled .topbar{padding:7px 24px;}
+  body.freeze-filters.scrolled .topbar .brand img{height:24px;}
+  body.freeze-filters.scrolled .topbar .brand h1{font-size:15px;}
+  body.freeze-filters.scrolled .topbar .subtitle{font-size:9.5px;}
+  .topbar, .topbar .brand img, .topbar .brand h1{transition:all .12s ease;}
   body.freeze-filters .tabbar{top:var(--toph,52px);}
   body.freeze-filters .filters{position:sticky;top:calc(var(--toph,52px) + var(--tabh,38px));z-index:25;
                                box-shadow:0 4px 10px rgba(0,0,0,0.05);}
@@ -375,6 +380,8 @@
 </style>
 </head>
 <body>
+
+<div id="topSentinel" style="height:1px;"></div>
 
 <div class="zoom-back" id="zoomBack">
   <div class="zoom-card">
@@ -5226,6 +5233,26 @@ function applyFreeze(){
   try{ localStorage.setItem("ewo-freeze-filters", on ? "1" : "0"); }catch(e){}
 }
 els.freezeTop.addEventListener("change", applyFreeze);
+
+/* The header shrinks once the page leaves the top. Watching a one pixel
+   sentinel at the very top is steadier than listening for scroll events,
+   which some hosts throttle away entirely, and it costs nothing while still. */
+function setScrolled(on){
+  if(on === document.body.classList.contains("scrolled")) return;
+  document.body.classList.toggle("scrolled", on);
+  var top = document.querySelector(".topbar");
+  if(top) document.documentElement.style.setProperty("--toph", top.offsetHeight + "px");
+}
+(function(){
+  var sentinel = document.getElementById("topSentinel");
+  if(sentinel && typeof IntersectionObserver === "function"){
+    new IntersectionObserver(function(entries){
+      setScrolled(!entries[0].isIntersecting);
+    }, { threshold: 0 }).observe(sentinel);
+  }else{
+    window.addEventListener("scroll", function(){ setScrolled(window.scrollY > 8); }, { passive: true });
+  }
+})();
 try{
   var savedFreeze = localStorage.getItem("ewo-freeze-filters");
   if(savedFreeze === "0") els.freezeTop.checked = false;
