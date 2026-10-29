@@ -124,7 +124,11 @@
   body.freeze-filters.scrolled .topbar .brand img{height:24px;}
   body.freeze-filters.scrolled .topbar .brand h1{font-size:15px;}
   body.freeze-filters.scrolled .topbar .subtitle{font-size:9.5px;}
-  .topbar, .topbar .brand img, .topbar .brand h1{transition:all .12s ease;}
+  /* No transition on anything that changes the header's height: the sticky
+     offsets below it are measured the moment it changes, and an animation in
+     flight reports the old height, leaving a gap for the page to show
+     through. Only the logo, which does not affect the height, eases. */
+  .topbar .brand img{transition:height .12s ease;}
   body.freeze-filters .tabbar{top:var(--toph,52px);}
   body.freeze-filters .filters{position:sticky;top:calc(var(--toph,52px) + var(--tabh,38px));z-index:25;
                                box-shadow:0 4px 10px rgba(0,0,0,0.05);}
@@ -5225,11 +5229,7 @@ els.ottNext.addEventListener("click", function(){ ottPage++; renderOttTab(); });
 function applyFreeze(){
   var on = els.freezeTop.checked;
   document.body.classList.toggle("freeze-filters", on);
-  // Measured after the class is on, so the shrunken height is the one used.
-  var tabs = document.getElementById("tabBar");
-  var top = document.querySelector(".topbar");
-  if(top) document.documentElement.style.setProperty("--toph", top.offsetHeight + "px");
-  if(tabs) document.documentElement.style.setProperty("--tabh", tabs.offsetHeight + "px");
+  measureSticky();
   try{ localStorage.setItem("ewo-freeze-filters", on ? "1" : "0"); }catch(e){}
 }
 els.freezeTop.addEventListener("change", applyFreeze);
@@ -5240,8 +5240,25 @@ els.freezeTop.addEventListener("change", applyFreeze);
 function setScrolled(on){
   if(on === document.body.classList.contains("scrolled")) return;
   document.body.classList.toggle("scrolled", on);
+  measureSticky();
+}
+
+/* The tab bar sits at the header's height and the filter bar below both, so
+   those two numbers must never lag behind reality: a stale one leaves a gap
+   between the layers and the page scrolls through it. They are re-measured
+   whenever either element changes size, from any cause, rather than only at
+   the moments the code happens to think about it. */
+function measureSticky(){
   var top = document.querySelector(".topbar");
-  if(top) document.documentElement.style.setProperty("--toph", top.offsetHeight + "px");
+  var tabs = document.getElementById("tabBar");
+  if(top) document.documentElement.style.setProperty("--toph", top.getBoundingClientRect().height + "px");
+  if(tabs) document.documentElement.style.setProperty("--tabh", tabs.getBoundingClientRect().height + "px");
+}
+if(typeof ResizeObserver === "function"){
+  var stickyRo = new ResizeObserver(measureSticky);
+  var topEl = document.querySelector(".topbar"), tabEl = document.getElementById("tabBar");
+  if(topEl) stickyRo.observe(topEl);
+  if(tabEl) stickyRo.observe(tabEl);
 }
 (function(){
   var sentinel = document.getElementById("topSentinel");
@@ -5260,7 +5277,7 @@ try{
 applyFreeze();
 window.addEventListener("resize", function(){
   clearTimeout(window.__fz);
-  window.__fz = setTimeout(applyFreeze, 200);
+  window.__fz = setTimeout(measureSticky, 150);
 });
 
 els.refreshBtn.addEventListener("click", function(){
