@@ -76,6 +76,10 @@
               border-top:3px solid var(--gold);padding:22px 26px;font-size:12.5px;color:var(--ink-soft);}
   .signin-box h2{text-align:left;}
   .signin-box p{margin:8px 0 16px;}
+  /* The technical line behind a refusal: there for whoever set the dashboard
+     up, quiet enough that it does not shout at everybody else. */
+  .signin-detail{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);
+                 font-family:var(--mono);font-size:11px;color:var(--ink-soft);word-break:break-word;}
   /* Until somebody signs in there is no data behind the tabs and no account to
      act on, so the whole chrome is held back and the card below carries the
      name instead. */
@@ -455,10 +459,11 @@
           <div class="subtitle">Department of Business Planning</div>
         </div>
       </div>
-      <h2>Sign in to open the dashboard</h2>
-      <p>The workbooks are read straight from OneDrive with your Microsoft account, so only people
+      <h2 id="signinTitle">Sign in to open the dashboard</h2>
+      <p id="signinText">The workbooks are read straight from OneDrive with your Microsoft account, so only people
          who already have access to the files can see this. Nothing is stored anywhere else.</p>
       <button id="signInBtn2">Sign in with Microsoft</button>
+      <div class="signin-detail" id="signinDetail" hidden></div>
     </div>
     <h2 id="loadingTitle">Starting</h2>
     <p id="loadingText">Checking your sign-in.</p>
@@ -1039,7 +1044,7 @@ var pollTimer = null, freshTimer = null, sourceLabel = "";
 
 var els = {};
 ["statusDot","statusText","freshness","refreshBtn","csvBtn","loadingState","dashboard",
- "signInBtn","signInBtn2","signOutBtn","accountLabel","signinBox","spinner","loadingTitle","loadingText",
+ "signInBtn","signInBtn2","signinTitle","signinText","signinDetail","signOutBtn","accountLabel","signinBox","spinner","loadingTitle","loadingText",
  "errorBox","filterGrid","searchInput","dateFieldWrap","dateFrom","dateTo","resetBtn",
  "zoomBack","zoomClose","zoomTitle","zoomHint","zoomBody","liveWrap",
  "fabLoadHint",
@@ -1168,6 +1173,32 @@ function greeting(acct){
   return part + ", " + first;
 }
 
+var SIGNIN_TITLE = "Sign in to open the dashboard";
+var SIGNIN_TEXT = "The workbooks are read straight from OneDrive with your Microsoft account, so only "
+                + "people who already have access to the files can see this. Nothing is stored anywhere else.";
+var pickAccount = false;          // next sign-in should offer the account list
+
+/* Signed in, but the files are not readable by this account. The dashboard
+   frame is put away again: there is nothing behind those tabs, and an empty
+   header with a Sign out button only invites a second confused try. */
+function noAccessScreen(acct, detail){
+  pickAccount = true;
+  clearError();
+  loadingScreen("", "", true);
+  els.signinTitle.textContent = "This account cannot open the workbooks";
+  els.signinText.textContent =
+    (acct ? acct + " is signed in, but it " : "This account ")
+    + "does not have access to the dashboard workbooks in OneDrive. Ask the Business Planning team "
+    + "to share them with you, or sign in with the account that already has them.";
+  els.signInBtn2.textContent = "Sign in with a different account";
+  els.signinDetail.textContent = detail || "";
+  els.signinDetail.hidden = !detail;
+  setStatus("No access", "err");
+  els.signInBtn.hidden = true; els.signOutBtn.hidden = true;
+  els.refreshBtn.hidden = true; els.csvBtn.hidden = true;
+  els.accountLabel.textContent = "";
+}
+
 function loadingScreen(title, text, showSignIn){
   if(showSignIn) document.body.classList.add("signed-out");
   els.loadingState.style.display = "block";
@@ -1178,6 +1209,11 @@ function loadingScreen(title, text, showSignIn){
   els.loadingText.style.display = showSignIn ? "none" : "";
   els.signinBox.style.display = showSignIn ? "block" : "none";
   els.spinner.style.display = showSignIn ? "none" : "";
+  // Back to the ordinary invitation unless noAccessScreen rewrites it after us.
+  els.signinTitle.textContent = SIGNIN_TITLE;
+  els.signinText.textContent = SIGNIN_TEXT;
+  els.signInBtn2.textContent = "Sign in with Microsoft";
+  els.signinDetail.hidden = true;
 }
 
 function initMsal(){
@@ -1203,6 +1239,14 @@ function initMsal(){
 
 async function getToken(interactive){
   var account = msalApp.getActiveAccount() || msalApp.getAllAccounts()[0];
+  /* After a refusal the silent path would hand back the very same account, so
+     it is skipped and Microsoft is asked to show the chooser. */
+  if(pickAccount && interactive){
+    var picked = await msalApp.acquireTokenPopup({ scopes: GRAPH_SCOPES, prompt: "select_account" });
+    msalApp.setActiveAccount(picked.account);
+    pickAccount = false;
+    return picked.accessToken;
+  }
   if(account){
     msalApp.setActiveAccount(account);
     try{
@@ -1239,11 +1283,24 @@ async function graph(path, token, init){
   if(!res.ok){
     var body = "";
     try{ body = (await res.text()).slice(0, 300); }catch(e){}
-    var msg = "Graph answered " + res.status;
+    var msg = "Graph answered " + res.status, noAccess = false;
     if(res.status === 401) msg = "Your sign-in has expired. Press Refresh to sign in again.";
-    else if(res.status === 403) msg = "Access refused. Either your account has no access to these files, or the app has not been granted access to them (for Files.SelectedOperations.Selected the file or its folder must be granted to the app with a POST to /permissions).";
-    else if(res.status === 404) msg = "The folder or file was not found. Check ONEDRIVE_OWNER and ONEDRIVE_FOLDER_PATH in config.js.";
-    throw new Error(msg + (body ? " " + body : ""));
+    else if(res.status === 403){
+      noAccess = true;
+      msg = "Access refused (403). Either this account has no access to the files, or the app "
+          + "registration has not been granted them (with Files.SelectedOperations.Selected the "
+          + "file or its folder must be granted to the app with a POST to /permissions).";
+    }else if(res.status === 404){
+      /* With a per-file grant OneDrive hides what you may not read, so an
+         account without access is told the item does not exist. The path
+         being wrong gives exactly the same answer, hence both readings. */
+      noAccess = true;
+      msg = "Not found (404). Either this account has no access to the files, or ONEDRIVE_OWNER "
+          + "and the file paths in config.js do not point at them.";
+    }
+    var err = new Error(msg + (body ? " " + body : ""));
+    err.noAccess = noAccess;
+    throw err;
   }
   return res;
 }
@@ -1747,9 +1804,17 @@ async function load(opts){
     if(opts.quiet && ROWS.length){
       setStatus("Check failed, showing last good data", "err");
       showDashboard();
+    }else if(e && e.noAccess){
+      var who = msalApp && msalApp.getActiveAccount();
+      noAccessScreen(who ? (who.username || who.name) : "", e.message);
     }else{
-      loadingScreen("", "", false);
-      els.loadingTitle.style.display = "none"; els.loadingText.style.display = "none"; els.spinner.style.display = "none";
+      /* If the dashboard was never on screen, the card stays: without it the
+         page is an error message with no button on it. */
+      var neverShown = document.body.classList.contains("signed-out");
+      loadingScreen("", "", neverShown);
+      if(!neverShown){
+        els.loadingTitle.style.display = "none"; els.loadingText.style.display = "none"; els.spinner.style.display = "none";
+      }
       showError("<strong>Couldn't load the workbooks.</strong><br/>" + esc(e.message));
       setStatus("Not loaded", "err");
     }
