@@ -43,10 +43,15 @@
   h1,h2,h3{font-family:Georgia,"Source Serif 4",serif;font-weight:600;margin:0;}
 
   /* ---------- header ---------- */
+  /* Pinned in order down the page: the title bar, then the tabs, then the
+     filter bar. The first two are how you know where you are and how you get
+     somewhere else, so they are always there; only the filter bar is the
+     reader's to pin or unpin. */
   .topbar{
     display:flex;align-items:center;justify-content:space-between;
     padding:14px 24px;background:#fff;border-bottom:3px solid var(--green);
     flex-wrap:wrap;gap:14px;
+    position:sticky;top:0;z-index:40;
   }
   .brand{display:flex;align-items:center;gap:14px;}
   .brand img{height:34px;width:auto;display:block;}
@@ -106,7 +111,7 @@
   .tabbar{
     display:flex;gap:2px;padding:0 24px;background:#fff;
     border-bottom:1px solid var(--line);flex-wrap:wrap;
-    position:sticky;top:0;z-index:30;
+    position:sticky;top:var(--toph,52px);z-index:30;
   }
   .tab{
     border:none;background:transparent;color:var(--ink-soft);
@@ -125,26 +130,22 @@
 
   /* ---------- filters ---------- */
   .filters{background:#fff;border:1px solid var(--line);border-top:2px solid var(--gold);padding:14px 16px;margin-bottom:18px;}
-  /* With the switch on, the filter bar rides under the tabs instead of
-     scrolling away, so a filter can be changed without going back to the top.
-     The tabs stay put either way. */
-  /* Pinned in order down the page: the title bar, the tabs, the filters. The
-     title bar gives up some of its height once it is pinned, because at that
-     point it is a label, not a headline. */
-  body.freeze-filters .topbar{position:sticky;top:0;z-index:40;}
-  /* Compact only once the page has actually moved. A sticky element has no
-     "stuck" state in CSS, so the state comes from a scroll listener; without
-     it the header was permanently shrunk and the subtitle never shown. */
-  body.freeze-filters.scrolled .topbar{padding:7px 24px;}
-  body.freeze-filters.scrolled .topbar .brand img{height:24px;}
-  body.freeze-filters.scrolled .topbar .brand h1{font-size:15px;}
-  body.freeze-filters.scrolled .topbar .subtitle{font-size:9.5px;}
+  /* The title bar gives up some of its height once the page has moved,
+     because by then it is a label rather than a headline. A sticky element
+     has no "stuck" state in CSS, so the state comes from a scroll listener;
+     without it the header was permanently shrunk and the subtitle never
+     shown. */
+  body.scrolled .topbar{padding:7px 24px;}
+  body.scrolled .topbar .brand img{height:24px;}
+  body.scrolled .topbar .brand h1{font-size:15px;}
+  body.scrolled .topbar .subtitle{font-size:9.5px;}
   /* No transition on anything that changes the header's height: the sticky
      offsets below it are measured the moment it changes, and an animation in
      flight reports the old height, leaving a gap for the page to show
      through. Only the logo, which does not affect the height, eases. */
   .topbar .brand img{transition:height .12s ease;}
-  body.freeze-filters .tabbar{top:var(--toph,52px);}
+  /* With the switch on, the filter bar rides under the tabs instead of
+     scrolling away, so a filter can be changed without going back to the top. */
   body.freeze-filters .filters{position:sticky;top:calc(var(--toph,52px) + var(--tabh,38px));z-index:25;
                                box-shadow:0 4px 10px rgba(0,0,0,0.05);}
   .freeze-opt{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-soft);
@@ -179,9 +180,8 @@
   /* ten tiles sit in two clean rows of five, six in one row, so no grey gaps show */
   .kpis.ten{grid-template-columns:repeat(5,1fr);}
   .kpis.six{grid-template-columns:repeat(6,1fr);}
-  .kpis.eight{grid-template-columns:repeat(4,1fr);}
-  @media(max-width:1100px){.kpis.ten{grid-template-columns:repeat(3,1fr);}.kpis.six,.kpis.eight{grid-template-columns:repeat(3,1fr);}}
-  @media(max-width:700px){.kpis.ten,.kpis.six,.kpis.eight{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:1100px){.kpis.ten{grid-template-columns:repeat(3,1fr);}.kpis.six{grid-template-columns:repeat(3,1fr);}}
+  @media(max-width:700px){.kpis.ten,.kpis.six{grid-template-columns:repeat(2,1fr);}}
   .kpi:nth-child(odd){border-top-color:var(--green);}
   .kpi:nth-child(even){border-top-color:var(--gold);}
   .kpi .label{color:var(--ink-soft);font-size:10.5px;margin-bottom:5px;letter-spacing:0.02em;}
@@ -627,7 +627,7 @@
 
     <!-- ============ CAPACITY ============ -->
     <div class="tabpage" id="page-capacity">
-      <div class="kpis eight" id="capKpis"></div>
+      <div class="kpis six" id="capKpis"></div>
       <div class="granbar"><span class="granhint">Each order's quantity is spread evenly across its planned window, the same arithmetic the fab and Sew sheets used. Filters and the Day / Week / Month switch apply.</span></div>
       <div class="grid1">
         <div class="panel">
@@ -4631,13 +4631,15 @@ function renderCapacity(){
 
   var tiles = [
     ["In-house fabric in plan", fmtInt(fabHours), fmtInt(planned.length) + " orders, spread " + rangeNote],
+    /* The average and its busiest day are one thought, not two: the peak only
+       means anything next to the average it stands out from. */
     ["Avg fabric load per day", fabDays ? fmtInt(fabHours / fabDays) : "0",
-      fabDays ? "kg, over " + fmtInt(fabDays) + " working days" : "no day carries fabric"],
-    ["Peak knitting day", fmtInt(fp.max), fp.at ? fmtDate(fp.at) : ""],
+      (fabDays ? "kg, over " + fmtInt(fabDays) + " working days" : "no day carries fabric")
+      + (fp.at ? " · peak " + fmtInt(fp.max) + " on " + fmtDate(fp.at) : "")],
     ["Sewing hours in plan", fmtInt(sewHours), fmtInt(sewPlanned.length) + " orders, spread " + rangeNote],
     ["Avg sewing load per day", sewDays ? fmtInt(sewHours / sewDays) : "0",
-      sewDays ? "FR hours, over " + fmtInt(sewDays) + " working days" : "no day carries sewing"],
-    ["Peak sewing day", fmtInt(sp.max), sp.at ? fmtDate(sp.at) : ""],
+      (sewDays ? "FR hours, over " + fmtInt(sewDays) + " working days" : "no day carries sewing")
+      + (sp.at ? " · peak " + fmtInt(sp.max) + " on " + fmtDate(sp.at) : "")],
     CAPACITY.days
       ? ["Capacity used", usedPct + "%", fmtInt(capStat.used) + " of " + fmtInt(capStat.avail)
           + " hours, " + fmtInt(capStat.covered) + " working days"]
@@ -5432,6 +5434,7 @@ els.signOutBtn.addEventListener("click", function(){
 });
 
 window.addEventListener("resize", function(){
+  measureSticky();               // the header rewraps at narrow widths
   clearTimeout(window.__rs);
   window.__rs = setTimeout(function(){ renderTab(activeTab); }, 250);
 });
