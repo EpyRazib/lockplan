@@ -689,17 +689,15 @@
           <div class="chart-box tall"><canvas id="ottMixChart"></canvas></div>
         </div>
         <div class="panel">
-          <h3>Hit rate by unit</h3>
-          <div class="hint" id="hitHint">Share of each milestone met on or before plan</div>
-          <div class="table-wrap"><table id="hitTable" class="report"></table></div>
-        </div>
-      </div>
-      <div class="grid2">
-        <div class="panel">
           <h3>How late, when late</h3>
           <div class="hint" id="ottLateHint">Days past plan on the events that were completed late</div>
           <div class="chart-box tall"><canvas id="ottLateChart"></canvas></div>
         </div>
+      </div>
+      <div class="panel">
+        <h3>Hit rate by unit</h3>
+        <div class="hint" id="hitHint">Share of each milestone met on or before plan</div>
+        <div class="table-wrap"><table id="hitTable" class="report"></table></div>
       </div>
       <div class="panel">
         <h3>Event by event</h3>
@@ -3376,17 +3374,38 @@ var OTT_PAGE_SIZE = 200;
 
 /* The lines for the orders currently on screen, narrowed further by the tab's
    own event and status pickers. */
+/* From and To pick milestones by the date they were PLANNED for, which is the
+   only date every line has. Judging a week means judging what that week was
+   supposed to deliver; a line with no plan date at all cannot belong to any
+   week, so it drops out as soon as a range is set. */
+function inPlanWindow(l, win){
+  if(!win) return true;
+  if(l.plan == null) return false;
+  if(win.from != null && l.plan < win.from) return false;
+  if(win.to != null && l.plan > win.to) return false;
+  return true;
+}
+
 function ottVisibleLines(){
   var keep = {};
   filtered.forEach(function(r){ keep[String(num(r, "EWO"))] = true; });
-  var st = els.ottStatusFilter.value;
+  var st = els.ottStatusFilter.value, win = dateWindow();
   return OTTLINES.filter(function(l){
     if(!keep[l.ewo]) return false;
+    if(!inPlanWindow(l, win)) return false;
     if(ottEventSel.length && ottEventSel.indexOf(l.event) === -1) return false;
     if(ottDeptSel.length && ottDeptSel.indexOf(l.dept) === -1) return false;
     if(st && l.status !== st) return false;
     return true;
   });
+}
+
+/* "01-Nov-26 to 03-Nov-26", or the open-ended forms of it. */
+function planWindowText(win){
+  if(!win) return "";
+  if(win.from != null && win.to != null) return fmtDate(win.from) + " to " + fmtDate(win.to);
+  if(win.from != null) return "on or after " + fmtDate(win.from);
+  return "on or before " + fmtDate(win.to);
 }
 
 /* The two OTT dropdowns work like the ones in the filter bar: several values
@@ -3498,10 +3517,13 @@ function renderOttCharts(lines){
   }
   var judgedMix = 0;
   order.forEach(function(e){ judgedMix += tally[e].Pass + tally[e].Fail + tally[e].Overdue; });
+  var mixWin = dateWindow();
   els.ottMixHint.textContent = order.length
-    ? fmtInt(judgedMix) + " judged lines across " + order.length
-      + " milestones. Pending and no-plan lines are left out."
-    : "Nothing to count for the orders on screen";
+    ? fmtInt(judgedMix) + " judged lines across " + order.length + " milestones"
+      + (mixWin ? " planned " + planWindowText(mixWin) : "")
+      + ". Pending and no-plan lines are left out."
+    : (mixWin ? "No milestone is planned " + planWindowText(mixWin) + " for the orders on screen"
+              : "Nothing to count for the orders on screen");
 
   /* Late events bucketed by how late. Anything inside a week is one thing, a
      month late is quite another, so the buckets widen as they go. */
@@ -3539,10 +3561,11 @@ function renderOttCharts(lines){
     : "Nothing on screen finished late";
 }
 
-/* The four milestones the planning meeting asks about, in the order they
-   happen. Each is the dashboard's own name on the left and the ERP event it
-   is measured from on the right, resolved through the alias list so a renamed
-   event follows automatically. */
+/* The milestones the planning meeting asks about by name. These only supply a
+   short heading: which events the table shows is whatever the Event picker
+   above it is set to. Each entry is the dashboard's own plan column on the
+   left and the heading on the right; the ERP event is resolved through the
+   alias list, so a renamed event follows automatically. */
 var HIT_EVENTS = [
   { col: "Adjusted Fabric Start",  head: "Fab start" },
   { col: "Adjusted Fabric End",    head: "Fab End" },
@@ -3560,20 +3583,35 @@ function hitEventName(canon){
   return headerFor(canon);
 }
 
-/* Lines whose PLANNED date falls inside the chosen range. A hit rate for a
-   week means the milestones due that week, not every milestone ever. */
+/* A short heading for the few events that have one, the event's own name for
+   the rest. Worked out from the aliases, not fixed at load time. */
+function hitHeading(event){
+  for(var i = 0; i < HIT_EVENTS.length; i++){
+    if(hitEventName(HIT_EVENTS[i].col) === event) return HIT_EVENTS[i].head;
+  }
+  return event;
+}
+
+/* One column per event the picker is showing, one row per unit. The lines
+   handed in have already been cut to the orders, the events, the responsible
+   team, the status and the date range, so this only has to count them. */
 function renderHitTable(lines){
   var win = dateWindow();
-  var names = HIT_EVENTS.map(function(h){ return hitEventName(h.col); });
+  /* The chosen events, or everything that survived the other filters when the
+     picker says All. Either way in lifecycle order, so the columns read left
+     to right the way the work actually happens. */
+  var names = ottEventSel.slice();
+  if(!names.length){
+    var seen = {};
+    lines.forEach(function(l){ if(!seen[l.event]){ seen[l.event] = true; names.push(l.event); } });
+  }
+  names.sort(function(a, b){ return erpEventRank(a) - erpEventRank(b); });
+
   var byUnit = {}, totals = {};
   names.forEach(function(n){ totals[n] = { pass: 0, n: 0 }; });
 
   lines.forEach(function(l){
-    var at = names.indexOf(l.event);
-    if(at === -1) return;
-    if(l.plan == null) return;
-    if(win && win.from != null && l.plan < win.from) return;
-    if(win && win.to != null && l.plan > win.to) return;
+    if(totals[l.event] == null) return;
     if(l.status !== "Pass" && l.status !== "Fail" && l.status !== "Overdue") return;
     var u = txt(l.order, "Execution Unit") || "(blank)";
     if(!byUnit[u]){
@@ -3585,6 +3623,9 @@ function renderHitTable(lines){
     if(l.status === "Pass"){ byUnit[u][l.event].pass++; totals[l.event].pass++; }
   });
 
+  // Picked by hand: show it even if empty. Picked by "All": only what counts.
+  if(!ottEventSel.length) names = names.filter(function(n){ return totals[n].n > 0; });
+
   var units = Object.keys(byUnit).sort();
   function cell(c){
     if(!c || !c.n) return '<td class="rate"></td>';
@@ -3594,9 +3635,11 @@ function renderHitTable(lines){
       + ' met on or before plan">' + pct + '%</td>';
   }
 
+  // "Hit Rate" after every heading is only worth the width on a short table.
+  var suffix = names.length <= 4 ? " Hit Rate" : "";
   var head = '<thead><tr><th>Unit</th>'
-    + HIT_EVENTS.map(function(h){ return '<th class="num">' + esc(h.head) + ' Hit Rate</th>'; }).join("")
-    + '</tr><tr><th>Due in range</th>'
+    + names.map(function(n){ return '<th class="num">' + esc(hitHeading(n) + suffix) + '</th>'; }).join("")
+    + '</tr><tr><th>' + (win ? "Due in range" : "Judged") + '</th>'
     + names.map(function(n){ return '<th class="num">' + fmtInt(totals[n].n) + '</th>'; }).join("")
     + '</tr></thead>';
   var body = '<tbody>' + units.map(function(u){
@@ -3605,13 +3648,14 @@ function renderHitTable(lines){
   var foot = '<tfoot><tr class="tot"><td>Total</td>'
     + names.map(function(n){ return cell(totals[n]); }).join("") + '</tr></tfoot>';
 
-  els.hitTable.innerHTML = units.length ? head + body + foot
+  els.hitTable.innerHTML = (units.length && names.length) ? head + body + foot
     : '<tbody><tr><td class="empty-note">No milestone falls due in this range.</td></tr></tbody>';
 
-  els.hitHint.textContent = "Met on or before plan, for milestones due "
-    + (win ? ((win.from != null ? fmtDate(win.from) : "any") + " to " + (win.to != null ? fmtDate(win.to) : "any"))
-           : "at any time")
-    + ". Set From and To in the filter bar to pick a week.";
+  els.hitHint.textContent = "Met on or before plan, for the "
+    + fmtInt(names.length) + (ottEventSel.length ? " chosen" : "") + " event"
+    + (names.length === 1 ? "" : "s")
+    + (win ? " due " + planWindowText(win) : " at any date")
+    + ". Choose events above, and From and To in the filter bar, to narrow it.";
 }
 
 function renderOttTab(){
@@ -3619,10 +3663,11 @@ function renderOttTab(){
      responsible team narrows the event list and the other way round. */
   var keepOrders = {};
   filtered.forEach(function(r){ keepOrders[String(num(r, "EWO"))] = true; });
-  var st0 = els.ottStatusFilter.value;
+  var st0 = els.ottStatusFilter.value, win0 = dateWindow();
   var evCounts = {}, deptCounts = {};
   OTTLINES.forEach(function(l){
     if(!keepOrders[l.ewo]) return;
+    if(!inPlanWindow(l, win0)) return;
     if(st0 && l.status !== st0) return;
     if(!ottDeptSel.length || ottDeptSel.indexOf(l.dept) !== -1)
       evCounts[l.event] = (evCounts[l.event] || 0) + 1;
@@ -3698,7 +3743,9 @@ function renderOttTab(){
   if(ottPage < 0) ottPage = 0;
   var slice = lines.slice(ottPage * OTT_PAGE_SIZE, (ottPage + 1) * OTT_PAGE_SIZE);
 
+  var tblWin = dateWindow();
   els.ottTableHint.textContent = fmtInt(lines.length) + " event lines"
+    + (tblWin ? " planned " + planWindowText(tblWin) : "")
     + (TNA.length ? " from " + fmtInt(TNA.length) + " records" : "")
     + (tnaSource === "sheet" ? " in the OTT sheet" : (tnaAt ? ", read from the ERP " + ago(tnaAt) : ""));
   els.ottPageInfo.textContent = "Page " + (ottPage + 1) + " of " + pages
