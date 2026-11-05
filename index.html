@@ -151,20 +151,24 @@
   .freeze-opt{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-soft);
               text-transform:none;letter-spacing:0;cursor:pointer;white-space:nowrap;}
   .freeze-opt input{margin:0;}
-  .filter-grid{display:flex;gap:10px 12px;flex-wrap:wrap;align-items:stretch;}
-  /* Every field is its own column of fixed width: the label sits on one line,
-     clipped if it is long, and the control underneath starts where the label
-     starts. Without the fixed width a long label widened its own field and
-     pushed every heading after it out of step with its control. */
+  .filter-grid{display:flex;gap:10px 8px;flex-wrap:wrap;align-items:stretch;}
+  /* Twelve controls across one line only fit if they can give ground, so a
+     field is a share of the row rather than a fixed column: a picker takes one
+     share, the search box two, and the dates and switches keep their natural
+     size. The label still sits on one line, clipped if it is long, and the
+     control underneath starts where the label starts; what the fixed width
+     used to prevent -- a long label widening its own field -- is prevented now
+     by the share, which no label can push past. Narrower than about 1400px the
+     line wraps, as it always did. */
   .fld{display:flex;flex-direction:column;gap:3px;justify-content:flex-end;
-       width:132px;flex:none;min-width:0;}
-  .fld.wide{width:218px;}
-  .fld.auto{width:auto;}
+       flex:1 1 88px;width:auto;min-width:0;max-width:150px;}
+  .fld.wide{flex:2 1 150px;max-width:260px;}
+  .fld.auto{flex:0 0 auto;width:auto;max-width:none;}
   .fld label{font-size:10px;color:var(--ink-soft);letter-spacing:0.04em;text-transform:uppercase;
              white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;height:13px;line-height:13px;}
   .fld > select, .fld > input, .fld .ms{width:100%;}
   input[type="text"],input[type="date"],select{
-    font-family:inherit;font-size:12.5px;padding:6px 8px;
+    font-family:inherit;font-size:12.5px;padding:6px 8px;box-sizing:border-box;
     border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:3px;
   }
   input[type="text"]:focus,select:focus,input[type="date"]:focus{outline:2px solid var(--green-soft);border-color:var(--green-mid);}
@@ -1157,7 +1161,7 @@ var msalApp = null;
    department opens is worse than leaving it out. */
 function greeting(acct){
   var h = new Date().getHours();
-  var part = h < 12 ? "Good morning" : (h < 17 ? "Good afternoon" : "Good evening");
+  var part = h < 12 ? "Good Morning" : (h < 17 ? "Good Afternoon" : "Good Evening");
   var name = String((acct && (acct.name || acct.username)) || "").trim();
   if(name.indexOf("@") !== -1) name = name.split("@")[0].replace(/[._-]+/g, " ");
   var drop = ["md", "md.", "mohammad", "muhammad", "mohammed", "mst", "mst.", "mrs", "mrs.",
@@ -4499,11 +4503,11 @@ function renderSewUnitCharts(g, win, sewRows){
     return;
   }
   els.sewUnitHint.textContent = "One chart per Execution Unit, same spread and the same window as above. "
-    + units.length + " units, " + fmtInt(sum(sewRows, "FR hour")) + " FR hours in the filter.";
+    + units.length + " units, " + fmtInt(sum(sewRows, "FR hour")) + " Sewing hours in the filter.";
 
   els.sewUnitGrid.innerHTML = units.map(function(u, i){
     return '<div class="panel"><h3>' + esc(u) + '</h3>'
-      + '<div class="hint">' + fmtInt(totals[u]) + ' FR hours</div>'
+      + '<div class="hint">' + fmtInt(totals[u]) + ' Sewing hours</div>'
       + '<div class="chart-box"><canvas id="sewUnit_' + i + '"></canvas></div></div>';
   }).join("");
 
@@ -4555,7 +4559,7 @@ function renderCapacity(){
 
   /* The tiles must agree with the charts above them, so they add up the same
      daily spread the charts draw rather than the raw column. An order running
-     1 Oct to 4 Oct carries 227 FR hours, which is 56.75 hours on each of those
+     1 Oct to 4 Oct carries 227 Sewing hours, which is 56.75 hours on each of those
      four days; asking for 1 Oct to 2 Oct must therefore count 113.5 hours, not
      the whole 227. Summing the column would also quietly include orders whose
      window sits entirely outside the range. */
@@ -4630,18 +4634,18 @@ function renderCapacity(){
   var usedPct = capStat.avail ? Math.round(1000 * capStat.used / capStat.avail) / 10 : 0;
 
   var tiles = [
-    ["In-house fabric in plan", fmtInt(fabHours), fmtInt(planned.length) + " orders, spread " + rangeNote],
+    ["In-house fabric delivery plan", fmtInt(fabHours), fmtInt(planned.length) + " orders, spread " + rangeNote],
     /* The average and its busiest day are one thought, not two: the peak only
        means anything next to the average it stands out from. */
-    ["Avg fabric load per day", fabDays ? fmtInt(fabHours / fabDays) : "0",
+    ["Fabric delivery Plan per day", fabDays ? fmtInt(fabHours / fabDays) : "0",
       (fabDays ? "kg, over " + fmtInt(fabDays) + " working days" : "no day carries fabric")
       + (fp.at ? " · peak " + fmtInt(fp.max) + " on " + fmtDate(fp.at) : "")],
-    ["Sewing hours in plan", fmtInt(sewHours), fmtInt(sewPlanned.length) + " orders, spread " + rangeNote],
-    ["Avg sewing load per day", sewDays ? fmtInt(sewHours / sewDays) : "0",
-      (sewDays ? "FR hours, over " + fmtInt(sewDays) + " working days" : "no day carries sewing")
+    ["Total Sewing Load", fmtInt(sewHours), fmtInt(sewPlanned.length) + " orders, spread " + rangeNote],
+    ["Sewing load per day", sewDays ? fmtInt(sewHours / sewDays) : "0",
+      (sewDays ? "Sewing hours, over " + fmtInt(sewDays) + " working days" : "no day carries sewing")
       + (sp.at ? " · peak " + fmtInt(sp.max) + " on " + fmtDate(sp.at) : "")],
     CAPACITY.days
-      ? ["Capacity used", usedPct + "%", fmtInt(capStat.used) + " of " + fmtInt(capStat.avail)
+      ? ["Sewing Load on Capacity", usedPct + "%", fmtInt(capStat.used) + " of " + fmtInt(capStat.avail)
           + " hours, " + fmtInt(capStat.covered) + " working days"]
       : ["Sewing not planned", fmtInt(sum(filtered, "FR hour") - sewHours),
          fmtInt(filtered.length - sewPlanned.length) + " orders with no window, or outside the range"],
