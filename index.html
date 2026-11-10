@@ -191,6 +191,11 @@
   .kpi .label{color:var(--ink-soft);font-size:10.5px;margin-bottom:5px;letter-spacing:0.02em;}
   .kpi .value{font-family:Georgia,serif;font-size:23px;color:var(--green);line-height:1.15;}
   .kpi .foot{font-size:10.5px;color:var(--ink-soft);margin-top:3px;}
+  /* The locked share, in the same green the charts use for locked work, so a
+     tile and the bars above it are read as one answer. */
+  .kpi .foot.lock{color:var(--green);display:flex;align-items:flex-start;gap:5px;}
+  .kpi .foot.lock i{width:8px;height:8px;background:var(--green);border-radius:2px;
+                    flex:none;margin-top:3px;}
 
   /* ---------- alerts ---------- */
   .alerts{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:10px;margin-bottom:18px;}
@@ -374,8 +379,19 @@
   .hit-1{background:#FFD9A8;}
   .hit-2{background:#FFF0C2;}
   .hit-3{background:#E6F0EB;}
-  #hitTable td.rate{text-align:right;font-variant-numeric:tabular-nums;}
-  #hitTable tr.tot td{font-weight:700;border-top:2px solid var(--line);}
+  /* Every event gets the same column, so the eye compares rates across the
+     row without first measuring how wide each heading happens to be. Fixed
+     layout divides what is left after the unit column equally; the headings
+     wrap instead of setting the width. A class, not an id, because the table
+     is cloned into the full-screen card and two of the same id would leave
+     the copy unstyled. */
+  .hit-table{table-layout:fixed;}
+  .hit-table th:first-child,.hit-table td:first-child{width:150px;}
+  .hit-table th{white-space:normal;word-break:break-word;line-height:1.25;vertical-align:bottom;}
+  .hit-table td.rate{text-align:right;font-variant-numeric:tabular-nums;}
+  .hit-table tr.tot td{font-weight:700;border-top:2px solid var(--line);}
+  .table-zoom{cursor:zoom-in;}
+  .zoom-table{position:absolute;inset:0;overflow:auto;}
   .pill{display:inline-block;padding:1px 7px;border-radius:9px;font-size:10.5px;white-space:nowrap;}
   .pill.pass{background:var(--green-soft);color:var(--green);}
   .pill.fail{background:#FBE4DC;color:#A33F14;}
@@ -701,7 +717,7 @@
       <div class="panel">
         <h3>Hit rate by unit</h3>
         <div class="hint" id="hitHint">Share of each milestone met on or before plan</div>
-        <div class="table-wrap"><table id="hitTable" class="report"></table></div>
+        <div class="table-wrap table-zoom"><table id="hitTable" class="report hit-table"></table></div>
       </div>
       <div class="panel">
         <h3>Event by event</h3>
@@ -2846,10 +2862,6 @@ var ALERTS = [
       if(fs != null && pcd != null && fs > pcd) return true;
       if(se != null && ss != null && se < ss) return true;
       return false; } },
-  { key: "fabAfterSew", sev: "mid", title: "Fabric still arriving at sew start",
-    detail: "Adjusted Fabric End is later than Adjusted sew start",
-    test: function(r){ var a = dat(r,"Adjusted Fabric End"), b = dat(r,"Adjusted sew start");
-                       return a != null && b != null && a > b; } },
   { key: "fabAfterMinFrd", sev: "mid", title: "Fabric starts after Min FRD",
     detail: "Fabric begins later than the earliest date it was needed",
     test: function(r){ var a = dat(r,"Adjusted Fabric Start"), b = dat(r,"Min FRD");
@@ -4483,6 +4495,27 @@ function lockedSplit(r){
   return txt(r, "Status").toLowerCase().indexOf("locked") === 0 ? "Locked" : "Not locked";
 }
 
+/* A split spread, with the two halves added back together under "All". The
+   tiles need both: the whole figure, and the locked part of exactly that
+   figure. Adding the column up separately would not do, because the spread
+   counts only the days inside the window. */
+function withAll(sr){
+  if(!sr.series.All){
+    sr.series.All = sr.keys.map(function(_, i){
+      var t = 0;
+      Object.keys(sr.series).forEach(function(k){ t += sr.series[k][i] || 0; });
+      return t;
+    });
+  }
+  return sr;
+}
+function lockedCount(rows){
+  var n = 0;
+  rows.forEach(function(r){ if(lockedSplit(r) === "Locked") n++; });
+  return n;
+}
+function sharePct(part, whole){ return (whole ? Math.round(100 * part / whole) : 0) + "%"; }
+
 /* One sewing-load chart per Execution Unit, three to a row. The panels are
    built from the units actually present, so a unit that disappears from the
    filter takes its chart with it. */
@@ -4490,11 +4523,13 @@ function renderSewUnitCharts(g, win, sewRows){
   Object.keys(charts).forEach(function(id){
     if(id.indexOf("sewUnit_") === 0) destroyChart(id);
   });
-  var totals = {};
+  var totals = {}, lockedBy = {}, lockedAll = 0;
   sewRows.forEach(function(r){
     if(dat(r, "Adjusted sew start") == null || dat(r, "Adjusted sew end") == null) return;
     var u = txt(r, "Execution Unit") || "(blank)";
-    totals[u] = (totals[u] || 0) + (num(r, "FR hour") || 0);
+    var q = num(r, "FR hour") || 0;
+    totals[u] = (totals[u] || 0) + q;
+    if(lockedSplit(r) === "Locked"){ lockedBy[u] = (lockedBy[u] || 0) + q; lockedAll += q; }
   });
   var units = Object.keys(totals).sort(function(a, b){ return totals[b] - totals[a]; });
   if(!units.length){
@@ -4502,12 +4537,16 @@ function renderSewUnitCharts(g, win, sewRows){
     els.sewUnitHint.textContent = "No order in the current filter has a sewing window.";
     return;
   }
+  var allHours = sum(sewRows, "FR hour");
   els.sewUnitHint.textContent = "One chart per Execution Unit, same spread and the same window as above. "
-    + units.length + " units, " + fmtInt(sum(sewRows, "FR hour")) + " Sewing hours in the filter.";
+    + units.length + " units, " + fmtInt(allHours) + " Sewing hours in the filter, of which "
+    + fmtInt(lockedAll) + " are locked (" + sharePct(lockedAll, allHours) + ").";
 
   els.sewUnitGrid.innerHTML = units.map(function(u, i){
+    var lk = lockedBy[u] || 0;
     return '<div class="panel"><h3>' + esc(u) + '</h3>'
-      + '<div class="hint">' + fmtInt(totals[u]) + ' Sewing hours</div>'
+      + '<div class="hint">' + fmtInt(totals[u]) + ' Sewing hours · locked ' + fmtInt(lk)
+      + ' (' + sharePct(lk, totals[u]) + ')</div>'
       + '<div class="chart-box"><canvas id="sewUnit_' + i + '"></canvas></div></div>';
   }).join("");
 
@@ -4551,8 +4590,10 @@ function renderCapacity(){
   renderSewUnitCharts(g, win, sewRows);
 
   // KPI tiles
-  var fabDaily = spreadSeries(fabRows, "Adjusted Fabric Start", "Adjusted Fabric End", "InHouse", "day", null, win);
-  var sewDaily = spreadSeries(sewRows, "Adjusted sew start", "Adjusted sew end", "FR hour", "day", null, win);
+  var fabDaily = withAll(spreadSeries(fabRows, "Adjusted Fabric Start", "Adjusted Fabric End",
+                                      "InHouse", "day", lockedSplit, win));
+  var sewDaily = withAll(spreadSeries(sewRows, "Adjusted sew start", "Adjusted sew end",
+                                      "FR hour", "day", lockedSplit, win));
   function peak(sr){ var v = sr.series.All || []; var m = 0, at = null;
     v.forEach(function(x, i){ if(x > m){ m = x; at = sr.keys[i]; } }); return { max: m, at: at }; }
   var fp = peak(fabDaily), sp = peak(sewDaily);
@@ -4563,8 +4604,8 @@ function renderCapacity(){
      four days; asking for 1 Oct to 2 Oct must therefore count 113.5 hours, not
      the whole 227. Summing the column would also quietly include orders whose
      window sits entirely outside the range. */
-  function seriesTotal(sr){
-    var v = sr.series.All || [], t = 0;
+  function seriesTotal(sr, lab){
+    var v = sr.series[lab || "All"] || [], t = 0;
     for(var i = 0; i < v.length; i++) t += v[i] || 0;
     return t;
   }
@@ -4578,6 +4619,7 @@ function renderCapacity(){
     });
   }
   var fabHours = seriesTotal(fabDaily), sewHours = seriesTotal(sewDaily);
+  var fabLocked = seriesTotal(fabDaily, "Locked"), sewLocked = seriesTotal(sewDaily, "Locked");
   /* Averaged over WORKING days, not calendar days: the week's holiday here is
      Friday, and the Capacity sheet marks the Eid shutdowns as zero. Counting
      those would make the floor look emptier than it is. The span is the chosen
@@ -4605,20 +4647,22 @@ function renderCapacity(){
      Only days the Capacity sheet actually covers are counted, so a plan that
      runs past the end of the sheet does not look like a shortage. */
   var capStat = { avail: 0, used: 0, over: 0, shortfall: 0, covered: 0, worst: null, worstPct: 0,
-                  holidayDays: 0, holidayHours: 0 };
+                  holidayDays: 0, holidayHours: 0, usedLocked: 0, overLocked: 0, shortLocked: 0 };
   if(CAPACITY.days){
     var dayLoad = sewDaily.series.All || [];
+    var dayLock = sewDaily.series.Locked || [];
     var wantKeys2 = wantedUnitKeys(sewRows);
     sewDaily.keys.forEach(function(k, i){
       var c = capacityOnDay(k, wantKeys2);
       if(c == null) return;
-      var load = dayLoad[i] || 0;
+      var load = dayLoad[i] || 0, lock = dayLock[i] || 0;
       /* Counted the same way the averages count: open days only, Fridays and
          the Capacity sheet's zeroes left out. Two tiles side by side quoting
          different day counts for the same window is just confusing. */
       if(c > 0) capStat.covered++;
       capStat.avail += c;
       capStat.used += load;
+      capStat.usedLocked += lock;
       /* A closed day is not an overloaded day. Work landing on Eid or a Friday
          is a different problem from a day that is simply too full, and lumping
          them together buried the real overload under one holiday. */
@@ -4629,26 +4673,44 @@ function renderCapacity(){
       var pct = 100 * load / c;
       if(pct > capStat.worstPct){ capStat.worstPct = pct; capStat.worst = k; }
       if(load > c){ capStat.over++; capStat.shortfall += load - c; }
+      /* Locked work alone over the line is the hard shortage: it cannot be
+         moved by dropping an unconfirmed order. */
+      if(lock > c){ capStat.overLocked++; capStat.shortLocked += lock - c; }
     });
   }
   var usedPct = capStat.avail ? Math.round(1000 * capStat.used / capStat.avail) / 10 : 0;
+  var lockedPct = capStat.avail ? Math.round(1000 * capStat.usedLocked / capStat.avail) / 10 : 0;
+  var lockedRows = filtered.filter(function(r){ return lockedSplit(r) === "Locked"; });
 
+  /* Each tile carries its own locked line: the same figure, cut to the orders
+     that are actually committed, so the tile says both what is planned and how
+     much of it is already fixed. */
   var tiles = [
-    ["In-house fabric delivery plan", fmtInt(fabHours), fmtInt(planned.length) + " orders, spread " + rangeNote],
+    ["In-house fabric delivery plan", fmtInt(fabHours), fmtInt(planned.length) + " orders, spread " + rangeNote,
+      "Locked " + fmtInt(fabLocked) + " kg (" + sharePct(fabLocked, fabHours) + ") · "
+      + fmtInt(lockedCount(planned)) + " of " + fmtInt(planned.length) + " orders"],
     /* The average and its busiest day are one thought, not two: the peak only
        means anything next to the average it stands out from. */
     ["Fabric delivery Plan per day", fabDays ? fmtInt(fabHours / fabDays) : "0",
       (fabDays ? "kg, over " + fmtInt(fabDays) + " working days" : "no day carries fabric")
-      + (fp.at ? " · peak " + fmtInt(fp.max) + " on " + fmtDate(fp.at) : "")],
-    ["Total Sewing Load", fmtInt(sewHours), fmtInt(sewPlanned.length) + " orders, spread " + rangeNote],
+      + (fp.at ? " · peak " + fmtInt(fp.max) + " on " + fmtDate(fp.at) : ""),
+      "Locked " + (fabDays ? fmtInt(fabLocked / fabDays) : "0") + " kg a day ("
+      + sharePct(fabLocked, fabHours) + " of the load)"],
+    ["Total Sewing Load", fmtInt(sewHours), fmtInt(sewPlanned.length) + " orders, spread " + rangeNote,
+      "Locked " + fmtInt(sewLocked) + " hours (" + sharePct(sewLocked, sewHours) + ") · "
+      + fmtInt(lockedCount(sewPlanned)) + " of " + fmtInt(sewPlanned.length) + " orders"],
     ["Sewing load per day", sewDays ? fmtInt(sewHours / sewDays) : "0",
       (sewDays ? "Sewing hours, over " + fmtInt(sewDays) + " working days" : "no day carries sewing")
-      + (sp.at ? " · peak " + fmtInt(sp.max) + " on " + fmtDate(sp.at) : "")],
+      + (sp.at ? " · peak " + fmtInt(sp.max) + " on " + fmtDate(sp.at) : ""),
+      "Locked " + (sewDays ? fmtInt(sewLocked / sewDays) : "0") + " hours a day ("
+      + sharePct(sewLocked, sewHours) + " of the load)"],
     CAPACITY.days
       ? ["Sewing Load on Capacity", usedPct + "%", fmtInt(capStat.used) + " of " + fmtInt(capStat.avail)
-          + " hours, " + fmtInt(capStat.covered) + " working days"]
+          + " hours, " + fmtInt(capStat.covered) + " working days",
+         "Locked work alone takes " + lockedPct + "% (" + fmtInt(capStat.usedLocked) + " hours)"]
       : ["Sewing not planned", fmtInt(sum(filtered, "FR hour") - sewHours),
-         fmtInt(filtered.length - sewPlanned.length) + " orders with no window, or outside the range"],
+         fmtInt(filtered.length - sewPlanned.length) + " orders with no window, or outside the range",
+         "Locked " + fmtInt(sum(lockedRows, "FR hour") - sewLocked) + " hours of it"],
     CAPACITY.days
       ? ["Days over capacity", fmtInt(capStat.over),
           (capStat.over
@@ -4656,13 +4718,19 @@ function renderCapacity(){
             : "every open day fits")
           + (capStat.holidayDays
               ? " · " + fmtInt(capStat.holidayHours) + " hours fall on " + fmtInt(capStat.holidayDays) + " closed day" + (capStat.holidayDays > 1 ? "s" : "")
-              : "")]
+              : ""),
+         "Locked work alone is over on " + fmtInt(capStat.overLocked) + " day"
+         + (capStat.overLocked === 1 ? "" : "s")
+         + (capStat.overLocked ? ", " + fmtInt(capStat.shortLocked) + " hours short" : "")]
       : ["In-house not windowed", fmtInt(sum(filtered, "InHouse") - fabHours),
-         fmtInt(filtered.length - planned.length) + " orders, InStock, blank, or outside the range"]
+         fmtInt(filtered.length - planned.length) + " orders, InStock, blank, or outside the range",
+         "Locked " + fmtInt(sum(lockedRows, "InHouse") - fabLocked) + " kg of it"]
   ];
   els.capKpis.innerHTML = tiles.map(function(t){
     return '<div class="kpi"><div class="label">' + esc(t[0]) + '</div><div class="value">' + esc(t[1])
-      + '</div><div class="foot">' + esc(t[2]) + '</div></div>'; }).join("");
+      + '</div><div class="foot">' + esc(t[2]) + '</div>'
+      + (t[3] ? '<div class="foot lock"><i></i><span>' + esc(t[3]) + '</span></div>' : '')
+      + '</div>'; }).join("");
 
   var word = g === "day" ? "day" : (g === "week" ? "week" : "month");
   document.querySelectorAll("[data-grantitle2]").forEach(function(h){
@@ -5253,6 +5321,24 @@ function openZoomChart(canvasId, title, hint){
   });
 }
 
+/* A table opens the same way a chart does: a copy, full screen, scrollable.
+   The copy's ids are stripped, because an id that appears twice styles only
+   the first of them. */
+function openZoomTable(wrap, title, hint){
+  closeZoom();
+  document.querySelector(".zoom-card").classList.remove("small");
+  els.zoomTitle.textContent = title || "";
+  els.zoomHint.textContent = hint || "";
+  var box = document.createElement("div");
+  box.className = "zoom-table";
+  var copy = wrap.cloneNode(true);
+  copy.className = "";
+  Array.prototype.forEach.call(copy.querySelectorAll("[id]"), function(n){ n.removeAttribute("id"); });
+  box.appendChild(copy);
+  els.zoomBody.appendChild(box);
+  els.zoomBack.classList.add("on");
+}
+
 function openZoomCard(label, value, foot){
   closeZoom();
   document.querySelector(".zoom-card").classList.add("small");
@@ -5276,11 +5362,21 @@ document.addEventListener("click", function(e){
       return;
     }
   }
+  var tbl = e.target.closest ? e.target.closest(".table-zoom") : null;
+  if(tbl){
+    var tp = tbl.closest(".panel");
+    var th3 = tp ? tp.querySelector("h3") : null;
+    var thint = tp ? tp.querySelector(".hint") : null;
+    openZoomTable(tbl, th3 ? th3.textContent : "", thint ? thint.textContent : "");
+    return;
+  }
   var kpi = e.target.closest ? e.target.closest(".kpi") : null;
   if(kpi){
     openZoomCard(kpi.querySelector(".label") ? kpi.querySelector(".label").textContent : "",
                  kpi.querySelector(".value") ? kpi.querySelector(".value").textContent : "",
-                 kpi.querySelector(".foot") ? kpi.querySelector(".foot").textContent : "");
+                 Array.prototype.map.call(kpi.querySelectorAll(".foot"), function(f){
+                   return f.textContent;
+                 }).join(" · "));
   }
 });
 
