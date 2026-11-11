@@ -4509,6 +4509,11 @@ function withAll(sr){
   }
   return sr;
 }
+function seriesSum(sr, lab){
+  var v = sr.series[lab || "All"] || [], t = 0;
+  for(var i = 0; i < v.length; i++) t += v[i] || 0;
+  return t;
+}
 function lockedCount(rows){
   var n = 0;
   rows.forEach(function(r){ if(lockedSplit(r) === "Locked") n++; });
@@ -4523,21 +4528,31 @@ function renderSewUnitCharts(g, win, sewRows){
   Object.keys(charts).forEach(function(id){
     if(id.indexOf("sewUnit_") === 0) destroyChart(id);
   });
-  var totals = {}, lockedBy = {}, lockedAll = 0;
+  /* Each unit's own rows, so its hours are the same spread its own chart
+     draws and the units add up to the Total Sewing Load tile exactly. */
+  var rowsBy = {};
   sewRows.forEach(function(r){
     if(dat(r, "Adjusted sew start") == null || dat(r, "Adjusted sew end") == null) return;
     var u = txt(r, "Execution Unit") || "(blank)";
-    var q = num(r, "FR hour") || 0;
-    totals[u] = (totals[u] || 0) + q;
-    if(lockedSplit(r) === "Locked"){ lockedBy[u] = (lockedBy[u] || 0) + q; lockedAll += q; }
+    (rowsBy[u] || (rowsBy[u] = [])).push(r);
   });
-  var units = Object.keys(totals).sort(function(a, b){ return totals[b] - totals[a]; });
+  var totals = {}, lockedBy = {}, lockedAll = 0, allHours = 0;
+  Object.keys(rowsBy).forEach(function(u){
+    var sr = withAll(spreadSeries(rowsBy[u], "Adjusted sew start", "Adjusted sew end",
+                                  "FR hour", "day", lockedSplit, win));
+    totals[u] = seriesSum(sr);
+    lockedBy[u] = seriesSum(sr, "Locked");
+    allHours += totals[u];
+    lockedAll += lockedBy[u];
+  });
+  /* A unit left with nothing inside the range would only draw an empty box. */
+  var units = Object.keys(totals).filter(function(u){ return totals[u] > 0; })
+                .sort(function(a, b){ return totals[b] - totals[a]; });
   if(!units.length){
     els.sewUnitGrid.innerHTML = "";
     els.sewUnitHint.textContent = "No order in the current filter has a sewing window.";
     return;
   }
-  var allHours = sum(sewRows, "FR hour");
   els.sewUnitHint.textContent = "One chart per Execution Unit, same spread and the same window as above. "
     + units.length + " units, " + fmtInt(allHours) + " Sewing hours in the filter, of which "
     + fmtInt(lockedAll) + " are locked (" + sharePct(lockedAll, allHours) + ").";
@@ -4551,8 +4566,7 @@ function renderSewUnitCharts(g, win, sewRows){
   }).join("");
 
   units.forEach(function(u, i){
-    var rows = sewRows.filter(function(r){ return (txt(r, "Execution Unit") || "(blank)") === u; });
-    var sr = spreadSeries(rows, "Adjusted sew start", "Adjusted sew end", "FR hour", g, lockedSplit, win);
+    var sr = spreadSeries(rowsBy[u], "Adjusted sew start", "Adjusted sew end", "FR hour", g, lockedSplit, win);
     var key = unitKey(u);
     var cap = CAPACITY.unitKeys[key] ? capacitySeries(sr.keys, g, [key]) : null;
     stackedChart("sewUnit_" + i, sr.keys, sr.series, g, "hours", ["#006040", "#F8B000"], cap);
@@ -4604,11 +4618,6 @@ function renderCapacity(){
      four days; asking for 1 Oct to 2 Oct must therefore count 113.5 hours, not
      the whole 227. Summing the column would also quietly include orders whose
      window sits entirely outside the range. */
-  function seriesTotal(sr, lab){
-    var v = sr.series[lab || "All"] || [], t = 0;
-    for(var i = 0; i < v.length; i++) t += v[i] || 0;
-    return t;
-  }
   function windowed(rows, startCol, endCol, qtyCol){
     return rows.filter(function(r){
       var a = dat(r, startCol), b = dat(r, endCol), q = num(r, qtyCol);
@@ -4618,8 +4627,8 @@ function renderCapacity(){
       return true;
     });
   }
-  var fabHours = seriesTotal(fabDaily), sewHours = seriesTotal(sewDaily);
-  var fabLocked = seriesTotal(fabDaily, "Locked"), sewLocked = seriesTotal(sewDaily, "Locked");
+  var fabHours = seriesSum(fabDaily), sewHours = seriesSum(sewDaily);
+  var fabLocked = seriesSum(fabDaily, "Locked"), sewLocked = seriesSum(sewDaily, "Locked");
   /* Averaged over WORKING days, not calendar days: the week's holiday here is
      Friday, and the Capacity sheet marks the Eid shutdowns as zero. Counting
      those would make the floor look emptier than it is. The span is the chosen
