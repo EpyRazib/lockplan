@@ -385,8 +385,11 @@
      wrap instead of setting the width. A class, not an id, because the table
      is cloned into the full-screen card and two of the same id would leave
      the copy unstyled. */
-  .hit-table{table-layout:fixed;}
+  /* The table is sized in JavaScript, which knows how many events there would
+     be with nothing chosen; the widths themselves live here. */
+  .hit-table{table-layout:fixed;width:auto;}
   .hit-table th:first-child,.hit-table td:first-child{width:150px;}
+  .hit-table th:not(:first-child),.hit-table td:not(:first-child){width:var(--hitcol,140px);}
   .hit-table th{white-space:normal;word-break:break-word;line-height:1.25;vertical-align:bottom;}
   .hit-table td.rate{text-align:right;font-variant-numeric:tabular-nums;}
   .hit-table tr.tot td{font-weight:700;border-top:2px solid var(--line);}
@@ -3402,14 +3405,17 @@ function inPlanWindow(l, win){
   return true;
 }
 
-function ottVisibleLines(){
+/* ignoreEvents asks the same question with the event picker left out, which
+   is how the hit table learns how wide a column would be with every event on
+   screen. */
+function ottVisibleLines(ignoreEvents){
   var keep = {};
   filtered.forEach(function(r){ keep[String(num(r, "EWO"))] = true; });
   var st = els.ottStatusFilter.value, win = dateWindow();
   return OTTLINES.filter(function(l){
     if(!keep[l.ewo]) return false;
     if(!inPlanWindow(l, win)) return false;
-    if(ottEventSel.length && ottEventSel.indexOf(l.event) === -1) return false;
+    if(!ignoreEvents && ottEventSel.length && ottEventSel.indexOf(l.event) === -1) return false;
     if(ottDeptSel.length && ottDeptSel.indexOf(l.dept) === -1) return false;
     if(st && l.status !== st) return false;
     return true;
@@ -3608,6 +3614,29 @@ function hitHeading(event){
   return event;
 }
 
+var HIT_UNIT_W = 150;          // the Unit column, as the stylesheet sets it
+var HIT_COL_MIN = 48, HIT_COL_MAX = 190;
+
+/* How wide one event column should be: the share it would get if every event
+   the other filters allow were on screen at once. Choosing fewer events then
+   takes columns off the right instead of stretching the ones that are left,
+   so an event is the same size however many are picked. Only the upper bound
+   really bites: one event alone does not deserve the whole panel. The lower
+   one is a floor against nonsense, deliberately below anything the all-events
+   view would ask for, so that view still fits its panel exactly as before. */
+function hitColWidth(){
+  var wrap = els.hitTable.parentNode;
+  var avail = wrap ? wrap.clientWidth : 0;
+  var seen = {}, n = 0;
+  ottVisibleLines(true).forEach(function(l){
+    if(l.status !== "Pass" && l.status !== "Fail" && l.status !== "Overdue") return;
+    if(!seen[l.event]){ seen[l.event] = true; n++; }
+  });
+  if(!avail || !n) return HIT_COL_MAX;
+  var w = (avail - HIT_UNIT_W) / n;
+  return Math.max(HIT_COL_MIN, Math.min(HIT_COL_MAX, Math.round(w * 100) / 100));
+}
+
 /* One column per event the picker is showing, one row per unit. The lines
    handed in have already been cut to the orders, the events, the responsible
    team, the status and the date range, so this only has to count them. */
@@ -3651,10 +3680,12 @@ function renderHitTable(lines){
       + ' met on or before plan">' + pct + '%</td>';
   }
 
-  // "Hit Rate" after every heading is only worth the width on a short table.
-  var suffix = names.length <= 4 ? " Hit Rate" : "";
+  /* No "Hit Rate" after each heading any more: a column is the same width
+     whether one event is chosen or fourteen, so the words no longer buy a
+     wider column, they only cost three lines of header. The panel's own
+     title already says what the numbers are. */
   var head = '<thead><tr><th>Unit</th>'
-    + names.map(function(n){ return '<th class="num">' + esc(hitHeading(n) + suffix) + '</th>'; }).join("")
+    + names.map(function(n){ return '<th class="num">' + esc(hitHeading(n)) + '</th>'; }).join("")
     + '</tr><tr><th>' + (win ? "Due in range" : "Judged") + '</th>'
     + names.map(function(n){ return '<th class="num">' + fmtInt(totals[n].n) + '</th>'; }).join("")
     + '</tr></thead>';
@@ -3664,8 +3695,17 @@ function renderHitTable(lines){
   var foot = '<tfoot><tr class="tot"><td>Total</td>'
     + names.map(function(n){ return cell(totals[n]); }).join("") + '</tr></tfoot>';
 
-  els.hitTable.innerHTML = (units.length && names.length) ? head + body + foot
+  var ok = units.length && names.length;
+  els.hitTable.innerHTML = ok ? head + body + foot
     : '<tbody><tr><td class="empty-note">No milestone falls due in this range.</td></tr></tbody>';
+  if(ok){
+    var colW = hitColWidth();
+    els.hitTable.style.setProperty("--hitcol", colW + "px");
+    els.hitTable.style.width = (HIT_UNIT_W + names.length * colW) + "px";
+  }else{
+    els.hitTable.style.removeProperty("--hitcol");
+    els.hitTable.style.width = "";
+  }
 
   els.hitHint.textContent = "Met on or before plan, for the "
     + fmtInt(names.length) + (ottEventSel.length ? " chosen" : "") + " event"
