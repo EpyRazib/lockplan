@@ -225,6 +225,74 @@
   .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;}
   .grid1{display:block;}
   .grid1 .panel{margin-bottom:18px;}
+
+  /* ---------- the reader's own arrangement ----------
+     A tab page is one twelve-column grid once it has been flattened, and every
+     panel, card row and section heading in it is a block with a span. The
+     spans the markup already implied are kept, so an untouched dashboard looks
+     exactly as it did; only a reader's own choices change it. */
+  /* Stretch, not start: panels sharing a row matched heights inside the old
+     fixed grids, and a ragged row would be a change nobody asked for. */
+  /* .tabpage.on sets display:block and outranks a single class, so the grid
+     has to say so with the same weight or more. */
+  .layout-grid,
+  .tabpage.on.layout-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:18px;}
+  .layout-grid > .layout-block{margin-bottom:0;min-width:0;}
+  .layout-grid > .span-12{grid-column:span 12;}
+  .layout-grid > .span-6{grid-column:span 6;}
+  .layout-grid > .span-4{grid-column:span 4;}
+  .layout-grid > .span-3{grid-column:span 3;}
+  /* The same give the fixed grids had: quarters pair up first, then thirds,
+     then everything goes single file. */
+  @media(max-width:1400px){.layout-grid > .span-3{grid-column:span 6;}}
+  @media(max-width:1100px){.layout-grid > .span-4{grid-column:span 6;}}
+  @media(max-width:820px){.layout-grid > .layout-block{grid-column:span 12;}}
+  /* A card row with something switched off cannot keep its fixed column count
+     without leaving holes, so it falls back to fitting what is left. */
+  .kpis.kpis-auto{grid-template-columns:repeat(auto-fit,minmax(170px,1fr));}
+  /* Rendered out of sight only to learn what cards a tab has. */
+  .layout-measure{position:absolute !important;left:-99999px !important;top:0 !important;
+                  width:1280px !important;}
+
+  /* ---------- the wizard ---------- */
+  .wiz-back{position:fixed;inset:0;background:rgba(26,26,26,0.55);z-index:2100;
+            display:none;align-items:center;justify-content:center;padding:28px;}
+  .wiz-back.on{display:flex;}
+  .wiz-card{background:#fff;border:1px solid var(--line);border-top:3px solid var(--green);
+            width:min(820px,100%);max-height:100%;display:flex;flex-direction:column;
+            padding:22px 26px 18px;position:relative;}
+  .wiz-card h3{color:var(--green);font-size:17px;margin:0 30px 2px 0;}
+  .wiz-card > .hint{font-size:11.5px;color:var(--ink-soft);margin-bottom:12px;}
+  .wiz-steps{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+  .wiz-step{font-size:11px;padding:3px 10px;border:1px solid var(--line);border-radius:12px;
+            color:var(--ink-soft);background:var(--paper);cursor:pointer;font-family:inherit;}
+  .wiz-step.on{background:var(--green);color:#fff;border-color:var(--green);}
+  .wiz-step.done{border-color:var(--green-mid);color:var(--green);}
+  .wiz-body{flex:1;overflow:auto;min-height:120px;border:1px solid var(--line-soft);
+            background:var(--paper);padding:10px 12px;}
+  .wiz-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .wiz-chip{font-size:11px;padding:3px 10px;border:1px solid var(--line);background:#fff;
+            cursor:pointer;font-family:inherit;color:var(--ink);}
+  .wiz-chip.on{background:var(--green-soft);border-color:var(--green);color:var(--green);font-weight:600;}
+  .wiz-row{display:flex;align-items:center;gap:10px;padding:6px 8px;background:#fff;
+           border:1px solid var(--line-soft);margin-bottom:5px;}
+  .wiz-row.off{opacity:0.55;}
+  .wiz-row label.name{flex:1;font-size:12.5px;display:flex;align-items:center;gap:8px;
+                      cursor:pointer;min-width:0;}
+  .wiz-row label.name span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .wiz-row .lock{font-size:10px;color:var(--ink-soft);white-space:nowrap;}
+  .wiz-row select{font-size:11.5px;padding:3px 6px;}
+  .wiz-move{display:flex;gap:3px;}
+  .wiz-move button{font:inherit;font-size:12px;line-height:1;padding:3px 7px;background:#fff;
+                   border:1px solid var(--line);cursor:pointer;color:var(--ink);}
+  .wiz-move button:hover{border-color:var(--green);color:var(--green);}
+  .wiz-move button:disabled{opacity:0.3;cursor:default;}
+  .wiz-foot{display:flex;justify-content:space-between;gap:10px;margin-top:12px;flex-wrap:wrap;}
+  .wiz-foot > div{display:flex;gap:6px;flex-wrap:wrap;}
+  .wiz-note{font-size:11.5px;color:var(--ink-soft);line-height:1.6;}
+  .wiz-note b{color:var(--ink);}
+  .wiz-done{font-size:12.5px;line-height:1.7;}
+  .wiz-done ul{margin:6px 0 0 18px;}
   .chart-box.wide{height:340px;}
   @media(max-width:1400px){.grid4{grid-template-columns:1fr 1fr;}}
   @media(max-width:1100px){.grid3{grid-template-columns:1fr 1fr;}}
@@ -425,6 +493,28 @@
 
 <div id="topSentinel" style="height:1px;"></div>
 
+<div class="wiz-back" id="wizBack">
+  <div class="wiz-card">
+    <button class="zoom-close" id="wizClose" title="Close">&times;</button>
+    <h3>Arrange your dashboard</h3>
+    <div class="hint" id="wizWho"></div>
+    <div class="wiz-steps" id="wizSteps"></div>
+    <div class="wiz-body" id="wizBody"></div>
+    <div class="wiz-foot">
+      <div>
+        <button class="secondary tiny" id="wizReset">Reset to standard</button>
+        <button class="secondary tiny" id="wizExport">Export</button>
+        <button class="secondary tiny" id="wizImport">Import</button>
+        <input type="file" id="wizFile" accept="application/json,.json" hidden />
+      </div>
+      <div>
+        <button class="secondary tiny" id="wizPrev">Back</button>
+        <button class="tiny" id="wizNext">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="zoom-back" id="zoomBack">
   <div class="zoom-card">
     <button class="zoom-close" id="zoomClose" title="Close">&times;</button>
@@ -450,6 +540,7 @@
       <span id="freshness"></span>
     </span>
     <span id="accountLabel" class="acct"></span>
+    <button class="secondary tiny" id="layoutBtn" hidden>Layout</button>
     <button class="secondary tiny" id="csvBtn" hidden>Export CSV</button>
     <button class="secondary tiny" id="signOutBtn" hidden>Sign out</button>
     <button class="tiny" id="signInBtn">Sign in with Microsoft</button>
@@ -1068,6 +1159,8 @@ var els = {};
  "signInBtn","signInBtn2","signinTitle","signinText","signinDetail","signOutBtn","accountLabel","signinBox","spinner","loadingTitle","loadingText",
  "errorBox","filterGrid","searchInput","dateFieldWrap","dateFrom","dateTo","resetBtn",
  "zoomBack","zoomClose","zoomTitle","zoomHint","zoomBody","liveWrap",
+ "layoutBtn","wizBack","wizClose","wizWho","wizSteps","wizBody","wizReset","wizExport",
+ "wizImport","wizFile","wizPrev","wizNext",
  "fabLoadHint",
  "ottKpis","ottSourceNote","ottEventMs","ottDeptMs","ottStatusFilter","ottTableHint","ottTable",
  "hitTable","hitHint",
@@ -1216,7 +1309,7 @@ function noAccessScreen(acct, detail){
   els.signinDetail.hidden = !detail;
   setStatus("No access", "err");
   els.signInBtn.hidden = true; els.signOutBtn.hidden = true;
-  els.refreshBtn.hidden = true; els.csvBtn.hidden = true;
+  els.refreshBtn.hidden = true; els.csvBtn.hidden = true; els.layoutBtn.hidden = true;
   els.accountLabel.textContent = "";
 }
 
@@ -1714,6 +1807,9 @@ function showDashboard(){
   els.loadingState.style.display = "none";
   els.dashboard.style.display = "block";
   document.body.classList.remove("signed-out");
+  /* The reader's own arrangement, which is kept against the signed-in
+     account and so cannot be read any earlier than this. */
+  if(typeof startLayout === "function") startLayout();
   measureSticky();                 // the header is only now laid out
 }
 
@@ -1758,7 +1854,8 @@ async function load(opts){
       if(interactive) throw e;
       loadingScreen("", "", true);              // ask for a click; popups need a gesture
       setStatus("Signed out");
-      els.signInBtn.hidden = false; els.signOutBtn.hidden = true; els.refreshBtn.hidden = true; els.csvBtn.hidden = true;
+      els.signInBtn.hidden = false; els.signOutBtn.hidden = true; els.refreshBtn.hidden = true;
+      els.csvBtn.hidden = true; els.layoutBtn.hidden = true;
       return false;
     }
     var acct = msalApp.getActiveAccount();
@@ -1768,7 +1865,8 @@ async function load(opts){
     measureSticky();
     els.accountLabel.textContent = acct ? greeting(acct) : "";
     els.accountLabel.title = acct ? (acct.username || "") : "";
-    els.signInBtn.hidden = true; els.signOutBtn.hidden = false; els.refreshBtn.hidden = false; els.csvBtn.hidden = false;
+    els.signInBtn.hidden = true; els.signOutBtn.hidden = false; els.refreshBtn.hidden = false;
+    els.csvBtn.hidden = false; els.layoutBtn.hidden = false;
 
     if(!opts.quiet){ loadingScreen("Finding the workbooks", "Looking in the OneDrive folder.", false); setStatus("Finding files...", "busy"); }
     var found = await locateWorkbooks(token);
@@ -5586,6 +5684,645 @@ window.addEventListener("resize", function(){
   measureSticky();               // the header rewraps at narrow widths
   clearTimeout(window.__rs);
   window.__rs = setTimeout(function(){ renderTab(activeTab); }, 250);
+});
+
+/* ============================================================
+   The arrangement each reader keeps
+
+   The dashboard ships with one arrangement. This lets a person decide
+   which tabs they see and in what order, which panels appear inside each
+   tab, how wide each one sits, and which of the number cards are worth
+   the space. It changes nothing about what a figure means.
+
+   Everything below works on the page as it already is. Each tab page is
+   flattened once into a single twelve-column grid whose children are the
+   blocks the reader moves; the spans the old fixed grids implied are kept,
+   so an untouched dashboard is pixel for pixel the one it always was, and
+   "Reset to standard" returns to exactly that.
+
+   The arrangement lives in this browser under the signed-in account, so two
+   people sharing a machine do not inherit each other's, and it survives a
+   dashboard update because nothing here is written into the page. Export
+   writes it out as a small file; Import reads one back on another machine.
+   ============================================================ */
+var LAYOUT_VERSION = 1;
+var LAYOUT_KEY_BASE = "ewo-layout-v1";
+var LAYOUT_SPANS = [12, 6, 4, 3];
+var SPAN_NAMES = { 12: "Full width", 6: "Half", 4: "One third", 3: "One quarter" };
+
+/* Which element holds the blocks of each tab. Most tabs are their own
+   container; the delivery tab keeps its blocks one level in, inside the
+   element that is hidden whole when the workbook carries no delivery sheet. */
+var LAYOUT_PAGES = {
+  overview: "page-overview", attention: "page-attention", timeline: "page-timeline",
+  capacity: "page-capacity", ott: "page-ott", delivery: "deliveryBody",
+  summary: "page-summary", orders: "page-orders"
+};
+/* The card rows, which are rebuilt from scratch on every render and so are
+   arranged after the fact rather than moved once. */
+var KPI_HOSTS = { overview: "kpiRow", capacity: "capKpis", ott: "ottKpis", delivery: "delKpis" };
+
+var layout = null;            // the reader's arrangement, or null while on the standard one
+var DEFAULT_LAYOUT = null;    // read off the page before anything is moved
+var KPI_SEEN = {};            // tab -> the card labels that tab has shown
+var DEFAULT_KPI = {};         // tab -> the order the dashboard itself puts them in
+var layoutReady = false;
+
+function tabTitle(key){
+  var b = els.tabBar.querySelector('.tab[data-tab="' + key + '"]');
+  if(!b) return key;
+  var t = b.cloneNode(true);
+  var c = t.querySelector(".count");
+  if(c) c.parentNode.removeChild(c);
+  return t.textContent.trim();
+}
+
+/* A name for a block that survives a reload and a dashboard update. The id or
+   the chart it holds is the steadiest thing about it; a heading that rewrites
+   itself with the day/week/month switch is matched on its template, not on the
+   words currently in it. */
+function blockKey(el, i){
+  if(el.id) return "#" + el.id;
+  var c = el.querySelector("canvas[id]");
+  if(c) return "c:" + c.id;
+  var t = el.querySelector("table[id]");
+  if(t) return "t:" + t.id;
+  var h = el.matches("h3") ? el : el.querySelector("h3");
+  if(h){
+    for(var a = 0; a < h.attributes.length; a++){
+      var nm = h.attributes[a].name;
+      if(nm.indexOf("data-grantitle") === 0) return "g:" + h.getAttribute(nm);
+    }
+    var txt = h.textContent.trim().toLowerCase().replace(/\s+/g, " ");
+    if(txt) return "h:" + txt;
+  }
+  return "i:" + i;
+}
+
+function blockLabel(el){
+  var h = el.matches("h3") ? el : el.querySelector("h3");
+  if(h){
+    for(var a = 0; a < h.attributes.length; a++){
+      var nm = h.attributes[a].name;
+      if(nm.indexOf("data-grantitle") === 0)
+        return h.getAttribute(nm).replace("{g}", "day");
+    }
+    var t = h.textContent.trim();
+    if(t) return t;
+  }
+  if(el.classList.contains("granbar")) return "Controls for this tab";
+  if(el.classList.contains("kpis")) return "Number cards";
+  if(el.classList.contains("alerts")) return "Attention cards";
+  if(el.id === "sewUnitGrid") return "One chart per unit";
+  if(el.classList.contains("empty-note")) return "Notice";
+  if(el.classList.contains("section-hint")) return "Section note";
+  return "Section";
+}
+
+function spanOf(el){
+  for(var i = 0; i < LAYOUT_SPANS.length; i++)
+    if(el.classList.contains("span-" + LAYOUT_SPANS[i])) return LAYOUT_SPANS[i];
+  return 12;
+}
+function setSpan(el, n){
+  LAYOUT_SPANS.forEach(function(s){ el.classList.remove("span-" + s); });
+  el.classList.add("span-" + (LAYOUT_SPANS.indexOf(n) === -1 ? 12 : n));
+}
+
+/* One tab page, turned from nested fixed grids into a single grid of blocks.
+   The panels of a .grid4 come out as quarter-width blocks, a .grid2 as halves,
+   and so on, which is what those grids drew anyway. A grid with an id is one
+   the dashboard fills itself, so it stays whole. */
+function flattenPage(tab){
+  var host = document.getElementById(LAYOUT_PAGES[tab]);
+  if(!host) return null;
+  if(host.classList.contains("layout-grid")) return host;
+  var kids = Array.prototype.slice.call(host.children);
+  kids.forEach(function(el){
+    var g = el.classList.contains("grid1") ? 12
+          : el.classList.contains("grid2") ? 6
+          : el.classList.contains("grid3") ? 4
+          : el.classList.contains("grid4") ? 3 : 0;
+    if(g && !el.id){
+      Array.prototype.slice.call(el.children).forEach(function(pn){
+        pn.style.gridColumn = "";              // the markup's own span is ours now
+        pn.classList.add("layout-block", "span-" + g);
+        host.insertBefore(pn, el);
+      });
+      host.removeChild(el);
+    }else if(el.classList.contains("section-head")){
+      /* A section heading and the line under it are one thought and move as
+         one. The wrapper inherits needs-plan so the delivery tab can still
+         hide the whole thing when there is no plan to show. */
+      var wrap = document.createElement("div");
+      wrap.className = "layout-block span-12";
+      if(el.classList.contains("needs-plan")) wrap.className += " needs-plan";
+      host.insertBefore(wrap, el);
+      wrap.appendChild(el);
+      /* nextElementSibling, not nextSibling: the markup is indented, so the
+         plain one hands back the whitespace between the two tags and the
+         hint was left behind as a block of its own. */
+      var nx = wrap.nextElementSibling;
+      /* A notice the dashboard shows only when something is missing can sit
+         between a heading and its hint; it is not what we are looking for. */
+      while(nx && nx.classList.contains("empty-note")) nx = nx.nextElementSibling;
+      if(nx && nx.classList.contains("section-hint")) wrap.appendChild(nx);
+    }else{
+      el.classList.add("layout-block", "span-12");
+    }
+  });
+  host.classList.add("layout-grid");
+  Array.prototype.forEach.call(host.children, function(el, i){
+    if(!el.getAttribute("data-block")) el.setAttribute("data-block", blockKey(el, i));
+    /* A notice the dashboard shows or hides by itself is not the reader's to
+       arrange, and the controls of a tab are not theirs to switch off. */
+    if(el.classList.contains("empty-note")) el.setAttribute("data-fixed", "1");
+    else if(el.classList.contains("granbar")) el.setAttribute("data-locked", "1");
+  });
+  return host;
+}
+
+function blockMap(host){
+  var m = {};
+  Array.prototype.forEach.call(host.children, function(el){
+    var k = el.getAttribute("data-block");
+    if(k && m[k] == null) m[k] = el;
+  });
+  return m;
+}
+
+/* The standard arrangement, read off the page the first time, so that reset
+   means the dashboard as it shipped and not a second guess at it. */
+function readDefaultLayout(){
+  var d = { v: LAYOUT_VERSION, tabs: [], blocks: {}, kpis: {}, start: null };
+  Array.prototype.forEach.call(els.tabBar.querySelectorAll(".tab"), function(b){
+    d.tabs.push({ key: b.getAttribute("data-tab"), on: true });
+  });
+  d.start = d.tabs.length ? d.tabs[0].key : null;
+  Object.keys(LAYOUT_PAGES).forEach(function(tab){
+    var host = flattenPage(tab);
+    if(!host) return;
+    d.blocks[tab] = Array.prototype.filter.call(host.children, function(el){
+      return !el.getAttribute("data-fixed");
+    }).map(function(el){
+      return { key: el.getAttribute("data-block"), on: true, span: spanOf(el) };
+    });
+  });
+  return d;
+}
+
+function cloneLayout(L){ return JSON.parse(JSON.stringify(L)); }
+
+function layoutKey(){
+  var acct = msalApp && msalApp.getActiveAccount();
+  var who = acct && (acct.username || acct.name) ? String(acct.username || acct.name).toLowerCase() : "guest";
+  return LAYOUT_KEY_BASE + ":" + who;
+}
+function loadLayout(){
+  try{
+    var raw = localStorage.getItem(layoutKey());
+    if(!raw) return null;
+    var L = JSON.parse(raw);
+    return (L && L.v === LAYOUT_VERSION && L.tabs && L.blocks) ? L : null;
+  }catch(e){ return null; }
+}
+function saveLayout(L){
+  try{
+    if(L) localStorage.setItem(layoutKey(), JSON.stringify(L));
+    else localStorage.removeItem(layoutKey());
+    return true;
+  }catch(e){ return false; }
+}
+
+/* ---- putting an arrangement on screen ---- */
+
+function kpiLabel(el){
+  var l = el.querySelector(".label");
+  return l ? l.textContent.trim() : "";
+}
+
+/* The card rows are rebuilt by every render, so they are arranged after each
+   one rather than moved once. This is also where the wizard learns which
+   cards a tab has to offer. */
+function applyKpis(){
+  var L = layout || DEFAULT_LAYOUT;
+  Object.keys(KPI_HOSTS).forEach(function(tab){
+    var host = document.getElementById(KPI_HOSTS[tab]);
+    if(!host) return;
+    var tiles = Array.prototype.slice.call(host.children);
+    if(!tiles.length) return;
+    var labels = tiles.map(kpiLabel);
+    /* The dashboard's own order, caught the first time the row is seen and
+       before anything here has touched it. Without it there would be nothing
+       to reset to: these tiles are not rebuilt by every render, so an order
+       this function imposed would otherwise be the only one left. */
+    if(!DEFAULT_KPI[tab]) DEFAULT_KPI[tab] = [];
+    labels.forEach(function(lab){
+      if(DEFAULT_KPI[tab].indexOf(lab) === -1) DEFAULT_KPI[tab].push(lab);
+    });
+    KPI_SEEN[tab] = DEFAULT_KPI[tab].slice();
+    var want = L && L.kpis ? L.kpis[tab] : null;
+    if(!want || !want.length){
+      want = DEFAULT_KPI[tab].map(function(lab){ return { label: lab, on: true }; });
+    }
+    var taken = {}, order = [], hidden = 0;
+    want.forEach(function(w){
+      var at = labels.indexOf(w.label);
+      if(at === -1 || taken[at]) return;
+      taken[at] = true;
+      order.push({ el: tiles[at], on: w.on !== false });
+    });
+    /* A card the saved list has never met is new to this reader: it is shown,
+       in the place the dashboard put it. */
+    tiles.forEach(function(el, i){ if(!taken[i]) order.push({ el: el, on: true }); });
+    order.forEach(function(o){
+      host.appendChild(o.el);
+      o.el.style.display = o.on ? "" : "none";
+      if(!o.on) hidden++;
+    });
+    host.classList.toggle("kpis-auto", hidden > 0);
+  });
+}
+
+function visibleTabs(){
+  var L = layout || DEFAULT_LAYOUT;
+  return L.tabs.filter(function(t){
+    return t.on !== false && els.tabBar.querySelector('.tab[data-tab="' + t.key + '"]');
+  }).map(function(t){ return t.key; });
+}
+
+function applyLayout(){
+  if(!DEFAULT_LAYOUT) return;
+  var L = layout || DEFAULT_LAYOUT;
+
+  L.tabs.forEach(function(t){
+    var b = els.tabBar.querySelector('.tab[data-tab="' + t.key + '"]');
+    if(!b) return;
+    els.tabBar.appendChild(b);                       // the saved order, one by one
+    b.style.display = t.on === false ? "none" : "";
+  });
+
+  Object.keys(LAYOUT_PAGES).forEach(function(tab){
+    var host = document.getElementById(LAYOUT_PAGES[tab]);
+    if(!host || !host.classList.contains("layout-grid")) return;
+    var map = blockMap(host);
+    var want = (L.blocks && L.blocks[tab]) || [];
+    want.forEach(function(b){
+      var el = map[b.key];
+      if(!el) return;
+      host.appendChild(el);
+      var locked = el.getAttribute("data-locked");
+      el.style.display = (b.on === false && !locked) ? "none" : "";
+      setSpan(el, b.span);
+    });
+  });
+
+  applyKpis();
+  measureSticky();
+}
+
+/* A render rebuilds the card rows, so the reader's choice about them has to be
+   put back each time. */
+var renderTabPlain = renderTab;
+renderTab = function(name){
+  renderTabPlain(name);
+  if(layoutReady) applyKpis();
+};
+
+/* A hidden tab must not stay open, and must not be reachable by a click that
+   is no longer there. */
+var showTabPlain = showTab;
+showTab = function(name){
+  var vis = layoutReady ? visibleTabs() : null;
+  if(vis && vis.length && vis.indexOf(name) === -1) name = vis[0];
+  showTabPlain(name);
+};
+
+function startLayout(){
+  if(layoutReady) return;
+  DEFAULT_LAYOUT = readDefaultLayout();
+  layout = loadLayout();
+  layoutReady = true;
+  applyLayout();
+  var vis = visibleTabs();
+  var want = (layout && layout.start) || DEFAULT_LAYOUT.start;
+  if(vis.indexOf(want) === -1) want = vis[0];
+  if(want && want !== activeTab) showTab(want);
+}
+
+/* ============================================================
+   The wizard
+
+   Four steps: which tabs, what is inside each tab, which number cards, and
+   then save. It edits a copy and puts nothing on screen until Save, so a
+   reader can change their mind by closing it.
+   ============================================================ */
+var WIZ_STEPS = ["Tabs", "Sections", "Cards", "Save"];
+var wizStep = 0, wizDraft = null, wizTab = null, wizCardTab = null, wizDirty = false;
+
+function wizOpen(){
+  if(!layoutReady) return;
+  ensureKpiLists();
+  wizDraft = cloneLayout(layout || DEFAULT_LAYOUT);
+  wizDraft.kpis = wizDraft.kpis || {};
+  wizStep = 0;
+  wizDirty = false;
+  var vis = wizDraft.tabs.filter(function(t){ return t.on !== false; });
+  wizTab = vis.length ? vis[0].key : wizDraft.tabs[0].key;
+  var cardTabs = Object.keys(KPI_HOSTS).filter(function(t){ return (KPI_SEEN[t] || []).length; });
+  wizCardTab = cardTabs.length ? cardTabs[0] : null;
+  var acct = msalApp && msalApp.getActiveAccount();
+  els.wizWho.textContent = "Saved in this browser for "
+    + ((acct && (acct.username || acct.name)) || "this computer")
+    + (layout ? "." : ". You are on the standard arrangement at the moment.");
+  els.wizBack.classList.add("on");
+  wizRender();
+}
+function wizClose(){ els.wizBack.classList.remove("on"); }
+
+/* Every tab has to have been drawn once before its cards can be listed. A tab
+   nobody has opened is drawn out of sight, which costs one render and spares
+   the reader a tour of the dashboard before they can arrange it. */
+function ensureKpiLists(){
+  Object.keys(KPI_HOSTS).forEach(function(tab){
+    if((KPI_SEEN[tab] || []).length) return;
+    var page = document.getElementById("page-" + tab);
+    if(!page) return;
+    var wasOn = page.classList.contains("on");
+    if(!wasOn) page.classList.add("on", "layout-measure");
+    try{ renderTab(tab); }catch(e){}
+    if(!wasOn) page.classList.remove("on", "layout-measure");
+  });
+  applyKpis();
+}
+
+function wizRender(){
+  els.wizSteps.innerHTML = WIZ_STEPS.map(function(s, i){
+    return '<button class="wiz-step' + (i === wizStep ? " on" : (i < wizStep ? " done" : ""))
+      + '" data-step="' + i + '">' + (i + 1) + ". " + esc(s) + '</button>';
+  }).join("");
+  els.wizPrev.disabled = wizStep === 0;
+  els.wizNext.textContent = wizStep === WIZ_STEPS.length - 1 ? "Save and close" : "Next";
+  if(wizStep === 0) wizRenderTabs();
+  else if(wizStep === 1) wizRenderBlocks();
+  else if(wizStep === 2) wizRenderCards();
+  else wizRenderDone();
+}
+
+function moveBtns(i, n){
+  return '<div class="wiz-move">'
+    + '<button data-move="-1" data-i="' + i + '"' + (i === 0 ? " disabled" : "") + ' title="Move up">&uarr;</button>'
+    + '<button data-move="1" data-i="' + i + '"' + (i === n - 1 ? " disabled" : "") + ' title="Move down">&darr;</button>'
+    + '</div>';
+}
+
+function wizRenderTabs(){
+  var n = wizDraft.tabs.length;
+  var html = '<div class="wiz-note">Tick the tabs you want, and use the arrows to put them in '
+    + 'the order you read them. The one marked <b>opens first</b> is what you land on after signing in.</div>';
+  html += wizDraft.tabs.map(function(t, i){
+    var on = t.on !== false;
+    return '<div class="wiz-row' + (on ? "" : " off") + '">'
+      + '<label class="name"><input type="checkbox" data-on="' + i + '"' + (on ? " checked" : "") + ' />'
+      + '<span>' + esc(tabTitle(t.key)) + '</span></label>'
+      + '<label class="lock"><input type="radio" name="wizStart" data-start="' + i + '"'
+      + (wizDraft.start === t.key ? " checked" : "") + (on ? "" : " disabled") + ' /> opens first</label>'
+      + moveBtns(i, n) + '</div>';
+  }).join("");
+  els.wizBody.innerHTML = html;
+}
+
+function wizRenderBlocks(){
+  var tabs = wizDraft.tabs.filter(function(t){ return t.on !== false; });
+  var html = '<div class="wiz-chips">' + tabs.map(function(t){
+    return '<button class="wiz-chip' + (t.key === wizTab ? " on" : "") + '" data-tab="'
+      + esc(t.key) + '">' + esc(tabTitle(t.key)) + '</button>';
+  }).join("") + '</div>';
+  if(tabs.length && !tabs.some(function(t){ return t.key === wizTab; })) wizTab = tabs[0].key;
+
+  var host = document.getElementById(LAYOUT_PAGES[wizTab]);
+  var list = (wizDraft.blocks && wizDraft.blocks[wizTab]) || [];
+  var map = host ? blockMap(host) : {};
+  html += '<div class="wiz-note">Everything on the <b>' + esc(tabTitle(wizTab))
+    + '</b> tab, top to bottom. Untick what you never look at, and set how much of '
+    + 'the row each one takes. Side by side means two halves, three thirds, or four quarters.</div>';
+  var n = list.length, shown = 0;
+  html += list.map(function(b, i){
+    var el = map[b.key];
+    if(!el) return "";
+    shown++;
+    var locked = !!el.getAttribute("data-locked");
+    var on = b.on !== false || locked;
+    return '<div class="wiz-row' + (on ? "" : " off") + '">'
+      + '<label class="name">'
+      + (locked ? '<input type="checkbox" checked disabled />'
+                : '<input type="checkbox" data-bon="' + i + '"' + (on ? " checked" : "") + ' />')
+      + '<span>' + esc(blockLabel(el)) + '</span></label>'
+      + (locked ? '<span class="lock">always shown</span>' : "")
+      + '<select data-span="' + i + '">' + LAYOUT_SPANS.map(function(sp){
+          return '<option value="' + sp + '"' + (spanPick(b) === sp ? " selected" : "") + '>'
+            + SPAN_NAMES[sp] + '</option>';
+        }).join("") + '</select>'
+      + moveBtns(i, n) + '</div>';
+  }).join("");
+  if(!shown) html += '<div class="wiz-note">This tab has nothing to arrange.</div>';
+  els.wizBody.innerHTML = html;
+}
+function spanPick(b){ return LAYOUT_SPANS.indexOf(b.span) === -1 ? 12 : b.span; }
+
+function wizRenderCards(){
+  var tabs = Object.keys(KPI_HOSTS).filter(function(t){
+    if(!(KPI_SEEN[t] || []).length) return false;
+    return wizDraft.tabs.some(function(x){ return x.key === t && x.on !== false; });
+  });
+  if(!tabs.length){
+    els.wizBody.innerHTML = '<div class="wiz-note">None of the tabs you kept has number cards.</div>';
+    return;
+  }
+  if(tabs.indexOf(wizCardTab) === -1) wizCardTab = tabs[0];
+  var html = '<div class="wiz-chips">' + tabs.map(function(t){
+    return '<button class="wiz-chip' + (t === wizCardTab ? " on" : "") + '" data-ctab="'
+      + esc(t) + '">' + esc(tabTitle(t)) + '</button>';
+  }).join("") + '</div>';
+  var list = wizCardList(wizCardTab);
+  html += '<div class="wiz-note">The row of number cards at the top of the <b>'
+    + esc(tabTitle(wizCardTab)) + '</b> tab. Untick a card to take it off the row.</div>';
+  var n = list.length;
+  html += list.map(function(c, i){
+    var on = c.on !== false;
+    return '<div class="wiz-row' + (on ? "" : " off") + '">'
+      + '<label class="name"><input type="checkbox" data-kon="' + i + '"' + (on ? " checked" : "") + ' />'
+      + '<span>' + esc(c.label) + '</span></label>' + moveBtns(i, n) + '</div>';
+  }).join("");
+  els.wizBody.innerHTML = html;
+}
+
+/* The saved list for a tab, topped up with any card it has shown since. */
+function wizCardList(tab){
+  var seen = KPI_SEEN[tab] || [];
+  var have = wizDraft.kpis[tab] || [];
+  var out = have.filter(function(c){ return seen.indexOf(c.label) !== -1; });
+  seen.forEach(function(lab){
+    if(!out.some(function(c){ return c.label === lab; })) out.push({ label: lab, on: true });
+  });
+  wizDraft.kpis[tab] = out;
+  return out;
+}
+
+function wizRenderDone(){
+  var tabsOn = wizDraft.tabs.filter(function(t){ return t.on !== false; });
+  var hiddenBlocks = 0, widened = 0;
+  Object.keys(wizDraft.blocks || {}).forEach(function(tab){
+    var base = (DEFAULT_LAYOUT.blocks[tab] || []);
+    wizDraft.blocks[tab].forEach(function(b){
+      if(b.on === false) hiddenBlocks++;
+      var was = base.filter(function(x){ return x.key === b.key; })[0];
+      if(was && was.span !== spanPick(b)) widened++;
+    });
+  });
+  var hiddenCards = 0;
+  Object.keys(wizDraft.kpis || {}).forEach(function(t){
+    wizDraft.kpis[t].forEach(function(c){ if(c.on === false) hiddenCards++; });
+  });
+  els.wizBody.innerHTML = '<div class="wiz-done"><b>Your arrangement</b><ul>'
+    + '<li>' + fmtInt(tabsOn.length) + ' of ' + fmtInt(wizDraft.tabs.length) + ' tabs kept, opening on '
+    + esc(tabTitle(wizDraft.start)) + '</li>'
+    + '<li>' + fmtInt(hiddenBlocks) + ' section' + (hiddenBlocks === 1 ? "" : "s") + ' switched off, '
+    + fmtInt(widened) + ' resized</li>'
+    + '<li>' + fmtInt(hiddenCards) + ' number card' + (hiddenCards === 1 ? "" : "s") + ' switched off</li>'
+    + '</ul><p style="margin-top:10px;">Press <b>Save and close</b> to put it on screen. It is kept in '
+    + 'this browser for this account, so it comes back every time you sign in here. '
+    + '<b>Export</b> writes it to a small file you can <b>Import</b> on another computer, and '
+    + '<b>Reset to standard</b> undoes everything.</p></div>';
+}
+
+/* ---- the wizard's own wiring ---- */
+function wizMove(list, i, d){
+  var j = i + d;
+  if(j < 0 || j >= list.length) return;
+  var t = list[i]; list[i] = list[j]; list[j] = t;
+  wizDirty = true;
+}
+function wizCurrentList(){
+  if(wizStep === 0) return wizDraft.tabs;
+  if(wizStep === 1) return wizDraft.blocks[wizTab] || [];
+  if(wizStep === 2) return wizCardList(wizCardTab);
+  return [];
+}
+
+els.wizBody.addEventListener("click", function(e){
+  var mv = e.target.closest ? e.target.closest("[data-move]") : null;
+  if(mv){
+    wizMove(wizCurrentList(), parseInt(mv.getAttribute("data-i"), 10),
+            parseInt(mv.getAttribute("data-move"), 10));
+    wizRender();
+    return;
+  }
+  var chip = e.target.closest ? e.target.closest("[data-tab]") : null;
+  if(chip){ wizTab = chip.getAttribute("data-tab"); wizRender(); return; }
+  var cchip = e.target.closest ? e.target.closest("[data-ctab]") : null;
+  if(cchip){ wizCardTab = cchip.getAttribute("data-ctab"); wizRender(); return; }
+});
+
+els.wizBody.addEventListener("change", function(e){
+  var t = e.target;
+  if(t.hasAttribute("data-on")){
+    var i = parseInt(t.getAttribute("data-on"), 10);
+    wizDraft.tabs[i].on = t.checked;
+    if(!t.checked && wizDraft.start === wizDraft.tabs[i].key){
+      var first = wizDraft.tabs.filter(function(x){ return x.on !== false; })[0];
+      wizDraft.start = first ? first.key : null;
+    }
+    if(!wizDraft.tabs.some(function(x){ return x.on !== false; })) wizDraft.tabs[i].on = true;
+    wizDirty = true; wizRender();
+  }else if(t.hasAttribute("data-start")){
+    wizDraft.start = wizDraft.tabs[parseInt(t.getAttribute("data-start"), 10)].key;
+    wizDirty = true;
+  }else if(t.hasAttribute("data-bon")){
+    wizDraft.blocks[wizTab][parseInt(t.getAttribute("data-bon"), 10)].on = t.checked;
+    wizDirty = true; wizRender();
+  }else if(t.hasAttribute("data-span")){
+    wizDraft.blocks[wizTab][parseInt(t.getAttribute("data-span"), 10)].span =
+      parseInt(t.value, 10);
+    wizDirty = true;
+  }else if(t.hasAttribute("data-kon")){
+    wizCardList(wizCardTab)[parseInt(t.getAttribute("data-kon"), 10)].on = t.checked;
+    wizDirty = true; wizRender();
+  }
+});
+
+els.wizSteps.addEventListener("click", function(e){
+  var b = e.target.closest ? e.target.closest("[data-step]") : null;
+  if(b){ wizStep = parseInt(b.getAttribute("data-step"), 10); wizRender(); }
+});
+els.wizPrev.addEventListener("click", function(){ if(wizStep > 0){ wizStep--; wizRender(); } });
+els.wizNext.addEventListener("click", function(){
+  if(wizStep < WIZ_STEPS.length - 1){ wizStep++; wizRender(); return; }
+  layout = cloneLayout(wizDraft);
+  layout.v = LAYOUT_VERSION;
+  var ok = saveLayout(layout);
+  applyLayout();
+  var vis = visibleTabs();
+  showTab(vis.indexOf(layout.start) === -1 ? vis[0] : layout.start);
+  renderTab(activeTab);                        // the charts are a new size now
+  wizClose();
+  setStatus(ok ? "Layout saved" : "Layout applied, but this browser would not store it",
+            ok ? "live" : "err");
+});
+
+els.wizReset.addEventListener("click", function(){
+  layout = null;
+  saveLayout(null);
+  applyLayout();
+  showTab(DEFAULT_LAYOUT.start);
+  renderTab(activeTab);
+  wizDraft = cloneLayout(DEFAULT_LAYOUT);
+  wizDraft.kpis = {};
+  wizRender();
+  setStatus("Standard layout restored", "live");
+});
+
+els.wizExport.addEventListener("click", function(){
+  var out = cloneLayout(wizDraft || layout || DEFAULT_LAYOUT);
+  out.savedAt = new Date().toISOString();
+  var blob = new Blob([JSON.stringify(out, null, 2)], { type: "application/json" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "ewo-dashboard-layout.json";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+});
+
+els.wizImport.addEventListener("click", function(){ els.wizFile.click(); });
+els.wizFile.addEventListener("change", function(){
+  var f = els.wizFile.files && els.wizFile.files[0];
+  if(!f) return;
+  var fr = new FileReader();
+  fr.onload = function(){
+    try{
+      var L = JSON.parse(String(fr.result));
+      if(!L || !L.tabs || !L.blocks) throw new Error("not a layout file");
+      wizDraft = cloneLayout(L);
+      wizDraft.v = LAYOUT_VERSION;
+      wizDraft.kpis = wizDraft.kpis || {};
+      wizStep = WIZ_STEPS.length - 1;
+      wizRender();
+      setStatus("Layout file read. Press Save and close to use it.", "busy");
+    }catch(e){
+      setStatus("That file is not a dashboard layout", "err");
+    }
+    els.wizFile.value = "";
+  };
+  fr.readAsText(f);
+});
+
+els.layoutBtn.addEventListener("click", wizOpen);
+els.wizClose.addEventListener("click", wizClose);
+els.wizBack.addEventListener("click", function(e){ if(e.target === els.wizBack) wizClose(); });
+document.addEventListener("keydown", function(e){
+  if(e.key === "Escape" && els.wizBack.classList.contains("on")) wizClose();
 });
 
 /* ============================================================
