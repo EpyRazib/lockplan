@@ -438,7 +438,7 @@
   /* Where the view says who it came from. Last line, far side, out of the
      way of the figure but part of anything printed or photographed. */
   .zoom-foot{display:flex;justify-content:flex-end;padding-top:8px;}
-  .zoom-ref{font-size:10.5px;color:var(--ink-soft);letter-spacing:0.02em;}
+  .zoom-ref{font-size:11px;color:var(--ink-soft);letter-spacing:0.02em;font-style:italic;}
   .share-pop{position:absolute;top:48px;right:14px;z-index:5;background:#fff;
              border:1px solid var(--line);box-shadow:0 8px 20px rgba(0,0,0,0.14);
              padding:6px;display:none;min-width:236px;}
@@ -453,9 +453,6 @@
   .share-pop hr{border:none;border-top:1px solid var(--line-soft);margin:4px 0;}
   .share-note{font-size:10.5px;color:var(--ink-soft);padding:6px 9px 3px;line-height:1.45;
               border-top:1px solid var(--line-soft);margin-top:4px;}
-  .share-text{display:none;width:100%;height:120px;margin:6px 0 0;font:inherit;font-size:11px;
-              border:1px solid var(--line);padding:6px;resize:vertical;background:var(--paper);
-              color:var(--ink);}
   .zoom-figure{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;}
   .zoom-figure{padding:4px 0 2px;}
   .zoom-figure .big{font-size:44px;font-weight:600;color:var(--green);font-variant-numeric:tabular-nums;}
@@ -473,14 +470,11 @@
     <h3 id="zoomTitle"></h3>
     <div class="hint" id="zoomHint"></div>
     <div class="zoom-body" id="zoomBody"></div>
-    <div class="zoom-foot"><span class="zoom-ref">Reference: Department of Business Planning</span></div>
+    <div class="zoom-foot"><span class="zoom-ref">Department of Business Planning</span></div>
     <div class="share-pop" id="sharePop">
       <div class="share-head">Send this on</div>
-      <button class="first" data-share="sheet" id="shareSheet">Share with the picture</button>
+      <button class="first" data-share="sheet" id="shareSheet">Share the picture</button>
       <hr id="shareRule" />
-      <button data-share="whatsapp">WhatsApp</button>
-      <button data-share="mail">Email</button>
-      <button data-share="copy">Copy the text</button>
       <button data-share="image" id="shareCopyImg">Copy the picture</button>
       <button data-share="download" id="shareSaveImg">Save the picture</button>
       <div class="share-note" id="shareNote"></div>
@@ -894,6 +888,38 @@
           <div class="hint" id="deficitHint">Largest shortfalls first. Click a heading to sort.</div>
           <div class="table-wrap short"><table id="deficitTable"></table></div>
         </div>
+
+        <!-- ---- the sewing floor, from the sew sheet ---- -->
+        <h3 class="section-head needs-sew">Sewing floor: capacity, plan and actual</h3>
+        <div class="section-hint needs-sew" id="sewHint"></div>
+        <div id="sewMissing" class="empty-note" style="display:none;"></div>
+        <div class="kpis six needs-sew" id="sewKpis"></div>
+        <div class="grid1 needs-sew">
+          <div class="panel">
+            <h3 data-grantitle7="Capacity, plan and actual per {g}">Capacity, plan and actual per day</h3>
+            <div class="hint" id="sewCapHint"></div>
+            <div class="chart-box wide"><canvas id="sewCapChart"></canvas></div>
+          </div>
+        </div>
+        <div class="grid2 needs-sew">
+          <div class="panel">
+            <h3 data-grantitle8="Efficiency and capacity use per {g}">Efficiency and capacity use per day</h3>
+            <div class="hint" id="sewEffHint"></div>
+            <div class="chart-box"><canvas id="sewEffChart"></canvas></div>
+          </div>
+          <div class="panel">
+            <h3>Where the hours went</h3>
+            <div class="hint" id="sewSpendHint"></div>
+            <div class="chart-box"><canvas id="sewSpendChart"></canvas></div>
+          </div>
+        </div>
+        <div class="grid1 needs-sew">
+          <div class="panel">
+            <h3>By execution unit</h3>
+            <div class="hint" id="sewUnitTableHint"></div>
+            <div class="table-wrap table-zoom"><table id="sewUnitTable" class="report"></table></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1135,6 +1161,8 @@ var els = {};
  "filterSummary","activeChips","kpiRow","alertRow","attnTable","attnTableTitle","attnTableHint",
  "pivotTable","dataTable","groupBy","colChooser","prevPage","nextPage","pageInfo","pageSize",
  "detailHint","tabBar","attnCount","capKpis","delKpis","asOfDate","asOfReset",
+ "sewHint","sewMissing","sewKpis","sewCapHint","sewEffHint","sewSpendHint",
+ "sewUnitTable","sewUnitTableHint",
  "asOfHint","kpiBuyerTable","kpiUnitTable","deficitTable","deficitHint","deliveryEmpty","noPlanNote",
  "deliveryBody","kpiBuyerHint","statusTable","lockTable","trendChart","achievedChart"
 ].forEach(function(id){ els[id] = document.getElementById(id); });
@@ -1729,6 +1757,11 @@ function bundleFromWorkbooks(ewoBuf, dlvBuf){
        report endpoint, which takes minutes to answer. */
     var o = sheetByName(wb2, "OTT");
     bundle.OttTna = o ? extractGrid(o, ["ewono"]) : [];
+    /* The sewing floor's daily record, if this copy of the workbook carries
+       one. Named "sew" by the planning team; matched loosely so a copy called
+       "Sewing" or "sew_data" is still found. */
+    var sw = sheetLike(wb2, "sew", [/^sew/i, /sewing/i]);
+    bundle.Sew = sw ? extractSew(sw) : [];
     bundle.DeliverySheets = wb2.SheetNames.slice(0);
   }
   return bundle;
@@ -1752,7 +1785,7 @@ var CACHE_VERSION = 4;
 function parserFingerprint(){
   var parts = [bundleFromWorkbooks, sheetLike, sheetByName, extractGrid, extractMain,
                extractDelivery, extractLockPlan, extractRfd, extractLockMeta,
-               tnaFromSheet, buildCapacity, cellValue];
+               tnaFromSheet, buildCapacity, cellValue, extractSew];
   var t = String(CACHE_VERSION) + JSON.stringify(DELIVERY_COLUMNS);
   for(var i = 0; i < parts.length; i++) t += parts[i].toString();
   var h = 5381;
@@ -1968,6 +2001,7 @@ function ingest(bundle){
   }else if(tnaSource === "sheet"){
     TNA = []; tnaSource = null; tnaSig = null;
   }
+  SEW = buildSew(bundle.Sew);
   cachedOttGrid = bundle.ActualEv || [];
   cachedOttSheet = bundle.OttSheet || null;
   cachedSheetNames = bundle.SheetNames || [];
@@ -4864,6 +4898,392 @@ function renderCapacity(){
 }
 
 /* ============================================================
+   The sewing floor's own record
+
+   A sheet named "sew" in the fabric delivery workbook: one row per line per
+   day, carrying the minutes a line had, the minutes it earned, and the
+   minutes it lost. The EWO sheet says what was planned for those days; this
+   says what the floor did with them. Neither answers the planner's question
+   on its own -- was the plan reasonable, and did the floor meet it -- which
+   is why they are drawn against each other here.
+
+   Everything is shown in hours. The sheet counts minutes, because that is how
+   a sewing line is measured, but the rest of the dashboard speaks in hours
+   and one page should not speak two languages.
+   ============================================================ */
+var SEW = [];
+
+/* The sheet's own spellings on the right; a copy of the workbook that renames
+   a column keeps working as long as one of these is recognisable. */
+var SEW_FIELDS = [
+  ["date",    ["ProductionDate", "Production Date", "Date"]],
+  ["unit",    ["Execution Unit", "ExecutionUnit", "Unit"]],
+  ["team",    ["Team"]],
+  ["line",    ["LineRowEntered", "Line", "LineNo"]],
+  ["final",   ["IsTheOutputFinalProduction", "IsFinalProduction", "FinalProduction"]],
+  ["buyer",   ["Buyer"]],
+  ["ewo",     ["EWONo", "EWO No", "EWO"]],
+  ["item",    ["Item"]],
+  ["style",   ["StyleNo", "Style No", "Style"]],
+  ["smv",     ["SMV"]],
+  ["sewers",  ["Utilized Sewers", "UtilizedSewers", "Sewers"]],
+  ["helpers", ["Utilized Helpers", "UtilizedHelpers", "Helpers"]],
+  ["workHr",  ["Work Hour", "WorkHour"]],
+  ["pcs",     ["TotalProduction", "Total Production"]],
+  ["availMin",["Available Minutes", "AvailableMinutes"]],
+  ["lostMin", ["LostTime Total", "LostTimeTotal", "Lost Time Total"]],
+  ["status",  ["Order Status", "OrderStatus"]],
+  ["prodMin", ["Produced Minutes", "ProducedMinutes"]],
+  ["utilMin", ["TotalUtilizeAvailableMinutes", "Total Utilize Available Minutes"]]
+];
+
+function extractSew(ws){
+  var rows = sheetRows(ws);
+  var hi = -1, lookup = null;
+  for(var i = 0; i < Math.min(rows.length, 15); i++){
+    var low = (rows[i] || []).map(normName);
+    if(low.indexOf("productiondate") === -1) continue;
+    if(low.indexOf("producedminutes") === -1 && low.indexOf("availableminutes") === -1
+       && low.indexOf("totalproduction") === -1) continue;
+    hi = i;
+    lookup = {};
+    (rows[i] || []).forEach(function(c, k){
+      if(c != null && lookup[normName(c)] == null) lookup[normName(c)] = k;
+    });
+    break;
+  }
+  if(hi === -1) return [];
+  var at = {};
+  SEW_FIELDS.forEach(function(f){
+    for(var k = 0; k < f[1].length; k++){
+      var c = lookup[normName(f[1][k])];
+      if(c != null){ at[f[0]] = c; return; }
+    }
+  });
+  if(at.date == null) return [];
+  var out = [];
+  for(var r = hi + 1; r < rows.length; r++){
+    var row = rows[r] || [];
+    var d = cellValue(row[at.date]);
+    /* A date is what makes a row a day's work. The totals strips some copies
+       of this workbook carry have none, and drop out here. */
+    if(typeof d !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(d)) continue;
+    var o = {};
+    SEW_FIELDS.forEach(function(f){
+      if(at[f[0]] != null) o[f[0]] = cellValue(row[at[f[0]]]);
+    });
+    out.push(o);
+  }
+  return out;
+}
+
+function buildSew(list){
+  var out = [];
+  (list || []).forEach(function(o){
+    var ms = parseDate(o.date);
+    if(ms == null) return;
+    /* One row per line per day is marked as the day's final output. Counting
+       the others as well would report the same minutes twice. */
+    var fin = String(o.final == null ? "" : o.final).trim().toLowerCase();
+    if(fin === "n" || fin === "no" || fin === "0" || fin === "false") return;
+    function n(k){ var v = toNum(o[k]); return v == null ? 0 : v; }
+    var availMin = n("availMin");
+    var utilMin = n("utilMin") || availMin;        // older copies have only the one
+    out.push({
+      d: ms,
+      unit: String(o.unit == null ? "" : o.unit).trim() || "(blank)",
+      team: String(o.team == null ? "" : o.team).trim(),
+      buyer: String(o.buyer == null ? "" : o.buyer).trim(),
+      ewo: o.ewo == null ? "" : String(o.ewo).trim(),
+      item: String(o.item == null ? "" : o.item).trim(),
+      smv: n("smv"),
+      people: n("sewers") + n("helpers"),
+      sewers: n("sewers"),
+      workHr: n("workHr"),
+      pcs: n("pcs"),
+      availMin: availMin,
+      utilMin: utilMin,
+      lostMin: n("lostMin"),
+      prodMin: n("prodMin")
+    });
+  });
+  out.sort(function(a, b){ return a.d - b.d; });
+  return out;
+}
+
+/* The rows this screen is asking about: the chosen date range, and the orders
+   the filter bar left standing. */
+function sewOnScreen(){
+  var join = orderJoin(), win = dateWindow();
+  return SEW.filter(function(s){
+    if(win && win.from != null && s.d < win.from) return false;
+    if(win && win.to != null && s.d > win.to) return false;
+    if(join && !join(s.ewo, s.buyer, s.unit)) return false;
+    return true;
+  });
+}
+
+function hrs(min){ return min / 60; }
+function pct(a, b){ return b > 0 ? Math.round(1000 * a / b) / 10 : 0; }
+
+function renderSewFloor(){
+  var has = SEW.length > 0;
+  document.querySelectorAll("#page-delivery .needs-sew").forEach(function(el){
+    el.style.display = has ? "" : "none";
+  });
+  els.sewMissing.style.display = has ? "none" : "";
+  if(!has){
+    els.sewMissing.innerHTML = "<strong>No sewing record in this workbook.</strong><br/>"
+      + "This block reads a sheet named <code>sew</code> in the fabric delivery file, one row"
+      + " per line per day."
+      + (DELIVERY_SHEETS.length
+          ? " Sheets found: <strong>" + DELIVERY_SHEETS.map(esc).join(", ") + "</strong>."
+          : "");
+    ["sewCapChart", "sewEffChart", "sewSpendChart"].forEach(destroyChart);
+    els.sewKpis.innerHTML = "";
+    els.sewUnitTable.innerHTML = "";
+    return;
+  }
+
+  var g = granularity, win = dateWindow();
+  var rows = sewOnScreen();
+
+  var word = g === "day" ? "day" : (g === "week" ? "week" : "month");
+  document.querySelectorAll("[data-grantitle7],[data-grantitle8]").forEach(function(h){
+    var a = h.getAttribute("data-grantitle7") || h.getAttribute("data-grantitle8");
+    h.textContent = a.replace("{g}", word);
+  });
+
+  if(!rows.length){
+    ["sewCapChart", "sewEffChart", "sewSpendChart"].forEach(destroyChart);
+    els.sewKpis.innerHTML = "";
+    els.sewUnitTable.innerHTML = '<tbody><tr><td class="empty-note">'
+      + 'No sewing day falls inside this filter.</td></tr></tbody>';
+    els.sewHint.textContent = "The sewing sheet has " + fmtInt(SEW.length)
+      + " line-days, none of them inside the current filter.";
+    return;
+  }
+
+  // ---- what the floor did, bucketed ----
+  var avail = {}, util = {}, prod = {}, lost = {}, pieces = {};
+  var lo = null, hi = null;
+  rows.forEach(function(s){
+    var k = bucketKey(s.d, g);
+    avail[k] = (avail[k] || 0) + s.availMin;
+    util[k] = (util[k] || 0) + s.utilMin;
+    prod[k] = (prod[k] || 0) + s.prodMin;
+    lost[k] = (lost[k] || 0) + s.lostMin;
+    pieces[k] = (pieces[k] || 0) + s.pcs;
+    if(lo == null || s.d < lo) lo = s.d;
+    if(hi == null || s.d > hi) hi = s.d;
+  });
+
+  /* What was planned for the same days, taken from the EWO sheet the same way
+     the Capacity vs Load tab takes it: an order's hours spread evenly across
+     its sewing window. Already in hours. */
+  var planSr = spreadSeries(filtered, "Adjusted sew start", "Adjusted sew end", "FR hour", g, null, win);
+  var planAt = {};
+  planSr.keys.forEach(function(k, i){ planAt[k] = (planSr.series.All || [])[i] || 0; });
+
+  /* The days on screen: everything the floor recorded, and the plan for those
+     same days. Without a chosen range the plan runs months past the last day
+     anyone has worked, and a chart that drew all of it would be mostly empty
+     air, so it is cut to the record. */
+  var keyset = {};
+  Object.keys(avail).forEach(function(k){ keyset[k] = true; });
+  Object.keys(planAt).forEach(function(k){
+    var n = Number(k);
+    if(win || (n >= bucketKey(lo, g) && n <= bucketKey(hi, g))) keyset[k] = true;
+  });
+  var keys = Object.keys(keyset).map(Number).sort(function(a, b){ return a - b; });
+
+  var capH = keys.map(function(k){ return hrs(avail[k] || 0); });
+  var planH = keys.map(function(k){ return planAt[k] || 0; });
+  var actH = keys.map(function(k){ return hrs(prod[k] || 0); });
+
+  destroyChart("sewCapChart");
+  var capEl = document.getElementById("sewCapChart");
+  if(capEl && keys.length){
+    charts.sewCapChart = new Chart(capEl, {
+      type: "bar",
+      data: {
+        labels: keys.map(function(k){ return bucketLabel(k, g); }),
+        datasets: [
+          { label: "Capacity", data: capH, backgroundColor: "rgba(74,144,217,0.35)",
+            borderColor: "#4A90D9", borderWidth: 1, order: 3 },
+          { label: "Plan", data: planH, backgroundColor: "#F8B000", borderWidth: 0, order: 2 },
+          { label: "Actual", data: actH, type: "line", borderColor: "#006040", borderWidth: 2,
+            backgroundColor: "#006040", pointRadius: 2, pointHoverRadius: 5, tension: 0, order: 1 }
+        ]
+      },
+      options: { responsive: true, maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: { legend: { position: "bottom", labels: { font: MONO, boxWidth: 12 } },
+          tooltip: { callbacks: { label: function(c){
+            return c.dataset.label + ": " + fmtInt(c.parsed.y) + " hours"; } } } },
+        scales: { x: { ticks: { font: MONO, autoSkip: true, maxTicksLimit: g === "day" ? 14 : 18,
+                                maxRotation: g === "day" ? 60 : 0 }, grid: { display: false } },
+                  y: { beginAtZero: true, ticks: { font: MONO }, grid: GRID } } }
+    });
+  }
+
+  // ---- efficiency and capacity use ----
+  /* A day the floor did not work has no efficiency, which is not the same as
+     an efficiency of nothing. Plotted as zero the line dived to the axis and
+     back on every weekly holiday, and those dives read as collapses. */
+  var effSeries = keys.map(function(k){ return avail[k] ? pct(prod[k] || 0, util[k] || 0) : null; });
+  var useSeries = keys.map(function(k){ return avail[k] ? pct(util[k] || 0, avail[k] || 0) : null; });
+  destroyChart("sewEffChart");
+  var effEl = document.getElementById("sewEffChart");
+  if(effEl && keys.length){
+    charts.sewEffChart = new Chart(effEl, {
+      type: "line",
+      data: {
+        labels: keys.map(function(k){ return bucketLabel(k, g); }),
+        datasets: [
+          { label: "Efficiency", data: effSeries, borderColor: "#006040", backgroundColor: "rgba(0,96,64,0.10)",
+            borderWidth: 2, pointRadius: 2, pointHoverRadius: 5, tension: 0.15, fill: true,
+            spanGaps: false },
+          { label: "Capacity use", data: useSeries, borderColor: "#C7511F", backgroundColor: "transparent",
+            borderWidth: 2, pointRadius: 2, pointHoverRadius: 5, tension: 0.15, borderDash: [5, 4],
+            spanGaps: false }
+        ]
+      },
+      options: { responsive: true, maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: { legend: { position: "bottom", labels: { font: MONO, boxWidth: 12 } },
+          tooltip: { callbacks: { label: function(c){
+            return c.dataset.label + ": " + c.parsed.y + "%"; } } } },
+        scales: { x: { ticks: { font: MONO, autoSkip: true, maxTicksLimit: g === "day" ? 14 : 18,
+                                maxRotation: g === "day" ? 60 : 0 }, grid: { display: false } },
+                  y: { beginAtZero: true, ticks: { font: MONO, callback: function(v){ return v + "%"; } },
+                       grid: GRID } } }
+    });
+  }
+
+  // ---- where the minutes went, by unit ----
+  var byUnit = {};
+  rows.forEach(function(s){
+    var u = byUnit[s.unit] || (byUnit[s.unit] = { avail: 0, util: 0, prod: 0, lost: 0, pcs: 0,
+                                                  days: {}, people: 0, rows: 0 });
+    u.avail += s.availMin; u.util += s.utilMin; u.prod += s.prodMin;
+    u.lost += s.lostMin; u.pcs += s.pcs; u.people += s.people; u.rows++;
+    u.days[s.d] = true;
+  });
+  var units = Object.keys(byUnit).sort(function(a, b){ return byUnit[b].avail - byUnit[a].avail; });
+
+  /* The plan, per unit, so the table can set a unit's own plan beside its own
+     output rather than against a floor-wide total. */
+  var planByUnit = {};
+  units.forEach(function(u){
+    var mine = filtered.filter(function(r){ return (txt(r, "Execution Unit") || "(blank)") === u; });
+    var sr = spreadSeries(mine, "Adjusted sew start", "Adjusted sew end", "FR hour", g, null, win);
+    var t = 0;
+    (sr.series.All || []).forEach(function(v, i){
+      var k = sr.keys[i];
+      if(keyset[k]) t += v || 0;
+    });
+    planByUnit[u] = t;
+  });
+
+  destroyChart("sewSpendChart");
+  var spEl = document.getElementById("sewSpendChart");
+  if(spEl && units.length){
+    charts.sewSpendChart = new Chart(spEl, {
+      type: "bar",
+      data: {
+        labels: units,
+        datasets: [
+          { label: "Earned", data: units.map(function(u){ return hrs(byUnit[u].prod); }),
+            backgroundColor: "#006040", borderWidth: 0 },
+          { label: "Lost", data: units.map(function(u){ return hrs(byUnit[u].lost); }),
+            backgroundColor: "#C7511F", borderWidth: 0 },
+          { label: "Neither", data: units.map(function(u){
+              return Math.max(0, hrs(byUnit[u].avail - byUnit[u].prod - byUnit[u].lost)); }),
+            backgroundColor: "#E3E1D9", borderWidth: 0 }
+        ]
+      },
+      options: { responsive: true, maintainAspectRatio: false, indexAxis: "y",
+        interaction: { mode: "index", intersect: false },
+        plugins: { legend: { position: "bottom", labels: { font: MONO, boxWidth: 12 } },
+          tooltip: { callbacks: { label: function(c){
+            return c.dataset.label + ": " + fmtInt(c.parsed.x) + " hours"; } } } },
+        scales: { x: { stacked: true, beginAtZero: true, ticks: { font: MONO }, grid: GRID },
+                  y: { stacked: true, ticks: { font: MONO }, grid: { display: false } } } }
+    });
+  }
+
+  // ---- the unit table ----
+  var head = '<thead><tr><th>Unit</th><th class="num">Days</th><th class="num">Capacity</th>'
+    + '<th class="num">Plan</th><th class="num">Actual</th><th class="num">Efficiency</th>'
+    + '<th class="num">Capacity use</th><th class="num">Lost</th><th class="num">Pieces</th>'
+    + '<th class="num">Avg people</th></tr></thead>';
+  function unitRow(u){
+    var v = byUnit[u];
+    var days = Object.keys(v.days).length;
+    return '<tr><td>' + esc(u) + '</td>'
+      + '<td class="num">' + fmtInt(days) + '</td>'
+      + '<td class="num">' + fmtInt(hrs(v.avail)) + '</td>'
+      + '<td class="num">' + fmtInt(planByUnit[u] || 0) + '</td>'
+      + '<td class="num">' + fmtInt(hrs(v.prod)) + '</td>'
+      + '<td class="num">' + pct(v.prod, v.util) + '%</td>'
+      + '<td class="num">' + pct(v.util, v.avail) + '%</td>'
+      + '<td class="num">' + fmtInt(hrs(v.lost)) + '</td>'
+      + '<td class="num">' + fmtInt(v.pcs) + '</td>'
+      + '<td class="num">' + (v.rows ? fmtInt(v.people / v.rows) : 0) + '</td></tr>';
+  }
+  var tot = { avail: 0, util: 0, prod: 0, lost: 0, pcs: 0, people: 0, rows: 0, plan: 0, days: {} };
+  units.forEach(function(u){
+    var v = byUnit[u];
+    tot.avail += v.avail; tot.util += v.util; tot.prod += v.prod; tot.lost += v.lost;
+    tot.pcs += v.pcs; tot.people += v.people; tot.rows += v.rows;
+    tot.plan += planByUnit[u] || 0;
+    Object.keys(v.days).forEach(function(d){ tot.days[d] = true; });
+  });
+  var foot = '<tfoot><tr class="tot"><td>All units</td>'
+    + '<td class="num">' + fmtInt(Object.keys(tot.days).length) + '</td>'
+    + '<td class="num">' + fmtInt(hrs(tot.avail)) + '</td>'
+    + '<td class="num">' + fmtInt(tot.plan) + '</td>'
+    + '<td class="num">' + fmtInt(hrs(tot.prod)) + '</td>'
+    + '<td class="num">' + pct(tot.prod, tot.util) + '%</td>'
+    + '<td class="num">' + pct(tot.util, tot.avail) + '%</td>'
+    + '<td class="num">' + fmtInt(hrs(tot.lost)) + '</td>'
+    + '<td class="num">' + fmtInt(tot.pcs) + '</td>'
+    + '<td class="num">' + (tot.rows ? fmtInt(tot.people / tot.rows) : 0) + '</td></tr></tfoot>';
+  els.sewUnitTable.innerHTML = head + '<tbody>' + units.map(unitRow).join("") + '</tbody>' + foot;
+
+  // ---- the tiles ----
+  var planTotal = keys.reduce(function(a, k){ return a + (planAt[k] || 0); }, 0);
+  var tiles = [
+    ["Sewing capacity", fmtInt(hrs(tot.avail)), "hours available over "
+      + fmtInt(Object.keys(tot.days).length) + " working days"],
+    ["Planned load", fmtInt(planTotal), "hours from the EWO plan for the same days"],
+    ["Actual production", fmtInt(hrs(tot.prod)), fmtInt(tot.pcs) + " pieces earned "
+      + fmtInt(hrs(tot.prod)) + " hours"],
+    ["Efficiency", pct(tot.prod, tot.util) + "%", "earned against the minutes actually used"],
+    ["Capacity use", pct(tot.util, tot.avail) + "%", "minutes used against minutes available"],
+    ["Lost time", fmtInt(hrs(tot.lost)), tot.avail ? pct(tot.lost, tot.avail) + "% of capacity" : "none recorded"]
+  ];
+  els.sewKpis.innerHTML = tiles.map(function(t){
+    return '<div class="kpi"><div class="label">' + esc(t[0]) + '</div><div class="value">' + esc(t[1])
+      + '</div><div class="foot">' + esc(t[2]) + '</div></div>'; }).join("");
+
+  els.sewHint.textContent = "From the sew sheet: " + fmtInt(rows.length) + " line-days across "
+    + fmtInt(units.length) + " unit" + (units.length === 1 ? "" : "s") + ", "
+    + fmtDate(lo) + " to " + fmtDate(hi) + ". Hours throughout; the sheet's minutes divided by 60.";
+  els.sewCapHint.textContent = "The blue band is what the floor had, the gold bars what the EWO plan"
+    + " asked of it, and the green line what it earned. A gold bar above the band is a plan the floor"
+    + " could not have met.";
+  els.sewEffHint.textContent = "Efficiency is earned minutes against the minutes actually used;"
+    + " capacity use is the minutes used against the minutes available. Low use with high efficiency"
+    + " means idle lines, not slow ones.";
+  els.sewSpendHint.textContent = "Every available hour each unit had, split into what it earned, what"
+    + " it lost to recorded downtime, and what it did neither with.";
+  els.sewUnitTableHint.textContent = "Each unit's own plan beside its own output. Capacity, plan,"
+    + " actual and lost are hours.";
+}
+
+/* ============================================================
    Fabric delivery: the weekly KPI, rebuilt live
 
    Every rule below was checked against the LockRepo sheet until each
@@ -4995,7 +5415,8 @@ function pvaChart(canvasId, rowsOut, limit){
 var deficitSort = { col: "gap", dir: 1 };
 
 function renderDelivery(){
-  var have = LOCK.length > 0 || DELIV.length > 0;
+  renderSewFloor();                  // its own sheet, its own answer
+  var have = LOCK.length > 0 || DELIV.length > 0 || SEW.length > 0;
   els.deliveryEmpty.style.display = have ? "none" : "block";
   els.deliveryBody.style.display = have ? "block" : "none";
   if(!have){
@@ -5422,7 +5843,7 @@ els.searchInput.addEventListener("input", function(){
    that copy away, so nothing the dashboard holds is disturbed.
    ============================================================ */
 var zoomChart = null;
-var SHARE_REF = "Reference: Department of Business Planning";
+var SHARE_REF = "Department of Business Planning";
 /* What is on screen full size, so that sending it on has something to
    describe without reading it back out of the markup. */
 var zoomCtx = { title: "", hint: "", value: "" };
@@ -5442,20 +5863,6 @@ function shareFilterText(){
   return bits.filter(Boolean).join(" \u00b7 ");
 }
 
-function shareText(){
-  var lines = [];
-  if(zoomCtx.title) lines.push(zoomCtx.title);
-  if(zoomCtx.value) lines.push(zoomCtx.value);
-  if(zoomCtx.hint) lines.push(zoomCtx.hint);
-  lines.push("");
-  lines.push("Filters: " + shareFilterText());
-  lines.push("As of " + fmtDate(TODAY));
-  lines.push("");
-  lines.push(SHARE_REF);
-  if(/^https?:/.test(location.href)) lines.push(location.href);
-  return lines.join("\n");
-}
-
 function zoomCanvas(){ return els.zoomBody.querySelector("canvas"); }
 
 function picName(){
@@ -5463,21 +5870,10 @@ function picName(){
     .replace(/\s+/g, "-") || "chart") + ".png";
 }
 
-/* The picture, drawn onto white with its title, its filters and its source,
-   because a chart that arrives on a phone arrives without this page around
-   it. Chart.js draws on a transparent canvas, which would reach WhatsApp as
-   a black rectangle. */
-function zoomPng(cb){
-  var cv = zoomCanvas();
-  if(!cv){ cb(null); return; }
-  var pad = 18, head = 44, foot = 34;
-  var out = document.createElement("canvas");
-  out.width = cv.width + pad * 2;
-  out.height = cv.height + head + foot;
-  var g = out.getContext("2d");
-  g.fillStyle = "#FFFFFF";
-  g.fillRect(0, 0, out.width, out.height);
-  g.drawImage(cv, pad, head);
+/* Every picture gets the same frame: the panel's own title, the filters it
+   was read under, and the signature. A figure that travels without the
+   filters is a figure somebody else will read differently. */
+function picFrame(g, w, h, pad){
   g.fillStyle = "#006040";
   g.font = "600 17px Georgia, serif";
   g.fillText(zoomCtx.title || "", pad, 25);
@@ -5485,11 +5881,154 @@ function zoomPng(cb){
   g.font = "11px Arial, sans-serif";
   var f = shareFilterText();
   g.fillText(f.length > 150 ? f.slice(0, 147) + "..." : f, pad, 38);
-  g.fillText("As of " + fmtDate(TODAY), pad, out.height - 12);
   g.textAlign = "right";
   g.fillStyle = "#1C1F22";
-  g.fillText(SHARE_REF, out.width - pad, out.height - 12);
+  g.font = "italic 11px Arial, sans-serif";
+  g.fillText(SHARE_REF, w - pad, h - 12);
+  g.textAlign = "left";
+}
+
+/* A chart. Chart.js draws on a transparent canvas, which would reach
+   WhatsApp as a black rectangle, so it is laid on white first. */
+function chartPng(cb){
+  var cv = zoomCanvas();
+  if(!cv){ cb(null); return; }
+  var box = cv.getBoundingClientRect();
+  var cw = Math.round(box.width) || cv.width, ch = Math.round(box.height) || cv.height;
+  /* How many real pixels the chart holds per pixel on screen. The frame is
+     drawn in screen units and the whole canvas scaled by that, so the
+     picture is as sharp as the chart and the writing is still legible. */
+  var ratio = cw ? cv.width / cw : 1;
+  var pad = 18, head = 44, foot = 30;
+  var w = cw + pad * 2, h = ch + head + foot;
+  var out = document.createElement("canvas");
+  out.width = Math.round(w * ratio);
+  out.height = Math.round(h * ratio);
+  var g = out.getContext("2d");
+  g.scale(ratio, ratio);
+  g.fillStyle = "#FFFFFF";
+  g.fillRect(0, 0, w, h);
+  g.drawImage(cv, 0, 0, cv.width, cv.height, pad, head, cw, ch);
+  picFrame(g, w, h, pad);
   out.toBlob(function(b){ cb(b); }, "image/png");
+}
+
+/* A table. The share sheet takes files, not elements, so a table that is to
+   travel has to be painted: every cell in the colour the screen gives it,
+   which is where the hit-rate shading lives. Drawn at twice the size, because
+   a table read on a phone is mostly small numbers. */
+function tablePng(tbl, cb){
+  var trs = Array.prototype.slice.call(tbl.querySelectorAll("tr"));
+  if(!trs.length){ cb(null); return; }
+  var rows = trs.map(function(tr){
+    return {
+      h: Math.max(22, Math.round(tr.getBoundingClientRect().height)),
+      cells: Array.prototype.map.call(tr.children, function(td){
+        var cs = getComputedStyle(td);
+        var bg = cs.backgroundColor;
+        if(!bg || bg === "transparent" || /rgba\(0, 0, 0, 0\)/.test(bg)) bg = "#FFFFFF";
+        return { t: td.textContent.replace(/\s+/g, " ").trim(), bg: bg, fg: cs.color,
+                 bold: (parseInt(cs.fontWeight, 10) || 400) >= 600,
+                 right: cs.textAlign === "right",
+                 w: Math.max(44, Math.round(td.getBoundingClientRect().width)) };
+      })
+    };
+  });
+  var widths = [];
+  rows.forEach(function(r){
+    r.cells.forEach(function(c, i){ widths[i] = Math.max(widths[i] || 0, c.w); });
+  });
+  var tw = widths.reduce(function(a, b){ return a + b; }, 0);
+  var bodyH = rows.reduce(function(a, r){ return a + r.h; }, 0);
+  var pad = 18, head = 50, foot = 30, ratio = 3;
+  var w = tw + pad * 2, h = bodyH + head + foot;
+  var out = document.createElement("canvas");
+  out.width = w * ratio;
+  out.height = h * ratio;
+  var g = out.getContext("2d");
+  g.scale(ratio, ratio);
+  g.fillStyle = "#FFFFFF";
+  g.fillRect(0, 0, w, h);
+  var y = head;
+  rows.forEach(function(r){
+    var x = pad;
+    r.cells.forEach(function(c, i){
+      var cw = widths[i] || c.w;
+      g.fillStyle = c.bg;
+      g.fillRect(x, y, cw, r.h);
+      g.strokeStyle = "#F0EEE7";
+      g.lineWidth = 1;
+      g.strokeRect(x + 0.5, y + 0.5, cw - 1, r.h - 1);
+      g.save();
+      g.beginPath();
+      g.rect(x + 3, y, cw - 6, r.h);
+      g.clip();
+      g.fillStyle = c.fg;
+      g.font = (c.bold ? "600 " : "") + "12px Arial, sans-serif";
+      g.textBaseline = "middle";
+      g.textAlign = c.right ? "right" : "left";
+      /* The headings wrap on screen, over three lines in a narrow column, and
+         a picture that drew them on one line would simply lose the ends of
+         them. The row is already as tall as the screen made it, so the lines
+         fit; they only have to be found again. */
+      var lines = wrapCell(g, c.t, cw - 12);
+      var lh = 14, top = y + r.h / 2 - (lines.length - 1) * lh / 2;
+      lines.forEach(function(ln, k){
+        g.fillText(ln, c.right ? x + cw - 6 : x + 6, top + k * lh);
+      });
+      g.restore();
+      x += cw;                       // on to the next column
+    });
+    y += r.h;
+  });
+  g.textBaseline = "alphabetic";
+  g.textAlign = "left";
+  picFrame(g, w, h, pad);
+  out.toBlob(function(b){ cb(b); }, "image/png");
+}
+
+function wrapCell(g, text, maxW){
+  if(!text) return [""];
+  if(g.measureText(text).width <= maxW) return [text];
+  var words = text.split(" "), lines = [], cur = "";
+  for(var i = 0; i < words.length; i++){
+    var t = cur ? cur + " " + words[i] : words[i];
+    if(!cur || g.measureText(t).width <= maxW) cur = t;
+    else { lines.push(cur); cur = words[i]; }
+  }
+  if(cur) lines.push(cur);
+  return lines;
+}
+
+/* A single number, which is a picture too once it has to leave the screen. */
+function figurePng(fig, cb){
+  var w = 520, h = 230, pad = 18, ratio = 3;
+  var out = document.createElement("canvas");
+  out.width = w * ratio;
+  out.height = h * ratio;
+  var g = out.getContext("2d");
+  g.scale(ratio, ratio);
+  g.fillStyle = "#FFFFFF";
+  g.fillRect(0, 0, w, h);
+  g.fillStyle = "#006040";
+  g.font = "600 44px Arial, sans-serif";
+  g.textAlign = "center";
+  g.fillText(zoomCtx.value || "", w / 2, 120);
+  g.fillStyle = "#6B7280";
+  g.font = "13px Arial, sans-serif";
+  g.fillText(zoomCtx.hint || "", w / 2, 150);
+  g.textAlign = "left";
+  picFrame(g, w, h, pad);
+  out.toBlob(function(b){ cb(b); }, "image/png");
+}
+
+/* Whatever is on screen full size, as a picture. */
+function zoomPng(cb){
+  if(zoomCanvas()){ chartPng(cb); return; }
+  var tbl = els.zoomBody.querySelector("table");
+  if(tbl){ tablePng(tbl, cb); return; }
+  if(els.zoomBody.querySelector(".zoom-figure")){ figurePng(null, cb); return; }
+  cb(null);
 }
 
 function shareNote(msg){
@@ -5497,36 +6036,33 @@ function shareNote(msg){
   els.shareNote.style.display = msg ? "" : "none";
 }
 
-/* Can this browser hand a real file to WhatsApp, to mail, to whatever else
-   the machine has? Chrome and Edge on Windows and Android can; some cannot,
-   and there the picture is saved instead. */
+/* Can this browser hand a real file to whatever the machine has -- WhatsApp,
+   Outlook, Teams? Chrome and Edge on Windows and Android can. A mailto: or
+   wa.me link cannot: neither standard has anywhere to put a file, which is
+   why those two are no longer offered. */
 function canSendPicture(){
   return !!(sharePic && navigator.canShare && navigator.canShare({ files: [sharePic] }));
 }
 
 function openShare(){
-  var hasPic = !!zoomCanvas();
-  els.shareCopyImg.style.display = hasPic ? "" : "none";
-  els.shareSaveImg.style.display = hasPic ? "" : "none";
   els.shareSheet.style.display = "none";
   els.shareRule.style.display = "none";
   sharePic = null;
-  shareNote(hasPic ? "Preparing the picture..." : "The filters above travel with whatever you send.");
+  shareNote("Preparing the picture...");
   els.sharePop.classList.add("on");
-  if(!hasPic) return;
   zoomPng(function(blob){
-    if(!blob || !els.sharePop.classList.contains("on")) return;
+    if(!blob || !els.sharePop.classList.contains("on")){
+      shareNote("There is no picture on this one.");
+      return;
+    }
     try{ sharePic = new File([blob], picName(), { type: "image/png" }); }
     catch(e){ sharePic = null; }
     if(canSendPicture()){
       els.shareSheet.style.display = "";
       els.shareRule.style.display = "";
-      shareNote("The picture and the filters go together.");
+      shareNote("Pick WhatsApp, Outlook or anything else; it opens with the picture attached.");
     }else{
-      /* No sheet on this browser. A mailto: or wa.me link has nowhere to put
-         a file, so saying so beats a link that arrives without its chart. */
-      shareNote("This browser cannot attach a picture to a link, so WhatsApp and "
-        + "Email will save it for you to attach.");
+      shareNote("This browser has no app chooser, so copy or save the picture and attach it.");
     }
   });
 }
@@ -5542,13 +6078,13 @@ els.sharePop.addEventListener("click", function(e){
   var b = e.target.closest ? e.target.closest("[data-share]") : null;
   if(!b) return;
   var how = b.getAttribute("data-share");
-  var txt = shareText();
 
   if(how === "sheet"){
-    /* Called straight from the click, with the file already in hand. */
+    /* Called straight from the click, with the file already in hand: a
+       browser only hands a file to the chooser while the click that asked
+       for it is still warm. Nothing but the picture goes. */
     if(!canSendPicture()){ savePng("The picture has been saved instead."); return; }
-    navigator.share({ files: [sharePic], title: zoomCtx.title || "EWO Life Cycle Dashboard",
-                      text: txt }).then(function(){
+    navigator.share({ files: [sharePic] }).then(function(){
       shareNote("Sent.");
       closeShare();
     }, function(err){
@@ -5558,28 +6094,7 @@ els.sharePop.addEventListener("click", function(e){
     return;
   }
 
-  if(how === "whatsapp" || how === "mail"){
-    /* Neither link can carry a file. If the sheet is there it is the better
-       road and takes the picture with it; if not, the picture is saved first
-       so there is something to attach when the window opens. */
-    if(canSendPicture()){
-      navigator.share({ files: [sharePic], title: zoomCtx.title || "EWO Life Cycle Dashboard",
-                        text: txt }).then(function(){
-        shareNote("Sent.");
-        closeShare();
-      }, function(err){
-        if(err && err.name === "AbortError") return;
-        openLinkShare(how, txt);
-      });
-      return;
-    }
-    openLinkShare(how, txt);
-    return;
-  }
-
-  if(how === "copy"){
-    copyText(txt, "Text copied. Paste it anywhere.");
-  }else if(how === "image"){
+  if(how === "image"){
     /* The clipboard will only take a picture while the click is still warm,
        so the item is handed over as a promise of one, which is the one way a
        browser will wait. */
@@ -5604,24 +6119,6 @@ els.sharePop.addEventListener("click", function(e){
   }
 });
 
-/* The old road: open WhatsApp or the mail window with the text, having first
-   put the picture somewhere it can be attached from. */
-function openLinkShare(how, txt){
-  var hasPic = !!zoomCanvas();
-  function go(){
-    if(how === "whatsapp"){
-      window.open("https://wa.me/?text=" + encodeURIComponent(txt), "_blank", "noopener");
-    }else{
-      var subj = (zoomCtx.title || "EWO Life Cycle Dashboard") + " \u2014 Business Planning";
-      location.href = "mailto:?subject=" + encodeURIComponent(subj) + "&body=" + encodeURIComponent(txt);
-    }
-  }
-  if(!hasPic){ go(); closeShare(); return; }
-  savePng("Picture saved to your downloads \u2014 attach it to the "
-    + (how === "whatsapp" ? "WhatsApp" : "mail") + " window that just opened.");
-  go();
-}
-
 /* The picture, written to a file. The name is the panel's own title, with
    anything a file system would object to taken out. */
 function savePng(note){
@@ -5638,42 +6135,6 @@ function savePng(note){
   });
 }
 
-function copyText(txt, ok){
-  function offer(){
-    /* The clipboard is refused often enough -- an unfocused window, a browser
-       that wants a sterner gesture -- that the last word cannot be "no". The
-       text is handed over, already selected, for Ctrl+C. */
-    var ta = document.getElementById("shareText");
-    if(!ta){
-      ta = document.createElement("textarea");
-      ta.id = "shareText";
-      ta.className = "share-text";
-      ta.readOnly = true;
-      els.sharePop.insertBefore(ta, els.shareNote);
-    }
-    ta.value = txt;
-    ta.style.display = "";
-    ta.focus();
-    ta.select();
-    shareNote("Press Ctrl+C to copy the text above.");
-  }
-  function fallback(){
-    var ta = document.createElement("textarea");
-    ta.value = txt;
-    ta.style.position = "fixed";
-    ta.style.left = "-9999px";
-    document.body.appendChild(ta);
-    ta.select();
-    var done = false;
-    try{ done = document.execCommand("copy"); }catch(e){}
-    document.body.removeChild(ta);
-    if(done) shareNote(ok); else offer();
-  }
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(txt).then(function(){ shareNote(ok); }, fallback);
-  }else fallback();
-}
-
 function closeZoom(){
   if(zoomChart){ zoomChart.destroy(); zoomChart = null; }
   els.zoomBody.innerHTML = "";
@@ -5681,8 +6142,6 @@ function closeZoom(){
   closeShare();
   shareNote("");
   sharePic = null;
-  var ta = document.getElementById("shareText");
-  if(ta) ta.style.display = "none";
 }
 
 function openZoomChart(canvasId, title, hint){
@@ -5696,10 +6155,14 @@ function openZoomChart(canvasId, title, hint){
   var cv = document.createElement("canvas");
   els.zoomBody.appendChild(cv);
   els.zoomBack.classList.add("on");
+  /* Drawn at three times the screen's own pixels. A chart full screen on a
+     laptop was being drawn at one device pixel per CSS pixel, which is why
+     both the zoom and the picture taken from it looked soft; at three the
+     canvas carries enough pixels for either. */
   zoomChart = new Chart(cv, {
     type: src.config.type,
     data: src.config.data,
-    options: Object.assign({}, src.config.options, { animation: false })
+    options: Object.assign({}, src.config.options, { animation: false, devicePixelRatio: 3 })
   });
 }
 
