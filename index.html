@@ -441,13 +441,16 @@
   .zoom-ref{font-size:10.5px;color:var(--ink-soft);letter-spacing:0.02em;}
   .share-pop{position:absolute;top:48px;right:14px;z-index:5;background:#fff;
              border:1px solid var(--line);box-shadow:0 8px 20px rgba(0,0,0,0.14);
-             padding:6px;display:none;min-width:210px;}
+             padding:6px;display:none;min-width:236px;}
   .share-pop.on{display:block;}
   .share-head{font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);
               padding:4px 9px 6px;}
   .share-pop button{display:block;width:100%;text-align:left;font:inherit;font-size:12.5px;
                     padding:7px 9px;border:none;background:none;cursor:pointer;color:var(--ink);}
   .share-pop button:hover{background:var(--green-soft);color:var(--green);}
+  /* The one that carries the picture is the one to reach for first. */
+  .share-pop button.first{font-weight:600;color:var(--green);}
+  .share-pop hr{border:none;border-top:1px solid var(--line-soft);margin:4px 0;}
   .share-note{font-size:10.5px;color:var(--ink-soft);padding:6px 9px 3px;line-height:1.45;
               border-top:1px solid var(--line-soft);margin-top:4px;}
   .share-text{display:none;width:100%;height:120px;margin:6px 0 0;font:inherit;font-size:11px;
@@ -473,6 +476,8 @@
     <div class="zoom-foot"><span class="zoom-ref">Reference: Department of Business Planning</span></div>
     <div class="share-pop" id="sharePop">
       <div class="share-head">Send this on</div>
+      <button class="first" data-share="sheet" id="shareSheet">Share with the picture</button>
+      <hr id="shareRule" />
       <button data-share="whatsapp">WhatsApp</button>
       <button data-share="mail">Email</button>
       <button data-share="copy">Copy the text</button>
@@ -689,7 +694,7 @@
         <div class="g-legend">
           <span><i class="sw fab"></i>Fabric window, Fab Qty spread evenly</span>
           <span><i class="sw sew"></i>Production window, FR hour spread evenly</span>
-        <span><i class="sw pcd">\u2702</i>Cutting input (PCD)</span>
+        <span><i class="sw pcd">&#9986;</i>Cutting input (PCD)</span>
           <span><i class="sw today"></i>Today</span>
           <span><i class="sw y"></i>90-100% of capacity</span>
           <span><i class="sw o"></i>over capacity</span>
@@ -1118,7 +1123,7 @@ var els = {};
  "signInBtn","signInBtn2","signinTitle","signinText","signinDetail","signOutBtn","accountLabel","signinBox","spinner","loadingTitle","loadingText",
  "errorBox","filterGrid","searchInput","dateFieldWrap","dateFrom","dateTo","resetBtn",
  "zoomBack","zoomClose","zoomTitle","zoomHint","zoomBody","liveWrap",
- "zoomShare","sharePop","shareCopyImg","shareSaveImg","shareNote",
+ "zoomShare","sharePop","shareSheet","shareRule","shareCopyImg","shareSaveImg","shareNote",
  "fabLoadHint",
  "ottKpis","ottSourceNote","ottEventMs","ottDeptMs","ottStatusFilter","ottTableHint","ottTable",
  "hitTable","hitHint",
@@ -3184,7 +3189,9 @@ function ganttCapacity(range, dayMap, unitKeysWanted){
    is what the date means on the floor: the order stops being a plan and
    starts being cut. The date is written beside the mark once the columns are
    wide enough to carry it without covering the next order's work; at every
-   width it is in the tooltip, and in the PCD column on the left. */
+   width it is in the tooltip, and in the PCD column on the left. An order
+   whose PCD falls outside the drawn window keeps the column and loses the
+   mark, which is the truthful pair. */
 function ganttPcd(range, colW, atCol, r){
   var d = dat(r, "Adjusted PCD");
   if(d == null || d < range.from || d > range.to) return "";
@@ -5416,9 +5423,13 @@ els.searchInput.addEventListener("input", function(){
    ============================================================ */
 var zoomChart = null;
 var SHARE_REF = "Reference: Department of Business Planning";
-/* What is on screen full size, so that sharing has something to describe
-   without reading it back out of the markup. */
+/* What is on screen full size, so that sending it on has something to
+   describe without reading it back out of the markup. */
 var zoomCtx = { title: "", hint: "", value: "" };
+/* The picture, drawn the moment the menu opens rather than when a button is
+   pressed. A browser only hands a file to the share sheet while the click
+   that asked for it is still warm, and drawing one takes longer than that. */
+var sharePic = null;
 
 /* The filters the view was read under, in the same words the filter bar uses.
    A number without them is a number somebody else will read differently. */
@@ -5446,6 +5457,11 @@ function shareText(){
 }
 
 function zoomCanvas(){ return els.zoomBody.querySelector("canvas"); }
+
+function picName(){
+  return ((zoomCtx.title || "chart").replace(/[^A-Za-z0-9 _-]/g, "").trim()
+    .replace(/\s+/g, "-") || "chart") + ".png";
+}
 
 /* The picture, drawn onto white with its title, its filters and its source,
    because a chart that arrives on a phone arrives without this page around
@@ -5481,12 +5497,38 @@ function shareNote(msg){
   els.shareNote.style.display = msg ? "" : "none";
 }
 
+/* Can this browser hand a real file to WhatsApp, to mail, to whatever else
+   the machine has? Chrome and Edge on Windows and Android can; some cannot,
+   and there the picture is saved instead. */
+function canSendPicture(){
+  return !!(sharePic && navigator.canShare && navigator.canShare({ files: [sharePic] }));
+}
+
 function openShare(){
   var hasPic = !!zoomCanvas();
   els.shareCopyImg.style.display = hasPic ? "" : "none";
   els.shareSaveImg.style.display = hasPic ? "" : "none";
-  shareNote("The filters above travel with whatever you send.");
+  els.shareSheet.style.display = "none";
+  els.shareRule.style.display = "none";
+  sharePic = null;
+  shareNote(hasPic ? "Preparing the picture..." : "The filters above travel with whatever you send.");
   els.sharePop.classList.add("on");
+  if(!hasPic) return;
+  zoomPng(function(blob){
+    if(!blob || !els.sharePop.classList.contains("on")) return;
+    try{ sharePic = new File([blob], picName(), { type: "image/png" }); }
+    catch(e){ sharePic = null; }
+    if(canSendPicture()){
+      els.shareSheet.style.display = "";
+      els.shareRule.style.display = "";
+      shareNote("The picture and the filters go together.");
+    }else{
+      /* No sheet on this browser. A mailto: or wa.me link has nowhere to put
+         a file, so saying so beats a link that arrives without its chart. */
+      shareNote("This browser cannot attach a picture to a link, so WhatsApp and "
+        + "Email will save it for you to attach.");
+    }
+  });
 }
 function closeShare(){ els.sharePop.classList.remove("on"); }
 
@@ -5501,25 +5543,46 @@ els.sharePop.addEventListener("click", function(e){
   if(!b) return;
   var how = b.getAttribute("data-share");
   var txt = shareText();
-  if(how === "whatsapp"){
-    window.open("https://wa.me/?text=" + encodeURIComponent(txt), "_blank", "noopener");
-    closeShare();
-  }else if(how === "mail"){
-    var subj = (zoomCtx.title || "EWO Life Cycle Dashboard") + " \u2014 Business Planning";
-    location.href = "mailto:?subject=" + encodeURIComponent(subj) + "&body=" + encodeURIComponent(txt);
-    closeShare();
-  }else if(how === "copy"){
+
+  if(how === "sheet"){
+    /* Called straight from the click, with the file already in hand. */
+    if(!canSendPicture()){ savePng("The picture has been saved instead."); return; }
+    navigator.share({ files: [sharePic], title: zoomCtx.title || "EWO Life Cycle Dashboard",
+                      text: txt }).then(function(){
+      shareNote("Sent.");
+      closeShare();
+    }, function(err){
+      if(err && err.name === "AbortError") return;      // the reader changed their mind
+      savePng("That did not go through, so the picture has been saved instead.");
+    });
+    return;
+  }
+
+  if(how === "whatsapp" || how === "mail"){
+    /* Neither link can carry a file. If the sheet is there it is the better
+       road and takes the picture with it; if not, the picture is saved first
+       so there is something to attach when the window opens. */
+    if(canSendPicture()){
+      navigator.share({ files: [sharePic], title: zoomCtx.title || "EWO Life Cycle Dashboard",
+                        text: txt }).then(function(){
+        shareNote("Sent.");
+        closeShare();
+      }, function(err){
+        if(err && err.name === "AbortError") return;
+        openLinkShare(how, txt);
+      });
+      return;
+    }
+    openLinkShare(how, txt);
+    return;
+  }
+
+  if(how === "copy"){
     copyText(txt, "Text copied. Paste it anywhere.");
   }else if(how === "image"){
-    /* The clipboard will only take a picture while the click that asked for
-       it is still warm, and drawing one takes longer than that. So the item
-       is handed over now as a promise of a picture, which is the one way a
-       browser will wait: building the blob first and writing it afterwards is
-       refused every time, as a write without a gesture behind it. */
-    /* Some browsers, and some windows a page is shown inside, allow the text
-       clipboard but not the picture one. Rather than leave the reader to
-       read a refusal and press the next button themselves, the picture is
-       saved instead and they are told that is what happened. */
+    /* The clipboard will only take a picture while the click is still warm,
+       so the item is handed over as a promise of one, which is the one way a
+       browser will wait. */
     if(typeof ClipboardItem === "undefined" || !navigator.clipboard || !navigator.clipboard.write){
       savePng("This browser cannot copy a picture, so it has been saved instead.");
       return;
@@ -5541,6 +5604,24 @@ els.sharePop.addEventListener("click", function(e){
   }
 });
 
+/* The old road: open WhatsApp or the mail window with the text, having first
+   put the picture somewhere it can be attached from. */
+function openLinkShare(how, txt){
+  var hasPic = !!zoomCanvas();
+  function go(){
+    if(how === "whatsapp"){
+      window.open("https://wa.me/?text=" + encodeURIComponent(txt), "_blank", "noopener");
+    }else{
+      var subj = (zoomCtx.title || "EWO Life Cycle Dashboard") + " \u2014 Business Planning";
+      location.href = "mailto:?subject=" + encodeURIComponent(subj) + "&body=" + encodeURIComponent(txt);
+    }
+  }
+  if(!hasPic){ go(); closeShare(); return; }
+  savePng("Picture saved to your downloads \u2014 attach it to the "
+    + (how === "whatsapp" ? "WhatsApp" : "mail") + " window that just opened.");
+  go();
+}
+
 /* The picture, written to a file. The name is the panel's own title, with
    anything a file system would object to taken out. */
 function savePng(note){
@@ -5548,8 +5629,7 @@ function savePng(note){
     if(!blob){ shareNote("There is no picture on this one."); return; }
     var a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = ((zoomCtx.title || "chart").replace(/[^A-Za-z0-9 _-]/g, "").trim()
-      .replace(/\s+/g, "-") || "chart") + ".png";
+    a.download = picName();
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -5600,6 +5680,7 @@ function closeZoom(){
   els.zoomBack.classList.remove("on");
   closeShare();
   shareNote("");
+  sharePic = null;
   var ta = document.getElementById("shareText");
   if(ta) ta.style.display = "none";
 }
