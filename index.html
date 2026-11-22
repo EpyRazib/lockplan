@@ -225,112 +225,6 @@
   .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;}
   .grid1{display:block;}
   .grid1 .panel{margin-bottom:18px;}
-
-  /* ---------- the reader's own arrangement ----------
-     A tab page is one twelve-column grid once it has been flattened, and every
-     panel, card row and section heading in it is a block with a span. The
-     spans the markup already implied are kept, so an untouched dashboard looks
-     exactly as it did; only a reader's own choices change it. */
-  /* Stretch, not start: panels sharing a row matched heights inside the old
-     fixed grids, and a ragged row would be a change nobody asked for. */
-  /* .tabpage.on sets display:block and outranks a single class, so the grid
-     has to say so with the same weight or more. */
-  .layout-grid,
-  .tabpage.on.layout-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:18px;}
-  .layout-grid > .layout-block{margin-bottom:0;min-width:0;}
-  .layout-grid > .span-2{grid-column:span 2;}
-  .layout-grid > .span-3{grid-column:span 3;}
-  .layout-grid > .span-4{grid-column:span 4;}
-  .layout-grid > .span-5{grid-column:span 5;}
-  .layout-grid > .span-6{grid-column:span 6;}
-  .layout-grid > .span-7{grid-column:span 7;}
-  .layout-grid > .span-8{grid-column:span 8;}
-  .layout-grid > .span-9{grid-column:span 9;}
-  .layout-grid > .span-10{grid-column:span 10;}
-  .layout-grid > .span-11{grid-column:span 11;}
-  .layout-grid > .span-12{grid-column:span 12;}
-  /* The same give the fixed grids had: quarters pair up first, then thirds,
-     then everything goes single file. */
-  @media(max-width:1400px){
-    .layout-grid > .span-2,.layout-grid > .span-3{grid-column:span 6;}
-  }
-  @media(max-width:1100px){
-    .layout-grid > .span-4,.layout-grid > .span-5{grid-column:span 6;}
-    .layout-grid > .span-7,.layout-grid > .span-8,.layout-grid > .span-9,
-    .layout-grid > .span-10,.layout-grid > .span-11{grid-column:span 12;}
-  }
-  @media(max-width:820px){.layout-grid > .layout-block{grid-column:span 12;}}
-  /* A card row with something switched off cannot keep its fixed column count
-     without leaving holes, so it falls back to fitting what is left. */
-  .kpis.kpis-auto{grid-template-columns:repeat(auto-fit,minmax(170px,1fr));}
-  /* Rendered out of sight only to learn what cards a tab has. */
-  .layout-measure{position:absolute !important;left:-99999px !important;top:0 !important;
-                  width:1280px !important;}
-
-  /* ---------- arranging by hand ----------
-     Only while editing: a grip to carry a panel by, a cross to put it away,
-     and an edge on the right and the bottom to pull. */
-  body.layout-edit .layout-block{position:relative;padding-top:30px;
-    outline:1px dashed var(--green-mid);outline-offset:-1px;}
-  body.layout-edit .layout-block.kpis{padding-top:30px;background:var(--line);}
-  body.layout-edit .le-dragging{opacity:0.45;outline:2px solid var(--green);}
-  body.le-moving, body.le-moving *{cursor:grabbing !important;user-select:none;}
-  body.le-sizing, body.le-sizing *{user-select:none;}
-  /* Nothing on the page should answer an ordinary click while it is being
-     arranged: no chart zoom, no sorting, no alert filter. */
-  body.layout-edit .chart-box,
-  body.layout-edit .alert,
-  body.layout-edit table{pointer-events:none;}
-  /* The card has to stay reachable: it is dragged by itself, not by a grip,
-     and the thing under the pointer is how the drop place is worked out. */
-  body.layout-edit .kpi{pointer-events:auto;}
-  /* While one is in the air it must not be what the pointer finds, or it
-     would only ever be dropped on itself. */
-  body.layout-edit .le-dragging,
-  body.layout-edit .le-dragging *{pointer-events:none !important;}
-  body.layout-edit .le-bar,
-  body.layout-edit .le-w,
-  body.layout-edit .le-h,
-  body.layout-edit .le-hide,
-  body.layout-edit .tab{pointer-events:auto;}
-
-  .le-bar{position:absolute;top:0;left:0;right:0;height:26px;display:flex;align-items:center;
-          gap:8px;padding:0 6px 0 8px;background:var(--green-soft);border-bottom:1px solid var(--green);
-          font-size:11px;color:var(--green);z-index:6;}
-  .le-grip{cursor:grab;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-           font-weight:600;letter-spacing:0.02em;}
-  .le-lock{font-size:10px;color:var(--ink-soft);white-space:nowrap;}
-  .le-hide{font:inherit;font-size:14px;line-height:1;border:none;background:none;cursor:pointer;
-           color:var(--green);padding:0 4px;}
-  .le-hide:hover{color:var(--rust);}
-  .tab .le-hide{margin-left:6px;font-size:12px;color:var(--ink-soft);}
-  .kpi{position:relative;}
-  .kpi .le-hide{position:absolute;top:2px;right:4px;}
-  body.layout-edit .kpi{cursor:grab;}
-  body.layout-edit .tab{cursor:grab;}
-
-  .le-w{position:absolute;top:30px;right:-7px;bottom:0;width:14px;cursor:col-resize;z-index:7;}
-  .le-h{position:absolute;left:0;right:0;bottom:-7px;height:14px;cursor:row-resize;z-index:7;}
-  .le-w::after{content:"";position:absolute;top:50%;right:6px;width:3px;height:30px;
-               margin-top:-15px;background:var(--green-mid);border-radius:2px;opacity:0.5;}
-  .le-h::after{content:"";position:absolute;left:50%;bottom:6px;width:30px;height:3px;
-               margin-left:-15px;background:var(--green-mid);border-radius:2px;opacity:0.5;}
-  .le-w:hover::after,.le-h:hover::after{opacity:1;}
-
-  .le-foot{position:fixed;left:0;right:0;bottom:0;z-index:2100;display:none;
-           align-items:center;gap:10px;flex-wrap:wrap;padding:10px 20px;background:#fff;
-           border-top:3px solid var(--green);box-shadow:0 -4px 14px rgba(0,0,0,0.10);}
-  .le-foot.on{display:flex;}
-  body.layout-edit main{padding-bottom:140px;}
-  .le-what{font-size:12px;color:var(--ink-soft);white-space:nowrap;}
-  .le-what b{color:var(--green);}
-  .le-hidden{display:flex;gap:6px;flex-wrap:wrap;align-items:center;flex:1;min-width:200px;}
-  .le-lab{font-size:11px;color:var(--ink-soft);}
-  .le-chip{font:inherit;font-size:11px;padding:3px 9px;border:1px solid var(--line);
-           background:var(--paper);cursor:pointer;color:var(--ink);white-space:nowrap;}
-  .le-chip:hover{border-color:var(--green);color:var(--green);background:var(--green-soft);}
-  .le-acts{display:flex;gap:6px;flex-wrap:wrap;}
-  .le-tip{font-size:10.5px;color:var(--ink-soft);width:100%;line-height:1.5;}
   .chart-box.wide{height:340px;}
   @media(max-width:1400px){.grid4{grid-template-columns:1fr 1fr;}}
   @media(max-width:1100px){.grid3{grid-template-columns:1fr 1fr;}}
@@ -447,11 +341,25 @@
   .g-bar.fab{top:3px;background:#4BA3D3;}          /* fabric: sky blue */
   .g-bar.sew{top:14px;background:#E8820C;}          /* production hours: orange */
   .g-today{position:absolute;top:0;width:2px;background:var(--rust);z-index:1;pointer-events:none;}
+  /* Cutting input: the one date on an order's row that is a moment rather
+     than a stretch, so it is marked where it falls instead of drawn as a bar.
+     The halo is what lets the mark be read where it lands on top of one. */
+  .g-pcd{position:absolute;top:0;bottom:0;z-index:2;pointer-events:none;}
+  .g-pcd::before{content:"";position:absolute;top:1px;bottom:1px;left:0;width:1px;
+                 background:var(--rust);opacity:0.5;}
+  .g-pcd i{position:absolute;top:50%;left:-4px;transform:translateY(-50%);font-style:normal;
+           font-size:11px;line-height:1;color:var(--rust);pointer-events:auto;cursor:help;
+           text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff;}
+  .g-pcd b{position:absolute;top:50%;left:10px;transform:translateY(-50%);font-size:9px;
+           font-weight:600;color:var(--rust);white-space:nowrap;
+           text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff;}
   .g-legend{display:flex;gap:18px;align-items:center;margin-top:10px;font-size:11px;color:var(--ink-soft);}
   .g-legend .sw{display:inline-block;width:14px;height:9px;border-radius:2px;margin-right:6px;vertical-align:middle;}
   .g-legend .sw.fab{background:#4BA3D3;}
   .g-legend .sw.sew{background:#E8820C;}
   .g-legend .sw.today{background:var(--rust);width:3px;height:12px;}
+  .g-legend .sw.pcd{background:none;color:var(--rust);width:auto;height:auto;font-size:11px;
+                    line-height:1;font-style:normal;}
   .g-legend .sw.y{background:#FFF0C2;}
   .g-legend .sw.o{background:#FFD9A8;}
   .g-legend .sw.r{background:#F7BBA6;}
@@ -521,6 +429,30 @@
   .zoom-close{position:absolute;top:12px;right:14px;border:1px solid var(--line);background:#fff;
               color:var(--ink);font-size:20px;line-height:1;width:32px;height:32px;cursor:pointer;}
   .zoom-close:hover{background:var(--green);color:#fff;border-color:var(--green);}
+  .zoom-share{position:absolute;top:12px;right:52px;border:1px solid var(--line);background:#fff;
+              color:var(--ink);font-size:14px;line-height:1;height:32px;padding:0 11px;cursor:pointer;
+              font-family:inherit;display:flex;align-items:center;gap:6px;}
+  .zoom-share:hover{background:var(--green);color:#fff;border-color:var(--green);}
+  /* The title has to stop before the buttons, not run under them. */
+  .zoom-card h3{margin-right:150px;}
+  /* Where the view says who it came from. Last line, far side, out of the
+     way of the figure but part of anything printed or photographed. */
+  .zoom-foot{display:flex;justify-content:flex-end;padding-top:8px;}
+  .zoom-ref{font-size:10.5px;color:var(--ink-soft);letter-spacing:0.02em;}
+  .share-pop{position:absolute;top:48px;right:14px;z-index:5;background:#fff;
+             border:1px solid var(--line);box-shadow:0 8px 20px rgba(0,0,0,0.14);
+             padding:6px;display:none;min-width:210px;}
+  .share-pop.on{display:block;}
+  .share-head{font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);
+              padding:4px 9px 6px;}
+  .share-pop button{display:block;width:100%;text-align:left;font:inherit;font-size:12.5px;
+                    padding:7px 9px;border:none;background:none;cursor:pointer;color:var(--ink);}
+  .share-pop button:hover{background:var(--green-soft);color:var(--green);}
+  .share-note{font-size:10.5px;color:var(--ink-soft);padding:6px 9px 3px;line-height:1.45;
+              border-top:1px solid var(--line-soft);margin-top:4px;}
+  .share-text{display:none;width:100%;height:120px;margin:6px 0 0;font:inherit;font-size:11px;
+              border:1px solid var(--line);padding:6px;resize:vertical;background:var(--paper);
+              color:var(--ink);}
   .zoom-figure{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;}
   .zoom-figure{padding:4px 0 2px;}
   .zoom-figure .big{font-size:44px;font-weight:600;color:var(--green);font-variant-numeric:tabular-nums;}
@@ -531,28 +463,23 @@
 
 <div id="topSentinel" style="height:1px;"></div>
 
-<div class="le-foot" id="leBar">
-  <span class="le-what">Arranging <b id="leTab"></b></span>
-  <span class="le-hidden" id="leHidden"></span>
-  <span class="le-acts">
-    <button class="secondary tiny" id="leReset">Reset</button>
-    <button class="secondary tiny" id="leExport">Export</button>
-    <button class="secondary tiny" id="leImport">Import</button>
-    <input type="file" id="leFile" accept="application/json,.json" hidden />
-    <button class="secondary tiny" id="leCancel">Cancel</button>
-    <button class="tiny" id="leDone">Done</button>
-  </span>
-  <span class="le-tip">Drag a panel by the bar at its top to move it &middot; pull the right edge
-    to set its width, the bottom edge its height &middot; &times; puts it away &middot;
-    tabs and number cards drag the same way &middot; the first tab is the one that opens.</span>
-</div>
-
 <div class="zoom-back" id="zoomBack">
   <div class="zoom-card">
+    <button class="zoom-share" id="zoomShare" title="Send this on">&#128279; Share</button>
     <button class="zoom-close" id="zoomClose" title="Close">&times;</button>
     <h3 id="zoomTitle"></h3>
     <div class="hint" id="zoomHint"></div>
     <div class="zoom-body" id="zoomBody"></div>
+    <div class="zoom-foot"><span class="zoom-ref">Reference: Department of Business Planning</span></div>
+    <div class="share-pop" id="sharePop">
+      <div class="share-head">Send this on</div>
+      <button data-share="whatsapp">WhatsApp</button>
+      <button data-share="mail">Email</button>
+      <button data-share="copy">Copy the text</button>
+      <button data-share="image" id="shareCopyImg">Copy the picture</button>
+      <button data-share="download" id="shareSaveImg">Save the picture</button>
+      <div class="share-note" id="shareNote"></div>
+    </div>
   </div>
 </div>
 
@@ -572,7 +499,6 @@
       <span id="freshness"></span>
     </span>
     <span id="accountLabel" class="acct"></span>
-    <button class="secondary tiny" id="layoutBtn" hidden>Layout</button>
     <button class="secondary tiny" id="csvBtn" hidden>Export CSV</button>
     <button class="secondary tiny" id="signOutBtn" hidden>Sign out</button>
     <button class="tiny" id="signInBtn">Sign in with Microsoft</button>
@@ -763,6 +689,7 @@
         <div class="g-legend">
           <span><i class="sw fab"></i>Fabric window, Fab Qty spread evenly</span>
           <span><i class="sw sew"></i>Production window, FR hour spread evenly</span>
+        <span><i class="sw pcd">\u2702</i>Cutting input (PCD)</span>
           <span><i class="sw today"></i>Today</span>
           <span><i class="sw y"></i>90-100% of capacity</span>
           <span><i class="sw o"></i>over capacity</span>
@@ -1191,8 +1118,7 @@ var els = {};
  "signInBtn","signInBtn2","signinTitle","signinText","signinDetail","signOutBtn","accountLabel","signinBox","spinner","loadingTitle","loadingText",
  "errorBox","filterGrid","searchInput","dateFieldWrap","dateFrom","dateTo","resetBtn",
  "zoomBack","zoomClose","zoomTitle","zoomHint","zoomBody","liveWrap",
- "layoutBtn","leBar","leTab","leHidden","leReset","leExport","leImport","leFile",
- "leCancel","leDone",
+ "zoomShare","sharePop","shareCopyImg","shareSaveImg","shareNote",
  "fabLoadHint",
  "ottKpis","ottSourceNote","ottEventMs","ottDeptMs","ottStatusFilter","ottTableHint","ottTable",
  "hitTable","hitHint",
@@ -1341,7 +1267,7 @@ function noAccessScreen(acct, detail){
   els.signinDetail.hidden = !detail;
   setStatus("No access", "err");
   els.signInBtn.hidden = true; els.signOutBtn.hidden = true;
-  els.refreshBtn.hidden = true; els.csvBtn.hidden = true; els.layoutBtn.hidden = true;
+  els.refreshBtn.hidden = true; els.csvBtn.hidden = true;
   els.accountLabel.textContent = "";
 }
 
@@ -1839,9 +1765,6 @@ function showDashboard(){
   els.loadingState.style.display = "none";
   els.dashboard.style.display = "block";
   document.body.classList.remove("signed-out");
-  /* The reader's own arrangement, which is kept against the signed-in
-     account and so cannot be read any earlier than this. */
-  if(typeof startLayout === "function") startLayout();
   measureSticky();                 // the header is only now laid out
 }
 
@@ -1886,8 +1809,7 @@ async function load(opts){
       if(interactive) throw e;
       loadingScreen("", "", true);              // ask for a click; popups need a gesture
       setStatus("Signed out");
-      els.signInBtn.hidden = false; els.signOutBtn.hidden = true; els.refreshBtn.hidden = true;
-      els.csvBtn.hidden = true; els.layoutBtn.hidden = true;
+      els.signInBtn.hidden = false; els.signOutBtn.hidden = true; els.refreshBtn.hidden = true; els.csvBtn.hidden = true;
       return false;
     }
     var acct = msalApp.getActiveAccount();
@@ -1897,8 +1819,7 @@ async function load(opts){
     measureSticky();
     els.accountLabel.textContent = acct ? greeting(acct) : "";
     els.accountLabel.title = acct ? (acct.username || "") : "";
-    els.signInBtn.hidden = true; els.signOutBtn.hidden = false; els.refreshBtn.hidden = false;
-    els.csvBtn.hidden = false; els.layoutBtn.hidden = false;
+    els.signInBtn.hidden = true; els.signOutBtn.hidden = false; els.refreshBtn.hidden = false; els.csvBtn.hidden = false;
 
     if(!opts.quiet){ loadingScreen("Finding the workbooks", "Looking in the OneDrive folder.", false); setStatus("Finding files...", "busy"); }
     var found = await locateWorkbooks(token);
@@ -3191,6 +3112,7 @@ var GANTT_COLUMNS = [
   { name: "EWO",            w: 72,  freeze: true, num: true },
   { name: "Execution Unit", w: 96 },
   { name: "Status",         w: 94 },
+  { name: "PCD",            w: 80 },
   { name: "FR hour",        w: 84,  num: true },
   { name: "Fab Qty",        w: 78,  num: true }
 ];
@@ -3258,6 +3180,22 @@ function ganttCapacity(range, dayMap, unitKeysWanted){
 /* A window drawn across the columns that are on show. With every day visible
    that is one block; with a colour filter on it becomes one block per run of
    visible days, so a bar never implies days that are not being displayed. */
+/* The cutting input date, marked on the day it falls. Scissors because that
+   is what the date means on the floor: the order stops being a plan and
+   starts being cut. The date is written beside the mark once the columns are
+   wide enough to carry it without covering the next order's work; at every
+   width it is in the tooltip, and in the PCD column on the left. */
+function ganttPcd(range, colW, atCol, r){
+  var d = dat(r, "Adjusted PCD");
+  if(d == null || d < range.from || d > range.to) return "";
+  var di = Math.round((d - range.from) / DAY);
+  if(atCol[di] == null) return "";          // a day the colour filter left out
+  var tip = esc(headerFor("Adjusted PCD") + ": " + fmtDate(d));
+  return '<div class="g-pcd" style="left:' + (atCol[di] * colW) + 'px" title="' + tip + '">'
+    + '<i title="' + tip + '">\u2702</i>'
+    + (colW >= 22 ? '<b>' + esc(fmtDate(d)) + '</b>' : '') + '</div>';
+}
+
 function ganttBar(range, colW, days, atCol, startCol, endCol, r, cls, label, qtyCol, unitWord){
   var a = dat(r, startCol), b = dat(r, endCol);
   if(a == null || b == null || b < a) return "";
@@ -3456,7 +3394,7 @@ function renderGantt(){
   // one row per order
   slice.forEach(function(r){
     var vals = [txt(r, "Buyer"), txt(r, "Team"), txt(r, "Dept"), num(r, "EWO"),
-                txt(r, "Execution Unit"), txt(r, "Status"),
+                txt(r, "Execution Unit"), txt(r, "Status"), fmtDate(dat(r, "Adjusted PCD")),
                 fmtInt(num(r, "FR hour") || 0), fmtInt(num(r, "Fab Qty") || 0)];
     html.push('<div class="g-row">' + leftCells(vals)
       + '<div class="g-track" style="width:' + trackW + 'px">'
@@ -3464,6 +3402,7 @@ function renderGantt(){
                  "Fabric quantity", "Fab Qty", "kg")
       + ganttBar(range, colW, days, atCol, "Adjusted sew start", "Adjusted sew end", r, "sew",
                  "Producible hour", "FR hour", "hours")
+      + ganttPcd(range, colW, atCol, r)
       + '</div></div>');
   });
 
@@ -5476,11 +5415,193 @@ els.searchInput.addEventListener("input", function(){
    that copy away, so nothing the dashboard holds is disturbed.
    ============================================================ */
 var zoomChart = null;
+var SHARE_REF = "Reference: Department of Business Planning";
+/* What is on screen full size, so that sharing has something to describe
+   without reading it back out of the markup. */
+var zoomCtx = { title: "", hint: "", value: "" };
+
+/* The filters the view was read under, in the same words the filter bar uses.
+   A number without them is a number somebody else will read differently. */
+function shareFilterText(){
+  var bits = [els.filterSummary.textContent.trim()];
+  Array.prototype.forEach.call(els.activeChips.querySelectorAll(".chip"), function(c){
+    var t = c.textContent.trim();
+    if(t) bits.push(t);
+  });
+  return bits.filter(Boolean).join(" \u00b7 ");
+}
+
+function shareText(){
+  var lines = [];
+  if(zoomCtx.title) lines.push(zoomCtx.title);
+  if(zoomCtx.value) lines.push(zoomCtx.value);
+  if(zoomCtx.hint) lines.push(zoomCtx.hint);
+  lines.push("");
+  lines.push("Filters: " + shareFilterText());
+  lines.push("As of " + fmtDate(TODAY));
+  lines.push("");
+  lines.push(SHARE_REF);
+  if(/^https?:/.test(location.href)) lines.push(location.href);
+  return lines.join("\n");
+}
+
+function zoomCanvas(){ return els.zoomBody.querySelector("canvas"); }
+
+/* The picture, drawn onto white with its title, its filters and its source,
+   because a chart that arrives on a phone arrives without this page around
+   it. Chart.js draws on a transparent canvas, which would reach WhatsApp as
+   a black rectangle. */
+function zoomPng(cb){
+  var cv = zoomCanvas();
+  if(!cv){ cb(null); return; }
+  var pad = 18, head = 44, foot = 34;
+  var out = document.createElement("canvas");
+  out.width = cv.width + pad * 2;
+  out.height = cv.height + head + foot;
+  var g = out.getContext("2d");
+  g.fillStyle = "#FFFFFF";
+  g.fillRect(0, 0, out.width, out.height);
+  g.drawImage(cv, pad, head);
+  g.fillStyle = "#006040";
+  g.font = "600 17px Georgia, serif";
+  g.fillText(zoomCtx.title || "", pad, 25);
+  g.fillStyle = "#6B7280";
+  g.font = "11px Arial, sans-serif";
+  var f = shareFilterText();
+  g.fillText(f.length > 150 ? f.slice(0, 147) + "..." : f, pad, 38);
+  g.fillText("As of " + fmtDate(TODAY), pad, out.height - 12);
+  g.textAlign = "right";
+  g.fillStyle = "#1C1F22";
+  g.fillText(SHARE_REF, out.width - pad, out.height - 12);
+  out.toBlob(function(b){ cb(b); }, "image/png");
+}
+
+function shareNote(msg){
+  els.shareNote.textContent = msg || "";
+  els.shareNote.style.display = msg ? "" : "none";
+}
+
+function openShare(){
+  var hasPic = !!zoomCanvas();
+  els.shareCopyImg.style.display = hasPic ? "" : "none";
+  els.shareSaveImg.style.display = hasPic ? "" : "none";
+  shareNote("The filters above travel with whatever you send.");
+  els.sharePop.classList.add("on");
+}
+function closeShare(){ els.sharePop.classList.remove("on"); }
+
+els.zoomShare.addEventListener("click", function(e){
+  e.stopPropagation();
+  if(els.sharePop.classList.contains("on")) closeShare(); else openShare();
+});
+els.sharePop.addEventListener("click", function(e){ e.stopPropagation(); });
+
+els.sharePop.addEventListener("click", function(e){
+  var b = e.target.closest ? e.target.closest("[data-share]") : null;
+  if(!b) return;
+  var how = b.getAttribute("data-share");
+  var txt = shareText();
+  if(how === "whatsapp"){
+    window.open("https://wa.me/?text=" + encodeURIComponent(txt), "_blank", "noopener");
+    closeShare();
+  }else if(how === "mail"){
+    var subj = (zoomCtx.title || "EWO Life Cycle Dashboard") + " \u2014 Business Planning";
+    location.href = "mailto:?subject=" + encodeURIComponent(subj) + "&body=" + encodeURIComponent(txt);
+    closeShare();
+  }else if(how === "copy"){
+    copyText(txt, "Text copied. Paste it anywhere.");
+  }else if(how === "image"){
+    /* The clipboard will only take a picture while the click that asked for
+       it is still warm, and drawing one takes longer than that. So the item
+       is handed over now as a promise of a picture, which is the one way a
+       browser will wait: building the blob first and writing it afterwards is
+       refused every time, as a write without a gesture behind it. */
+    /* Some browsers, and some windows a page is shown inside, allow the text
+       clipboard but not the picture one. Rather than leave the reader to
+       read a refusal and press the next button themselves, the picture is
+       saved instead and they are told that is what happened. */
+    if(typeof ClipboardItem === "undefined" || !navigator.clipboard || !navigator.clipboard.write){
+      savePng("This browser cannot copy a picture, so it has been saved instead.");
+      return;
+    }
+    var pending = new Promise(function(res, rej){
+      zoomPng(function(blob){ if(blob) res(blob); else rej(new Error("no picture")); });
+    });
+    try{
+      navigator.clipboard.write([new ClipboardItem({ "image/png": pending })]).then(function(){
+        shareNote("Picture copied. Paste it into WhatsApp or mail.");
+      }, function(){
+        savePng("This browser would not copy a picture, so it has been saved instead.");
+      });
+    }catch(err){
+      savePng("This browser would not copy a picture, so it has been saved instead.");
+    }
+  }else if(how === "download"){
+    savePng("Saved. Attach it from your downloads.");
+  }
+});
+
+/* The picture, written to a file. The name is the panel's own title, with
+   anything a file system would object to taken out. */
+function savePng(note){
+  zoomPng(function(blob){
+    if(!blob){ shareNote("There is no picture on this one."); return; }
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = ((zoomCtx.title || "chart").replace(/[^A-Za-z0-9 _-]/g, "").trim()
+      .replace(/\s+/g, "-") || "chart") + ".png";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+    shareNote(note || "Saved. Attach it from your downloads.");
+  });
+}
+
+function copyText(txt, ok){
+  function offer(){
+    /* The clipboard is refused often enough -- an unfocused window, a browser
+       that wants a sterner gesture -- that the last word cannot be "no". The
+       text is handed over, already selected, for Ctrl+C. */
+    var ta = document.getElementById("shareText");
+    if(!ta){
+      ta = document.createElement("textarea");
+      ta.id = "shareText";
+      ta.className = "share-text";
+      ta.readOnly = true;
+      els.sharePop.insertBefore(ta, els.shareNote);
+    }
+    ta.value = txt;
+    ta.style.display = "";
+    ta.focus();
+    ta.select();
+    shareNote("Press Ctrl+C to copy the text above.");
+  }
+  function fallback(){
+    var ta = document.createElement("textarea");
+    ta.value = txt;
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    var done = false;
+    try{ done = document.execCommand("copy"); }catch(e){}
+    document.body.removeChild(ta);
+    if(done) shareNote(ok); else offer();
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(function(){ shareNote(ok); }, fallback);
+  }else fallback();
+}
 
 function closeZoom(){
   if(zoomChart){ zoomChart.destroy(); zoomChart = null; }
   els.zoomBody.innerHTML = "";
   els.zoomBack.classList.remove("on");
+  closeShare();
+  shareNote("");
+  var ta = document.getElementById("shareText");
+  if(ta) ta.style.display = "none";
 }
 
 function openZoomChart(canvasId, title, hint){
@@ -5490,6 +5611,7 @@ function openZoomChart(canvasId, title, hint){
   document.querySelector(".zoom-card").classList.remove("small");
   els.zoomTitle.textContent = title || "";
   els.zoomHint.textContent = hint || "";
+  zoomCtx = { title: title || "", hint: hint || "", value: "" };
   var cv = document.createElement("canvas");
   els.zoomBody.appendChild(cv);
   els.zoomBack.classList.add("on");
@@ -5508,6 +5630,7 @@ function openZoomTable(wrap, title, hint){
   document.querySelector(".zoom-card").classList.remove("small");
   els.zoomTitle.textContent = title || "";
   els.zoomHint.textContent = hint || "";
+  zoomCtx = { title: title || "", hint: hint || "", value: "" };
   var box = document.createElement("div");
   box.className = "zoom-table";
   var copy = wrap.cloneNode(true);
@@ -5523,6 +5646,7 @@ function openZoomCard(label, value, foot){
   document.querySelector(".zoom-card").classList.add("small");
   els.zoomTitle.textContent = label || "";
   els.zoomHint.textContent = "";
+  zoomCtx = { title: label || "", hint: foot || "", value: value || "" };
   els.zoomBody.innerHTML = '<div class="zoom-figure"><div class="big">' + esc(value || "")
     + '</div><div class="cap">' + esc(foot || "") + '</div></div>';
   els.zoomBack.classList.add("on");
@@ -5530,7 +5654,6 @@ function openZoomCard(label, value, foot){
 
 document.addEventListener("click", function(e){
   if(els.zoomBack.classList.contains("on")) return;      // already open
-  if(typeof editing !== "undefined" && editing) return;  // being arranged, not read
   var box = e.target.closest ? e.target.closest(".chart-box") : null;
   if(box){
     var cv = box.querySelector("canvas");
@@ -5561,6 +5684,7 @@ document.addEventListener("click", function(e){
 });
 
 els.zoomBack.addEventListener("click", function(e){
+  closeShare();                                         // any click outside the menu
   if(e.target === els.zoomBack) closeZoom();            // backdrop only, not the card
 });
 els.zoomClose.addEventListener("click", closeZoom);
@@ -5718,769 +5842,6 @@ window.addEventListener("resize", function(){
   clearTimeout(window.__rs);
   window.__rs = setTimeout(function(){ renderTab(activeTab); }, 250);
 });
-
-/* ============================================================
-   The arrangement each reader keeps
-
-   The dashboard ships with one arrangement. This lets a person decide
-   which tabs they see and in what order, which panels appear inside each
-   tab, how wide each one sits, and which of the number cards are worth
-   the space. It changes nothing about what a figure means.
-
-   Everything below works on the page as it already is. Each tab page is
-   flattened once into a single twelve-column grid whose children are the
-   blocks the reader moves; the spans the old fixed grids implied are kept,
-   so an untouched dashboard is pixel for pixel the one it always was, and
-   "Reset to standard" returns to exactly that.
-
-   The arrangement lives in this browser under the signed-in account, so two
-   people sharing a machine do not inherit each other's, and it survives a
-   dashboard update because nothing here is written into the page. Export
-   writes it out as a small file; Import reads one back on another machine.
-   ============================================================ */
-var LAYOUT_VERSION = 1;
-var LAYOUT_KEY_BASE = "ewo-layout-v1";
-/* Every width an edge can be pulled to. The wizard offered four; a hand on
-   the edge expects to stop wherever it likes, so the whole dozen is here and
-   setSpan no longer quietly rounds an in-between width up to full. */
-var LAYOUT_SPANS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-
-/* Which element holds the blocks of each tab. Most tabs are their own
-   container; the delivery tab keeps its blocks one level in, inside the
-   element that is hidden whole when the workbook carries no delivery sheet. */
-var LAYOUT_PAGES = {
-  overview: "page-overview", attention: "page-attention", timeline: "page-timeline",
-  capacity: "page-capacity", ott: "page-ott", delivery: "deliveryBody",
-  summary: "page-summary", orders: "page-orders"
-};
-/* The card rows, which are rebuilt from scratch on every render and so are
-   arranged after the fact rather than moved once. */
-var KPI_HOSTS = { overview: "kpiRow", capacity: "capKpis", ott: "ottKpis", delivery: "delKpis" };
-
-var layout = null;            // the reader's arrangement, or null while on the standard one
-var DEFAULT_LAYOUT = null;    // read off the page before anything is moved
-var KPI_SEEN = {};            // tab -> the card labels that tab has shown
-var DEFAULT_KPI = {};         // tab -> the order the dashboard itself puts them in
-var layoutReady = false;
-
-function tabTitle(key){
-  var b = els.tabBar.querySelector('.tab[data-tab="' + key + '"]');
-  if(!b) return key;
-  var t = b.cloneNode(true);
-  /* The alert count, and the cross that only exists while arranging, are not
-     part of the tab's name. */
-  Array.prototype.forEach.call(t.querySelectorAll(".count,.le-hide"), function(n){
-    n.parentNode.removeChild(n);
-  });
-  return t.textContent.trim();
-}
-
-/* A name for a block that survives a reload and a dashboard update. The id or
-   the chart it holds is the steadiest thing about it; a heading that rewrites
-   itself with the day/week/month switch is matched on its template, not on the
-   words currently in it. */
-function blockKey(el, i){
-  if(el.id) return "#" + el.id;
-  var c = el.querySelector("canvas[id]");
-  if(c) return "c:" + c.id;
-  var t = el.querySelector("table[id]");
-  if(t) return "t:" + t.id;
-  var h = el.matches("h3") ? el : el.querySelector("h3");
-  if(h){
-    for(var a = 0; a < h.attributes.length; a++){
-      var nm = h.attributes[a].name;
-      if(nm.indexOf("data-grantitle") === 0) return "g:" + h.getAttribute(nm);
-    }
-    var txt = h.textContent.trim().toLowerCase().replace(/\s+/g, " ");
-    if(txt) return "h:" + txt;
-  }
-  return "i:" + i;
-}
-
-function blockLabel(el){
-  var h = el.matches("h3") ? el : el.querySelector("h3");
-  if(h){
-    for(var a = 0; a < h.attributes.length; a++){
-      var nm = h.attributes[a].name;
-      if(nm.indexOf("data-grantitle") === 0)
-        return h.getAttribute(nm).replace("{g}", "day");
-    }
-    var t = h.textContent.trim();
-    if(t) return t;
-  }
-  if(el.classList.contains("granbar")) return "Controls for this tab";
-  if(el.classList.contains("kpis")) return "Number cards";
-  if(el.classList.contains("alerts")) return "Attention cards";
-  if(el.id === "sewUnitGrid") return "One chart per unit";
-  if(el.classList.contains("empty-note")) return "Notice";
-  if(el.classList.contains("section-hint")) return "Section note";
-  return "Section";
-}
-
-function spanOf(el){
-  for(var i = 0; i < LAYOUT_SPANS.length; i++)
-    if(el.classList.contains("span-" + LAYOUT_SPANS[i])) return LAYOUT_SPANS[i];
-  return 12;
-}
-function setSpan(el, n){
-  LAYOUT_SPANS.forEach(function(s){ el.classList.remove("span-" + s); });
-  el.classList.add("span-" + (LAYOUT_SPANS.indexOf(n) === -1 ? 12 : n));
-}
-
-/* One tab page, turned from nested fixed grids into a single grid of blocks.
-   The panels of a .grid4 come out as quarter-width blocks, a .grid2 as halves,
-   and so on, which is what those grids drew anyway. A grid with an id is one
-   the dashboard fills itself, so it stays whole. */
-function flattenPage(tab){
-  var host = document.getElementById(LAYOUT_PAGES[tab]);
-  if(!host) return null;
-  if(host.classList.contains("layout-grid")) return host;
-  var kids = Array.prototype.slice.call(host.children);
-  kids.forEach(function(el){
-    var g = el.classList.contains("grid1") ? 12
-          : el.classList.contains("grid2") ? 6
-          : el.classList.contains("grid3") ? 4
-          : el.classList.contains("grid4") ? 3 : 0;
-    if(g && !el.id){
-      Array.prototype.slice.call(el.children).forEach(function(pn){
-        pn.style.gridColumn = "";              // the markup's own span is ours now
-        pn.classList.add("layout-block", "span-" + g);
-        host.insertBefore(pn, el);
-      });
-      host.removeChild(el);
-    }else if(el.classList.contains("section-head")){
-      /* A section heading and the line under it are one thought and move as
-         one. The wrapper inherits needs-plan so the delivery tab can still
-         hide the whole thing when there is no plan to show. */
-      var wrap = document.createElement("div");
-      wrap.className = "layout-block span-12";
-      if(el.classList.contains("needs-plan")) wrap.className += " needs-plan";
-      host.insertBefore(wrap, el);
-      wrap.appendChild(el);
-      /* nextElementSibling, not nextSibling: the markup is indented, so the
-         plain one hands back the whitespace between the two tags and the
-         hint was left behind as a block of its own. */
-      var nx = wrap.nextElementSibling;
-      /* A notice the dashboard shows only when something is missing can sit
-         between a heading and its hint; it is not what we are looking for. */
-      while(nx && nx.classList.contains("empty-note")) nx = nx.nextElementSibling;
-      if(nx && nx.classList.contains("section-hint")) wrap.appendChild(nx);
-    }else{
-      el.classList.add("layout-block", "span-12");
-    }
-  });
-  host.classList.add("layout-grid");
-  Array.prototype.forEach.call(host.children, function(el, i){
-    if(!el.getAttribute("data-block")) el.setAttribute("data-block", blockKey(el, i));
-    /* A notice the dashboard shows or hides by itself is not the reader's to
-       arrange, and the controls of a tab are not theirs to switch off. */
-    if(el.classList.contains("empty-note")) el.setAttribute("data-fixed", "1");
-    else if(el.classList.contains("granbar")) el.setAttribute("data-locked", "1");
-  });
-  return host;
-}
-
-function blockMap(host){
-  var m = {};
-  Array.prototype.forEach.call(host.children, function(el){
-    var k = el.getAttribute("data-block");
-    if(k && m[k] == null) m[k] = el;
-  });
-  return m;
-}
-
-/* The standard arrangement, read off the page the first time, so that reset
-   means the dashboard as it shipped and not a second guess at it. */
-function readDefaultLayout(){
-  var d = { v: LAYOUT_VERSION, tabs: [], blocks: {}, kpis: {}, start: null };
-  Array.prototype.forEach.call(els.tabBar.querySelectorAll(".tab"), function(b){
-    d.tabs.push({ key: b.getAttribute("data-tab"), on: true });
-  });
-  d.start = d.tabs.length ? d.tabs[0].key : null;
-  Object.keys(LAYOUT_PAGES).forEach(function(tab){
-    var host = flattenPage(tab);
-    if(!host) return;
-    d.blocks[tab] = Array.prototype.filter.call(host.children, function(el){
-      return !el.getAttribute("data-fixed");
-    }).map(function(el){
-      return { key: el.getAttribute("data-block"), on: true, span: spanOf(el) };
-    });
-  });
-  return d;
-}
-
-function cloneLayout(L){ return JSON.parse(JSON.stringify(L)); }
-
-function layoutKey(){
-  var acct = msalApp && msalApp.getActiveAccount();
-  var who = acct && (acct.username || acct.name) ? String(acct.username || acct.name).toLowerCase() : "guest";
-  return LAYOUT_KEY_BASE + ":" + who;
-}
-function loadLayout(){
-  try{
-    var raw = localStorage.getItem(layoutKey());
-    if(!raw) return null;
-    var L = JSON.parse(raw);
-    return (L && L.v === LAYOUT_VERSION && L.tabs && L.blocks) ? L : null;
-  }catch(e){ return null; }
-}
-function saveLayout(L){
-  try{
-    if(L) localStorage.setItem(layoutKey(), JSON.stringify(L));
-    else localStorage.removeItem(layoutKey());
-    return true;
-  }catch(e){ return false; }
-}
-
-/* ---- putting an arrangement on screen ---- */
-
-function kpiLabel(el){
-  var l = el.querySelector(".label");
-  return l ? l.textContent.trim() : "";
-}
-/* The row's own children are not all cards: while the dashboard is being
-   arranged the row carries a grip bar and a width handle of its own, and
-   counting those as cards left two nameless entries in every saved file. */
-function kpiTiles(host){
-  return Array.prototype.filter.call(host.children, function(k){
-    return k.classList.contains("kpi");
-  });
-}
-
-/* The card rows are rebuilt by every render, so they are arranged after each
-   one rather than moved once. This is also where the wizard learns which
-   cards a tab has to offer. */
-function applyKpis(){
-  var L = layout || DEFAULT_LAYOUT;
-  Object.keys(KPI_HOSTS).forEach(function(tab){
-    var host = document.getElementById(KPI_HOSTS[tab]);
-    if(!host) return;
-    var tiles = kpiTiles(host);
-    if(!tiles.length) return;
-    var labels = tiles.map(kpiLabel);
-    /* The dashboard's own order, caught the first time the row is seen and
-       before anything here has touched it. Without it there would be nothing
-       to reset to: these tiles are not rebuilt by every render, so an order
-       this function imposed would otherwise be the only one left. */
-    if(!DEFAULT_KPI[tab]) DEFAULT_KPI[tab] = [];
-    labels.forEach(function(lab){
-      if(DEFAULT_KPI[tab].indexOf(lab) === -1) DEFAULT_KPI[tab].push(lab);
-    });
-    KPI_SEEN[tab] = DEFAULT_KPI[tab].slice();
-    var want = L && L.kpis ? L.kpis[tab] : null;
-    if(!want || !want.length){
-      want = DEFAULT_KPI[tab].map(function(lab){ return { label: lab, on: true }; });
-    }
-    var taken = {}, order = [], hidden = 0;
-    want.forEach(function(w){
-      var at = labels.indexOf(w.label);
-      if(at === -1 || taken[at]) return;
-      taken[at] = true;
-      order.push({ el: tiles[at], on: w.on !== false });
-    });
-    /* A card the saved list has never met is new to this reader: it is shown,
-       in the place the dashboard put it. */
-    tiles.forEach(function(el, i){ if(!taken[i]) order.push({ el: el, on: true }); });
-    order.forEach(function(o){
-      host.appendChild(o.el);
-      o.el.style.display = o.on ? "" : "none";
-      if(!o.on) hidden++;
-    });
-    host.classList.toggle("kpis-auto", hidden > 0);
-  });
-}
-
-function visibleTabs(){
-  var L = layout || DEFAULT_LAYOUT;
-  return L.tabs.filter(function(t){
-    return t.on !== false && els.tabBar.querySelector('.tab[data-tab="' + t.key + '"]');
-  }).map(function(t){ return t.key; });
-}
-
-function applyLayout(){
-  if(!DEFAULT_LAYOUT) return;
-  var L = layout || DEFAULT_LAYOUT;
-
-  L.tabs.forEach(function(t){
-    var b = els.tabBar.querySelector('.tab[data-tab="' + t.key + '"]');
-    if(!b) return;
-    els.tabBar.appendChild(b);                       // the saved order, one by one
-    b.style.display = t.on === false ? "none" : "";
-  });
-
-  Object.keys(LAYOUT_PAGES).forEach(function(tab){
-    var host = document.getElementById(LAYOUT_PAGES[tab]);
-    if(!host || !host.classList.contains("layout-grid")) return;
-    var map = blockMap(host);
-    var want = (L.blocks && L.blocks[tab]) || [];
-    want.forEach(function(b){
-      var el = map[b.key];
-      if(!el) return;
-      host.appendChild(el);
-      var locked = el.getAttribute("data-locked");
-      el.style.display = (b.on === false && !locked) ? "none" : "";
-      setSpan(el, b.span);
-      if(typeof applyHeight === "function") applyHeight(el, b.h > 0 ? b.h : 0);
-    });
-  });
-
-  applyKpis();
-  measureSticky();
-}
-
-/* A render rebuilds the card rows, so the reader's choice about them has to be
-   put back each time. */
-var renderTabPlain = renderTab;
-renderTab = function(name){
-  renderTabPlain(name);
-  if(layoutReady) applyKpis();
-};
-
-/* A hidden tab must not stay open, and must not be reachable by a click that
-   is no longer there. */
-var showTabPlain = showTab;
-showTab = function(name){
-  var vis = layoutReady ? visibleTabs() : null;
-  if(vis && vis.length && vis.indexOf(name) === -1) name = vis[0];
-  showTabPlain(name);
-};
-
-function startLayout(){
-  if(layoutReady) return;
-  DEFAULT_LAYOUT = readDefaultLayout();
-  layout = loadLayout();
-  layoutReady = true;
-  applyLayout();
-  var vis = visibleTabs();
-  var want = (layout && layout.start) || DEFAULT_LAYOUT.start;
-  if(vis.indexOf(want) === -1) want = vis[0];
-  if(want && want !== activeTab) showTab(want);
-}
-
-/* ============================================================
-   Arranging by hand
-
-   Press Layout and the dashboard itself becomes the editor: take a panel by
-   the grip at its top and drop it where you want it, pull its right edge to
-   make it wider or narrower, pull its bottom edge to make it taller, press
-   the cross to put it away. Tabs and the number cards move the same way,
-   and anything put away waits in the bar at the foot of the screen until
-   it is wanted back.
-
-   Nothing is written down until Done. Cancel puts back whatever was there
-   when the Layout button was pressed.
-   ============================================================ */
-var editing = false, editBefore = null;
-var drag = null, size = null;
-var MIN_SPAN = 2, MIN_H = 120, MAX_H = 1400;
-
-/* What a height handle actually stretches: the chart, the strip plan or the
-   scrolling table inside the panel, not the panel's own box, which then
-   follows it. */
-function heightTarget(el){
-  return el.querySelector(".chart-box") || el.querySelector(".gantt")
-      || el.querySelector(".table-wrap") || null;
-}
-function applyHeight(el, h){
-  var t = heightTarget(el);
-  if(!t) return;
-  if(h > 0){ t.style.height = h + "px"; el.setAttribute("data-h", h); }
-  else { t.style.height = ""; el.removeAttribute("data-h"); }
-}
-
-/* ---- the handles that only exist while editing ---- */
-
-function undecorate(){
-  Array.prototype.forEach.call(document.querySelectorAll(".le-bar,.le-w,.le-h,.le-hide"),
-    function(n){ if(n.parentNode) n.parentNode.removeChild(n); });
-  Array.prototype.forEach.call(document.querySelectorAll("[data-le]"),
-    function(n){ n.removeAttribute("data-le"); });
-}
-
-function decorate(){
-  if(!editing) return;
-  Object.keys(LAYOUT_PAGES).forEach(function(tab){
-    var host = document.getElementById(LAYOUT_PAGES[tab]);
-    if(!host) return;
-    Array.prototype.forEach.call(host.children, function(el){
-      if(el.getAttribute("data-fixed") || el.getAttribute("data-le")) return;
-      if(!el.getAttribute("data-block")) return;
-      el.setAttribute("data-le", "block");
-      var locked = !!el.getAttribute("data-locked");
-      var bar = document.createElement("div");
-      bar.className = "le-bar";
-      var grip = document.createElement("span");
-      grip.className = "le-grip";
-      grip.title = "Drag to move";
-      grip.textContent = "☰  " + blockLabel(el);
-      bar.appendChild(grip);
-      if(locked){
-        var lk = document.createElement("span");
-        lk.className = "le-lock";
-        lk.textContent = "always shown";
-        bar.appendChild(lk);
-      }else{
-        var x = document.createElement("button");
-        x.className = "le-hide";
-        x.title = "Put away";
-        x.innerHTML = "&times;";
-        bar.appendChild(x);
-      }
-      el.appendChild(bar);
-      var w = document.createElement("div");
-      w.className = "le-w"; w.title = "Drag to set the width";
-      el.appendChild(w);
-      if(heightTarget(el)){
-        var h = document.createElement("div");
-        h.className = "le-h"; h.title = "Drag to set the height";
-        el.appendChild(h);
-      }
-    });
-  });
-
-  Array.prototype.forEach.call(els.tabBar.querySelectorAll(".tab"), function(b){
-    if(b.getAttribute("data-le")) return;
-    b.setAttribute("data-le", "tab");
-    var x = document.createElement("span");
-    x.className = "le-hide";
-    x.title = "Put this tab away";
-    x.innerHTML = "&times;";
-    b.appendChild(x);
-  });
-
-  Object.keys(KPI_HOSTS).forEach(function(tab){
-    var host = document.getElementById(KPI_HOSTS[tab]);
-    if(!host) return;
-    kpiTiles(host).forEach(function(k){
-      if(k.getAttribute("data-le")) return;
-      k.setAttribute("data-le", "kpi");
-      var x = document.createElement("button");
-      x.className = "le-hide";
-      x.title = "Put this card away";
-      x.innerHTML = "&times;";
-      k.appendChild(x);
-    });
-  });
-  renderTray();
-}
-
-/* ---- the bar at the foot: what has been put away, and the way out ---- */
-
-function trayChip(text, click){
-  var b = document.createElement("button");
-  b.className = "le-chip";
-  b.textContent = text + "  +";
-  b.addEventListener("click", click);
-  return b;
-}
-
-function renderTray(){
-  if(!editing) return;
-  els.leTab.textContent = tabTitle(activeTab);
-  els.leHidden.innerHTML = "";
-  var any = false;
-  Array.prototype.forEach.call(els.tabBar.querySelectorAll(".tab"), function(b){
-    if(b.style.display !== "none") return;
-    any = true;
-    els.leHidden.appendChild(trayChip("Tab: " + tabTitle(b.getAttribute("data-tab")), function(){
-      b.style.display = "";
-      renderTray();
-    }));
-  });
-  var host = document.getElementById(LAYOUT_PAGES[activeTab]);
-  if(host) Array.prototype.forEach.call(host.children, function(el){
-    if(el.style.display !== "none" || !el.getAttribute("data-block")) return;
-    any = true;
-    els.leHidden.appendChild(trayChip(blockLabel(el), function(){
-      el.style.display = "";
-      renderTray();
-    }));
-  });
-  var kh = KPI_HOSTS[activeTab] ? document.getElementById(KPI_HOSTS[activeTab]) : null;
-  if(kh) kpiTiles(kh).forEach(function(k){
-    if(k.style.display !== "none") return;
-    any = true;
-    els.leHidden.appendChild(trayChip("Card: " + kpiLabel(k), function(){
-      k.style.display = "";
-      kh.classList.toggle("kpis-auto", hasHiddenKpi(kh));
-      renderTray();
-    }));
-  });
-  if(!any){
-    var s = document.createElement("span");
-    s.className = "le-lab";
-    s.textContent = "Nothing put away yet.";
-    els.leHidden.appendChild(s);
-  }
-}
-function hasHiddenKpi(host){
-  return kpiTiles(host).some(function(k){ return k.style.display === "none"; });
-}
-
-/* ---- moving a thing ---- */
-
-function onDown(e){
-  if(!editing || e.button) return;
-  var hide = e.target.closest ? e.target.closest(".le-hide") : null;
-  if(hide){
-    var owner = hide.closest("[data-le]");
-    if(owner){
-      owner.style.display = "none";
-      if(owner.getAttribute("data-le") === "kpi")
-        owner.parentNode.classList.add("kpis-auto");
-      renderTray();
-    }
-    e.preventDefault();
-    e.stopPropagation();
-    return;
-  }
-
-  var w = e.target.closest ? e.target.closest(".le-w") : null;
-  var h = e.target.closest ? e.target.closest(".le-h") : null;
-  if(w || h){
-    var el = (w || h).closest("[data-le]");
-    var host = el.parentNode;
-    var cs = getComputedStyle(host);
-    var gap = parseFloat(cs.columnGap || cs.gap) || 18;
-    size = {
-      el: el, kind: w ? "w" : "h",
-      col: (host.clientWidth - 11 * gap) / 12, gap: gap,
-      x0: e.clientX, y0: e.clientY,
-      span0: spanOf(el),
-      h0: (function(){
-        var t = heightTarget(el);
-        return t ? Math.round(t.getBoundingClientRect().height) : 0;
-      })()
-    };
-    document.body.classList.add("le-sizing");
-    e.preventDefault();
-    return;
-  }
-
-  var grip = e.target.closest ? e.target.closest(".le-grip") : null;
-  var node = grip ? grip.closest("[data-le]") : (e.target.closest ? e.target.closest('[data-le="tab"],[data-le="kpi"]') : null);
-  if(!node) return;
-  if(node.getAttribute("data-le") === "block" && !grip) return;   // panels move by the grip only
-  drag = { node: node, host: node.parentNode, x0: e.clientX, y0: e.clientY, live: false };
-}
-
-function onMove(e){
-  if(size){
-    if(size.kind === "w"){
-      var step = size.col + size.gap;
-      var n = size.span0 + Math.round((e.clientX - size.x0) / step);
-      n = Math.max(MIN_SPAN, Math.min(12, n));
-      if(n !== spanOf(size.el)) setSpan(size.el, n);
-    }else{
-      var hh = Math.max(MIN_H, Math.min(MAX_H, size.h0 + (e.clientY - size.y0)));
-      applyHeight(size.el, Math.round(hh));
-    }
-    e.preventDefault();
-    return;
-  }
-  if(!drag) return;
-  if(!drag.live){
-    /* A few pixels of slack, so that clicking a tab still opens it. */
-    if(Math.abs(e.clientX - drag.x0) + Math.abs(e.clientY - drag.y0) < 5) return;
-    drag.live = true;
-    drag.node.classList.add("le-dragging");
-    document.body.classList.add("le-moving");
-  }
-  var over = document.elementFromPoint(e.clientX, e.clientY);
-  var t = over && over.closest ? over.closest("[data-le]") : null;
-  if(!t || t === drag.node || t.parentNode !== drag.host) return;
-  if(t.style.display === "none") return;
-  var r = t.getBoundingClientRect();
-  /* Same row: left or right of its middle. Different row: above or below. */
-  var cy = r.top + r.height / 2, cx = r.left + r.width / 2;
-  var sameRow = Math.abs(cy - e.clientY) < r.height / 2;
-  var after = sameRow ? (e.clientX > cx) : (e.clientY > cy);
-  drag.host.insertBefore(drag.node, after ? t.nextSibling : t);
-  e.preventDefault();
-}
-
-function onUp(){
-  if(size){
-    var el = size.el;
-    size = null;
-    document.body.classList.remove("le-sizing");
-    /* The charts were drawn for the old box; redraw them for the new one. */
-    renderTab(activeTab);
-    decorate();
-    return;
-  }
-  if(!drag) return;
-  var was = drag;
-  drag = null;
-  document.body.classList.remove("le-moving");
-  was.node.classList.remove("le-dragging");
-  if(was.live){
-    renderTray();
-    if(was.node.getAttribute("data-le") === "block") renderTab(activeTab);
-    /* The click that follows a drag is not a click on anything. */
-    document.addEventListener("click", eatClick, true);
-    setTimeout(function(){ document.removeEventListener("click", eatClick, true); }, 0);
-  }
-}
-function eatClick(e){ e.stopPropagation(); e.preventDefault(); }
-
-document.addEventListener("pointerdown", onDown, true);
-document.addEventListener("pointermove", onMove);
-document.addEventListener("pointerup", onUp);
-document.addEventListener("pointercancel", onUp);
-
-/* ---- reading the page back into an arrangement ---- */
-
-function layoutFromDom(){
-  var L = { v: LAYOUT_VERSION, tabs: [], blocks: {}, kpis: {}, start: null };
-  Array.prototype.forEach.call(els.tabBar.querySelectorAll(".tab"), function(b){
-    L.tabs.push({ key: b.getAttribute("data-tab"), on: b.style.display !== "none" });
-  });
-  /* Whatever tab was dragged to the front is the one the dashboard opens on;
-     there is nothing else to set and nothing else to explain. */
-  var first = L.tabs.filter(function(t){ return t.on; })[0];
-  L.start = first ? first.key : null;
-  Object.keys(LAYOUT_PAGES).forEach(function(tab){
-    var host = document.getElementById(LAYOUT_PAGES[tab]);
-    if(!host) return;
-    L.blocks[tab] = Array.prototype.filter.call(host.children, function(el){
-      return el.getAttribute("data-block") && !el.getAttribute("data-fixed");
-    }).map(function(el){
-      var o = { key: el.getAttribute("data-block"), on: el.style.display !== "none", span: spanOf(el) };
-      var h = parseInt(el.getAttribute("data-h"), 10);
-      if(h > 0) o.h = h;
-      return o;
-    });
-  });
-  Object.keys(KPI_HOSTS).forEach(function(tab){
-    var host = document.getElementById(KPI_HOSTS[tab]);
-    if(!host) return;
-    var tiles = kpiTiles(host);
-    if(!tiles.length) return;
-    L.kpis[tab] = tiles.map(function(k){
-      return { label: kpiLabel(k), on: k.style.display !== "none" };
-    });
-  });
-  return L;
-}
-
-/* ---- in and out of editing ---- */
-
-function editStart(){
-  if(!layoutReady || editing) return;
-  editBefore = cloneLayout(layout || DEFAULT_LAYOUT);
-  editBefore.wasDefault = !layout;
-  editing = true;
-  document.body.classList.add("layout-edit");
-  els.leBar.classList.add("on");
-  els.layoutBtn.textContent = "Arranging...";
-  decorate();
-}
-
-function editStop(){
-  editing = false;
-  document.body.classList.remove("layout-edit", "le-moving", "le-sizing");
-  els.leBar.classList.remove("on");
-  els.layoutBtn.textContent = "Layout";
-  undecorate();
-}
-
-els.layoutBtn.addEventListener("click", function(){
-  if(editing) editDone(); else editStart();
-});
-
-function editDone(){
-  var L = layoutFromDom();
-  editStop();
-  layout = L;
-  var ok = saveLayout(layout);
-  applyLayout();
-  var vis = visibleTabs();
-  showTab(vis.indexOf(layout.start) === -1 ? vis[0] : layout.start);
-  renderTab(activeTab);
-  setStatus(ok ? "Layout saved" : "Layout applied, but this browser would not store it",
-            ok ? "live" : "err");
-}
-els.leDone.addEventListener("click", editDone);
-
-els.leCancel.addEventListener("click", function(){
-  var back = editBefore;
-  editStop();
-  layout = (back && back.wasDefault) ? null : back;
-  if(layout) delete layout.wasDefault;
-  applyLayout();
-  showTab(activeTab);
-  renderTab(activeTab);
-  setStatus("Left as it was", "live");
-});
-
-els.leReset.addEventListener("click", function(){
-  layout = null;
-  saveLayout(null);
-  /* Heights are the one thing a reset cannot undo from the saved file alone,
-     because they live on the boxes themselves. */
-  Object.keys(LAYOUT_PAGES).forEach(function(tab){
-    var host = document.getElementById(LAYOUT_PAGES[tab]);
-    if(host) Array.prototype.forEach.call(host.children, function(el){ applyHeight(el, 0); });
-  });
-  applyLayout();
-  showTab(DEFAULT_LAYOUT.start);
-  renderTab(activeTab);
-  if(editing){ decorate(); renderTray(); }
-  setStatus("Standard layout restored", "live");
-});
-
-els.leExport.addEventListener("click", function(){
-  var out = editing ? layoutFromDom() : cloneLayout(layout || DEFAULT_LAYOUT);
-  out.savedAt = new Date().toISOString();
-  var blob = new Blob([JSON.stringify(out, null, 2)], { type: "application/json" });
-  var a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "ewo-dashboard-layout.json";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
-});
-
-els.leImport.addEventListener("click", function(){ els.leFile.click(); });
-els.leFile.addEventListener("change", function(){
-  var f = els.leFile.files && els.leFile.files[0];
-  if(!f) return;
-  var fr = new FileReader();
-  fr.onload = function(){
-    try{
-      var L = JSON.parse(String(fr.result));
-      if(!L || !L.tabs || !L.blocks) throw new Error("not a layout file");
-      L.v = LAYOUT_VERSION;
-      layout = L;
-      saveLayout(layout);
-      applyLayout();
-      var vis = visibleTabs();
-      showTab(vis.indexOf(layout.start) === -1 ? vis[0] : layout.start);
-      renderTab(activeTab);
-      if(editing){ decorate(); renderTray(); }
-      setStatus("Layout file loaded", "live");
-    }catch(e){
-      setStatus("That file is not a dashboard layout", "err");
-    }
-    els.leFile.value = "";
-  };
-  fr.readAsText(f);
-});
-
-/* A render rebuilds the number cards, so the handles on them have to be put
-   back, and the foot bar has to agree with what is on screen. */
-var applyKpisPlain = applyKpis;
-applyKpis = function(){
-  applyKpisPlain();
-  if(editing){ decorate(); renderTray(); }
-};
-var showTabEdit = showTab;
-showTab = function(name){
-  showTabEdit(name);
-  if(editing){ decorate(); renderTray(); }
-};
 
 /* ============================================================
    Startup
