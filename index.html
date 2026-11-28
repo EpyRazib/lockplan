@@ -684,6 +684,13 @@
         These rules were chosen by measuring the real workbook, so each one points at a genuine problem.
       </div>
       <div class="alerts" id="alertRow"></div>
+      <details class="cols" id="lockMatrixWrap">
+        <summary>Lock target matrix</summary>
+        <div class="hint" id="lockMatrixHint"></div>
+        <div class="table-wrap short table-zoom" style="max-height:300px;">
+          <table id="lockMatrixTable" class="report"></table>
+        </div>
+      </details>
       <div class="panel">
         <h3 id="attnTableTitle">Flagged orders</h3>
         <div class="hint" id="attnTableHint"></div>
@@ -951,16 +958,6 @@
             <div class="hint" id="sewCapHint"></div>
             <div class="chart-box wide"><canvas id="sewCapChart"></canvas></div>
           </div>
-          <div class="panel">
-            <h3 data-grantitle9="Fabric: capacity, plan and delivered per {g}">Fabric: capacity, plan and delivered per day</h3>
-            <div class="hint" id="sewFabHint"></div>
-            <div class="chart-box wide"><canvas id="sewFabChart"></canvas></div>
-          </div>
-          <div class="panel">
-            <h3 data-grantitle8="Sewing efficiency per {g}">Sewing efficiency per day</h3>
-            <div class="hint" id="sewEffHint"></div>
-            <div class="chart-box"><canvas id="sewEffChart"></canvas></div>
-          </div>
         </div>
         <h3 class="section-head needs-sew">Sewing by execution unit</h3>
         <div class="section-hint needs-sew" id="sewUnitGridHint"></div>
@@ -970,6 +967,33 @@
             <h3>By execution unit</h3>
             <div class="hint" id="sewUnitTableHint"></div>
             <div class="table-wrap table-zoom"><table id="sewUnitTable" class="report"></table></div>
+          </div>
+          <div class="panel">
+            <h3 data-grantitle8="Sewing efficiency per {g}">Sewing efficiency per day</h3>
+            <div class="hint" id="sewEffHint"></div>
+            <div class="chart-box"><canvas id="sewEffChart"></canvas></div>
+          </div>
+        </div>
+
+        <!-- ---- the fabric side, read the same way ---- -->
+        <h3 class="section-head needs-fab">Fabric: capacity, plan and delivered</h3>
+        <div class="section-hint needs-fab" id="fabHint"></div>
+        <div class="kpis six needs-fab" id="fabKpis"></div>
+        <div class="grid1 needs-fab">
+          <div class="panel">
+            <h3 data-grantitle9="Fabric: capacity, plan and delivered per {g}">Fabric: capacity, plan and delivered per day</h3>
+            <div class="hint" id="sewFabHint"></div>
+            <div class="chart-box wide"><canvas id="sewFabChart"></canvas></div>
+          </div>
+        </div>
+        <h3 class="section-head needs-fab">Fabric by execution unit</h3>
+        <div class="section-hint needs-fab" id="fabUnitGridHint"></div>
+        <div class="grid3 needs-fab" id="fabUnitGrid"></div>
+        <div class="grid1 needs-fab">
+          <div class="panel">
+            <h3>Fabric by execution unit</h3>
+            <div class="hint" id="fabUnitTableHint"></div>
+            <div class="table-wrap table-zoom"><table id="fabUnitTable" class="report"></table></div>
           </div>
         </div>
       </div>
@@ -1213,8 +1237,10 @@ var els = {};
  "filterSummary","activeChips","kpiRow","alertRow","attnTable","attnTableTitle","attnTableHint",
  "pivotTable","dataTable","groupBy","colChooser","prevPage","nextPage","pageInfo","pageSize",
  "detailHint","tabBar","attnCount","capKpis","delKpis","asOfDate","asOfReset",
+ "lockMatrixTable","lockMatrixHint",
  "sewHint","sewMissing","sewKpis","sewCapHint","sewEffHint","sewFabHint",
  "sewUnitGrid2","sewUnitGridHint","sewUnitTable","sewUnitTableHint",
+ "fabHint","fabKpis","fabUnitGrid","fabUnitGridHint","fabUnitTable","fabUnitTableHint",
  "asOfHint","kpiBuyerTable","kpiUnitTable","deficitTable","deficitHint","deliveryEmpty","noPlanNote",
  "deliveryBody","kpiBuyerHint","statusTable","lockTable","trendChart","achievedChart"
 ].forEach(function(id){ els[id] = document.getElementById(id); });
@@ -2960,15 +2986,58 @@ function stillOpen(r){
   return t.indexOf("cancel") === -1 && t.indexOf("drop") === -1
       && t.indexOf("ship") === -1 && t.indexOf("complete") === -1 && t.indexOf("close") === -1;
 }
-function isLocked(r){ return txt(r, "Status").toLowerCase().indexOf("lock") !== -1; }
+function isLocked(r){
+  var t = txt(r, "Status").toLowerCase();
+  /* "Unlocked" contains "lock". Read as locked, an unlocked order could never
+     be flagged for not being locked, which is the one thing that card exists
+     to do. The charts have always split the two correctly; this test had not. */
+  if(t.indexOf("unlock") !== -1) return false;
+  return t.indexOf("lock") !== -1;
+}
+
+/* How long an order may sit in the bank before it has to be locked, read
+   against how long it has in total: Order Bank to the date in Min FRD, which
+   the planning team reads as the shipment date. A short runway earns one day;
+   the longest earns twenty. The planning team's own table, and theirs to
+   change -- set LOCK_TARGET_DAYS in config.js to replace it. */
+var LOCK_TARGET_DAYS = cfg("LOCK_TARGET_DAYS", [
+  [15, 1], [20, 1], [25, 1], [30, 1], [35, 1], [40, 1], [45, 1],
+  [50, 2], [55, 2], [60, 3], [65, 4], [70, 5], [75, 6], [80, 7], [85, 8],
+  [90, 9], [95, 10], [100, 11], [105, 12], [110, 13], [115, 14], [120, 15],
+  [125, 16], [130, 17], [140, 18], [145, 19], [150, 20]
+]);
+
+/* The nearest row, and on a tie the shorter runway, which is the stricter
+   target. A duration past the end of the table takes the last row: nothing
+   earns more than the longest runway does. */
+function lockTargetDays(duration){
+  if(duration == null || !LOCK_TARGET_DAYS.length) return null;
+  var best = null, gap = Infinity;
+  LOCK_TARGET_DAYS.forEach(function(row){
+    var d = Math.abs(row[0] - duration);
+    if(d < gap || (d === gap && best != null && row[0] < best[0])){ gap = d; best = row; }
+  });
+  return best ? best[1] : null;
+}
+
+/* Order Bank to shipment, in days. */
+function orderRunway(r){
+  var a = dat(r, "Order Bank Date"), b = dat(r, "Min FRD");
+  if(a == null || b == null || b < a) return null;
+  return Math.round((b - a) / DAY);
+}
+function daysInBank(r){
+  var a = dat(r, "Order Bank Date");
+  return a == null ? null : Math.round((TODAY - a) / DAY);
+}
 
 var ALERTS = [
-  { key: "obNotLocked", sev: "high", title: "In order bank 20+ days, still not locked",
-    detail: "Order Bank Date is over 20 days old and the order has not been locked",
+  { key: "obNotLocked", sev: "high", title: "Past its lock target, still not locked",
+    detail: "Days in the order bank have passed the lock target for this order's runway",
     test: function(r){
       if(isLocked(r) || !stillOpen(r)) return false;
-      var d = dat(r, "Order Bank Date");
-      return d != null && d <= TODAY - 20 * DAY; } },
+      var target = lockTargetDays(orderRunway(r)), days = daysInBank(r);
+      return target != null && days != null && days > target; } },
   /* A locked order whose PCD has passed is usually just an order already in
      production: the sheet records no actual cut date, so there is nothing to
      compare against. Counting those would bury the real cases (1,389 of 1,425
@@ -3125,6 +3194,44 @@ function buildAttnChooser(){
   });
 }
 
+/* The rule, written out. A reader who disagrees with a flag can find the row
+   it came from, and count the orders sitting against each one. */
+function renderLockMatrix(){
+  if(!els.lockMatrixTable) return;
+  var count = {}, flagged = {};
+  baseFiltered.forEach(function(r){
+    var run = orderRunway(r);
+    var t = lockTargetDays(run);
+    if(t == null) return;
+    var row = null, gap = Infinity;
+    LOCK_TARGET_DAYS.forEach(function(x){
+      var d = Math.abs(x[0] - run);
+      if(d < gap || (d === gap && row != null && x[0] < row[0])){ gap = d; row = x; }
+    });
+    if(!row) return;
+    count[row[0]] = (count[row[0]] || 0) + 1;
+    var days = daysInBank(r);
+    if(!isLocked(r) && stillOpen(r) && days != null && days > t)
+      flagged[row[0]] = (flagged[row[0]] || 0) + 1;
+  });
+  var head = '<thead><tr><th class="num">Order Bank to shipment, days</th>'
+    + '<th class="num">Days allowed to lock</th><th class="num">Orders</th>'
+    + '<th class="num">Past the target</th></tr></thead>';
+  var body = LOCK_TARGET_DAYS.map(function(row){
+    var over = flagged[row[0]] || 0;
+    return '<tr' + (over ? ' class="hl"' : '') + '><td class="num">' + fmtInt(row[0]) + '</td>'
+      + '<td class="num">' + fmtInt(row[1]) + '</td>'
+      + '<td class="num">' + fmtInt(count[row[0]] || 0) + '</td>'
+      + '<td class="num">' + (over ? fmtInt(over) : "") + '</td></tr>';
+  }).join("");
+  els.lockMatrixTable.innerHTML = head + '<tbody>' + body + '</tbody>';
+  els.lockMatrixHint.textContent = "An order's runway is Order Bank Date to "
+    + headerFor("Min FRD") + ", which the planning team reads as the shipment date. The nearest"
+    + " row sets how many days it may sit in the bank before it has to be locked; a runway exactly"
+    + " between two rows takes the shorter one. Counts are the orders on screen before any card is"
+    + " clicked.";
+}
+
 function renderAttnTable(){
   var cols = attnCols.length ? attnCols : ATTN_COLUMNS.filter(function(c){ return IDX[c] != null; });
   els.attnTableTitle.textContent = activeAlert ? ALERTS_BY_KEY[activeAlert].title : "All shown orders";
@@ -3172,6 +3279,7 @@ function renderAll(){
   renderFilterSummary();
   renderKpis();
   renderAlerts();
+  renderLockMatrix();
   renderTab(activeTab);
 }
 /* ============================================================
@@ -5197,6 +5305,132 @@ function sewUnits(rows){
   return out.sort();
 }
 
+
+/* ============================================================
+   The fabric side, read the same way as the sewing side
+
+   The Capacity sheet's knitting capacity, the InHouse plan split into what
+   has been delivered and what is still owed, and the line of fresh
+   deliveries. Returns and replacements are left out: they are not this
+   week's output, and counting them would credit the mill twice for the same
+   kilograms.
+
+   The knitting capacity belongs to the whole mill, not to a unit, so the
+   per-unit charts carry no band. Saying that is better than drawing a sixth
+   of the mill behind each unit and calling it that unit's capacity.
+   ============================================================ */
+function freshDeliveryByUnit(g, win){
+  var join = orderJoin(), out = {};
+  DELIV.forEach(function(r){
+    if(dt_(r, "DeliveryType").toLowerCase().indexOf("fresh") === -1) return;
+    var x = dd(r, "DeliveryDate");
+    if(x == null) return;
+    if(win && win.from != null && x < win.from) return;
+    if(win && win.to != null && x > win.to) return;
+    if(join && !join(dn(r, "ExportOrderNo"), dt_(r, "Buyer"), dt_(r, "BeneficieryUnit"))) return;
+    var u = dt_(r, "ExecutionUnit") || dt_(r, "BeneficieryUnit") || "(blank)";
+    var by = out[u] || (out[u] = {});
+    var k = bucketKey(x, g);
+    by[k] = (by[k] || 0) + dn(r, "DeliveryQtyKg");
+  });
+  return out;
+}
+
+function renderFabricFloor(){
+  var has = DELIV.length > 0 || filtered.length > 0;
+  document.querySelectorAll("#page-delivery .needs-fab").forEach(function(el){
+    el.style.display = has ? "" : "none";
+  });
+  if(!has) return;
+
+  var g = granularity, win = dateWindow();
+  var planSr = spreadSeries(filtered, "Adjusted Fabric Start", "Adjusted Fabric End", "InHouse", g, null, win);
+  var planAt = seriesAt(planSr);
+  var act = freshDeliveryBuckets(g, win);
+  var keys = chartKeys(act, planSr, win, g);
+  var cap = fabricCapacitySeries(keys, g);
+
+  capPlanActualChart("sewFabChart", keys, g, cap,
+    keys.map(function(k){ return planAt[k] || 0; }),
+    keys.map(function(k){ return act[k] == null ? null : act[k]; }), "kg");
+
+  var byUnit = freshDeliveryByUnit(g, win);
+  var units = {};
+  Object.keys(byUnit).forEach(function(u){ units[unitKey(u)] = u; });
+  filtered.forEach(function(r){
+    var u = txt(r, "Execution Unit");
+    if(u && !units[unitKey(u)]) units[unitKey(u)] = u;
+  });
+  var names = Object.keys(units).map(function(k){ return units[k]; }).sort();
+
+  Object.keys(charts).forEach(function(id){ if(id.indexOf("fabU_") === 0) destroyChart(id); });
+  var uPlan = {}, uAct = {};
+  names.forEach(function(u){
+    var mine = filtered.filter(function(r){ return unitKey(txt(r, "Execution Unit")) === unitKey(u); });
+    var at = seriesAt(spreadSeries(mine, "Adjusted Fabric Start", "Adjusted Fabric End", "InHouse", g, null, win));
+    var a = byUnit[u] || {};
+    uPlan[u] = keys.reduce(function(t, k){ return t + (at[k] || 0); }, 0);
+    uAct[u] = keys.reduce(function(t, k){ return t + (a[k] || 0); }, 0);
+    uPlan[u + "\u0000at"] = at;
+  });
+
+  els.fabUnitGrid.innerHTML = names.map(function(u, i){
+    return '<div class="panel"><h3>' + esc(u) + '</h3>'
+      + '<div class="hint">' + fmtInt(uPlan[u]) + ' plan · ' + fmtInt(uAct[u]) + ' delivered, kg</div>'
+      + '<div class="chart-box"><canvas id="fabU_' + i + '"></canvas></div></div>';
+  }).join("");
+  names.forEach(function(u, i){
+    var at = uPlan[u + "\u0000at"] || {};
+    var a = byUnit[u] || {};
+    capPlanActualChart("fabU_" + i, keys, g, null,
+      keys.map(function(k){ return at[k] || 0; }),
+      keys.map(function(k){ return a[k] == null ? null : a[k]; }), "kg");
+  });
+
+  var head = '<thead><tr><th>Unit</th><th class="num">Plan</th><th class="num">Delivered</th>'
+    + '<th class="num">Still owed</th><th class="num">Plan met</th></tr></thead>';
+  function row(label, p, a){
+    return '<td>' + esc(label) + '</td>'
+      + '<td class="num">' + fmtInt(p) + '</td>'
+      + '<td class="num">' + fmtInt(a) + '</td>'
+      + '<td class="num">' + fmtInt(Math.max(0, p - a)) + '</td>'
+      + '<td class="num">' + pct(Math.min(a, p), p) + '%</td>';
+  }
+  var tp = 0, ta = 0;
+  var body = names.map(function(u){
+    tp += uPlan[u]; ta += uAct[u];
+    return '<tr>' + row(u, uPlan[u], uAct[u]) + '</tr>';
+  }).join("");
+  els.fabUnitTable.innerHTML = head + '<tbody>' + body + '</tbody>'
+    + '<tfoot><tr class="tot">' + row("All units listed", tp, ta) + '</tr></tfoot>';
+
+  var planTotal = keys.reduce(function(a2, k){ return a2 + (planAt[k] || 0); }, 0);
+  var actTotal = keys.reduce(function(a2, k){ return a2 + (act[k] || 0); }, 0);
+  var capTotal = cap ? cap.reduce(function(a2, v){ return a2 + v; }, 0) : 0;
+  var days = Object.keys(act).length;
+  els.fabKpis.innerHTML = [
+    ["Knitting capacity", fmtInt(capTotal), CAPACITY.fabricDays
+      ? "kg from the Capacity sheet, the whole mill" : "no fabric capacity in the Capacity sheet"],
+    ["Planned InHouse", fmtInt(planTotal), "kg the EWO plan asks for over these days"],
+    ["Fresh delivered", fmtInt(actTotal), fmtInt(days) + " day" + (days === 1 ? "" : "s") + " with a delivery"],
+    ["Plan met", pct(Math.min(actTotal, planTotal), planTotal) + "%", "delivered against planned"],
+    ["Capacity use", capTotal ? pct(actTotal, capTotal) + "%" : "n/a", "delivered against knitting capacity"],
+    ["Still owed", fmtInt(Math.max(0, planTotal - actTotal)), "kg of the plan not yet delivered"]
+  ].map(function(t){
+    return '<div class="kpi"><div class="label">' + esc(t[0]) + '</div><div class="value">' + esc(t[1])
+      + '</div><div class="foot">' + esc(t[2]) + '</div></div>'; }).join("");
+
+  els.fabHint.textContent = "InHouse kilograms from the EWO sheet against fresh deliveries from the"
+    + " Fab_Delivery sheet. Returns and replacements are left out.";
+  els.sewFabHint.textContent = "The blue band is the Capacity sheet's knitting capacity, which is the"
+    + " whole mill and does not change with a unit filter. The bar is the InHouse plan, green for the"
+    + " part delivered and gold for the part still owed; the line is the fresh deliveries themselves.";
+  els.fabUnitGridHint.textContent = "The same plan and deliveries for each unit. No band here: the"
+    + " knitting capacity belongs to the mill, not to any one unit.";
+  els.fabUnitTableHint.textContent = "Kilograms. Plan met is the delivered part of the plan, capped"
+    + " at the plan itself.";
+}
+
 function renderSewFloor(){
   var has = SEW.length > 0;
   document.querySelectorAll("#page-delivery .needs-sew").forEach(function(el){
@@ -5210,7 +5444,7 @@ function renderSewFloor(){
       + (DELIVERY_SHEETS.length
           ? " Sheets found: <strong>" + DELIVERY_SHEETS.map(esc).join(", ") + "</strong>."
           : "");
-    ["sewCapChart", "sewFabChart", "sewEffChart"].forEach(destroyChart);
+    ["sewCapChart", "sewEffChart"].forEach(destroyChart);
     Object.keys(charts).forEach(function(id){ if(id.indexOf("sewU_") === 0) destroyChart(id); });
     els.sewKpis.innerHTML = "";
     els.sewUnitTable.innerHTML = "";
@@ -5229,7 +5463,7 @@ function renderSewFloor(){
   });
 
   if(!rows.length){
-    ["sewCapChart", "sewFabChart", "sewEffChart"].forEach(destroyChart);
+    ["sewCapChart", "sewEffChart"].forEach(destroyChart);
     Object.keys(charts).forEach(function(id){ if(id.indexOf("sewU_") === 0) destroyChart(id); });
     els.sewKpis.innerHTML = "";
     els.sewUnitGrid2.innerHTML = "";
@@ -5265,15 +5499,6 @@ function renderSewFloor(){
   capPlanActualChart("sewCapChart", keys, g, capSeries,
     keys.map(function(k){ return planAt[k] || 0; }),
     keys.map(function(k){ return actAt[k] == null ? null : actAt[k]; }), "hours");
-
-  // ---- fabric: capacity, plan, fresh deliveries ----
-  var fabPlanSr = spreadSeries(filtered, "Adjusted Fabric Start", "Adjusted Fabric End", "InHouse", g, null, win);
-  var fabPlanAt = seriesAt(fabPlanSr);
-  var fabAct = freshDeliveryBuckets(g, win);
-  var fabKeys = chartKeys(fabAct, fabPlanSr, win, g);
-  capPlanActualChart("sewFabChart", fabKeys, g, fabricCapacitySeries(fabKeys, g),
-    fabKeys.map(function(k){ return fabPlanAt[k] || 0; }),
-    fabKeys.map(function(k){ return fabAct[k] == null ? null : fabAct[k]; }), "kg");
 
   // ---- efficiency: what was earned against what was available ----
   var effSeries = keys.map(function(k){ return avail[k] ? pct(prod[k] || 0, avail[k]) : null; });
@@ -5420,9 +5645,6 @@ function renderSewFloor(){
   els.sewCapHint.textContent = "The blue band is the Capacity sheet in the EWO workbook. The bar is the"
     + " EWO plan for each day, green for the part the floor has produced and gold for the part still"
     + " owed. The line is what actually came off the floor, which can run past the plan.";
-  els.sewFabHint.textContent = "The same four readings for fabric: the Capacity sheet's knitting"
-    + " capacity, the InHouse plan split into delivered and still owed, and the line of fresh"
-    + " deliveries from the Fab_Delivery sheet. Returns and replacements are left out.";
   els.sewEffHint.textContent = "Produced hours against available hours, from the sew sheet."
     + " A day nobody worked has no efficiency and leaves a gap rather than a dive to zero.";
   els.sewUnitGridHint.textContent = "The same four readings for every unit the Capacity sheet, the"
@@ -5566,6 +5788,7 @@ var deficitSort = { col: "gap", dir: 1 };
 
 function renderDelivery(){
   renderSewFloor();                  // its own sheet, its own answer
+  renderFabricFloor();               // and the fabric side, read the same way
   var have = LOCK.length > 0 || DELIV.length > 0 || SEW.length > 0;
   els.deliveryEmpty.style.display = have ? "none" : "block";
   els.deliveryBody.style.display = have ? "block" : "none";
