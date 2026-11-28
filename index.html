@@ -851,102 +851,27 @@
           <button class="secondary tiny" id="asOfReset">Report date</button>
           <span class="granhint" id="asOfHint"></span>
         </div>
-        <div class="kpis ten" id="delKpis"></div>
-
-        <!-- ---- the weekly KPI meeting layout, as the planning team sees it ---- -->
-        <h3 class="section-head needs-plan">Weekly KPI meeting with textile cluster</h3>
-        <div id="noPlanNote" class="empty-note" style="display:none;"></div>
-        <div class="section-hint">The same two blocks, trend, tables and gauge as the LockRepo sheet, rebuilt from the rows and answering to the filters</div>
-        <div class="grid2">
-          <div class="panel needs-plan">
-            <h3>Fabric delivery status</h3>
-            <div class="hint">Against the month target</div>
-            <div class="table-wrap"><table id="statusTable" class="report"></table></div>
-          </div>
-          <div class="panel needs-plan">
-            <h3>Fabric lock T&amp;A plan performance</h3>
-            <div class="hint">Against the lock plan</div>
-            <div class="table-wrap"><table id="lockTable" class="report"></table></div>
-          </div>
-        </div>
-        <div class="grid2">
-          <div class="panel" style="grid-column:span 1;">
-            <h3 data-grantitle3="Delivery trend per {g}">Delivery trend per day</h3>
-            <div class="hint">Delivery to lock-plan bookings due by the report date, against all fresh delivery</div>
-            <div class="chart-box tall"><canvas id="trendChart"></canvas></div>
-          </div>
-          <div class="panel needs-plan">
-            <h3>Plan against actual, cumulative</h3>
-            <div class="hint">Lock plan required by day, against fresh delivery to those orders</div>
-            <div class="chart-box tall"><canvas id="cumChart"></canvas></div>
-          </div>
-        </div>
-
-        <div class="grid3">
-          <div class="panel needs-plan">
-            <h3>Achieved</h3>
-            <div class="hint">Till-date actual as a share of till-date planned</div>
-            <div class="chart-box"><canvas id="achievedChart"></canvas></div>
-          </div>
-          <div class="panel needs-plan">
-            <h3 data-grantitle4="Fabric delivery plan per {g}">Fabric delivery plan per day</h3>
-            <div class="hint">InHouse kg across the fabric window, locked orders against unlocked, as the fab sheet builds it</div>
-            <div class="chart-box"><canvas id="planLockChart"></canvas></div>
-          </div>
-          <div class="panel needs-plan">
-            <h3 data-grantitle5="Fabric delivery actual per {g}">Fabric delivery actual per day</h3>
-            <div class="hint">Fresh delivery kg, split by whether the order is locked</div>
-            <div class="chart-box"><canvas id="actualLockChart"></canvas></div>
-          </div>
-        </div>
-
-        <div class="grid2">
+        <!-- ---- the fabric side, read the same way ---- -->
+        <h3 class="section-head needs-fab">Fabric: capacity, plan and delivered</h3>
+        <div class="section-hint needs-fab" id="fabHint"></div>
+        <div class="kpis six needs-fab" id="fabKpis"></div>
+        <div class="grid1 needs-fab">
           <div class="panel">
-            <h3 data-grantitle6="Fabric delivered per {g}">Fabric delivered per day</h3>
-            <div class="hint">Fresh delivery, re-delivery and returns, from the Delivery sheet</div>
-            <div class="chart-box tall"><canvas id="delDailyChart"></canvas></div>
-          </div>
-          <div class="panel needs-plan">
-            <h3>Plan against actual by unit</h3>
-            <div class="hint">Required till the report date, against delivered, as the weekly KPI defines it</div>
-            <div class="chart-box tall"><canvas id="unitPvaChart"></canvas></div>
+            <h3 data-grantitle9="Fabric: capacity, plan and delivered per {g}">Fabric: capacity, plan and delivered per day</h3>
+            <div class="hint" id="sewFabHint"></div>
+            <div class="chart-box wide"><canvas id="sewFabChart"></canvas></div>
           </div>
         </div>
-
-        <div class="grid3">
-          <div class="panel needs-plan">
-            <h3>Plan against actual by buyer</h3>
-            <div class="hint">Largest twelve by requirement</div>
-            <div class="chart-box tall"><canvas id="buyerPvaChart"></canvas></div>
-          </div>
+        <h3 class="section-head needs-fab">Fabric by execution unit</h3>
+        <div class="section-hint needs-fab" id="fabUnitGridHint"></div>
+        <div class="grid3 needs-fab" id="fabUnitGrid"></div>
+        <div class="grid1 needs-fab">
           <div class="panel">
-            <h3>Delivery by fabric type</h3>
-            <div class="hint">Net kilograms in the report window</div>
-            <div class="chart-box tall"><canvas id="fabTypeChart"></canvas></div>
-          </div>
-          <div class="panel">
-            <h3>Delivery by receiving unit</h3>
-            <div class="hint">Net kilograms in the report window</div>
-            <div class="chart-box tall"><canvas id="delUnitChart"></canvas></div>
+            <h3>Fabric by execution unit</h3>
+            <div class="hint" id="fabUnitTableHint"></div>
+            <div class="table-wrap table-zoom"><table id="fabUnitTable" class="report"></table></div>
           </div>
         </div>
-
-        <div class="panel needs-plan">
-          <h3>Weekly KPI, by buyer</h3>
-          <div class="hint" id="kpiBuyerHint">Same columns and rules as the LockRepo sheet, so the totals match the published report</div>
-          <div class="table-wrap short"><table id="kpiBuyerTable"></table></div>
-        </div>
-        <div class="panel needs-plan">
-          <h3>Weekly KPI, by garments unit</h3>
-          <div class="hint">Same rules, grouped by unit</div>
-          <div class="table-wrap short"><table id="kpiUnitTable"></table></div>
-        </div>
-        <div class="panel needs-plan">
-          <h3>Bookings behind plan</h3>
-          <div class="hint" id="deficitHint">Largest shortfalls first. Click a heading to sort.</div>
-          <div class="table-wrap short"><table id="deficitTable"></table></div>
-        </div>
-
         <!-- ---- the sewing floor, from the sew sheet ---- -->
         <h3 class="section-head needs-sew">Sewing floor: capacity, plan and actual</h3>
         <div class="section-hint needs-sew" id="sewHint"></div>
@@ -975,27 +900,25 @@
           </div>
         </div>
 
-        <!-- ---- the fabric side, read the same way ---- -->
-        <h3 class="section-head needs-fab">Fabric: capacity, plan and delivered</h3>
-        <div class="section-hint needs-fab" id="fabHint"></div>
-        <div class="kpis six needs-fab" id="fabKpis"></div>
-        <div class="grid1 needs-fab">
-          <div class="panel">
-            <h3 data-grantitle9="Fabric: capacity, plan and delivered per {g}">Fabric: capacity, plan and delivered per day</h3>
-            <div class="hint" id="sewFabHint"></div>
-            <div class="chart-box wide"><canvas id="sewFabChart"></canvas></div>
-          </div>
+        <h3 class="section-head needs-plan">Weekly KPI meeting with textile cluster</h3>
+        <div id="noPlanNote" class="empty-note" style="display:none;"></div>
+        <div class="section-hint">The weekly tables from the LockRepo sheet, rebuilt from the rows and answering to the filters. The charts that stood above them have given way to the fabric and sewing sections, which read the same question from the sheets the floor actually keeps.</div>
+        <div class="panel needs-plan">
+          <h3>Weekly KPI, by buyer</h3>
+          <div class="hint" id="kpiBuyerHint">Same columns and rules as the LockRepo sheet, so the totals match the published report</div>
+          <div class="table-wrap short"><table id="kpiBuyerTable"></table></div>
         </div>
-        <h3 class="section-head needs-fab">Fabric by execution unit</h3>
-        <div class="section-hint needs-fab" id="fabUnitGridHint"></div>
-        <div class="grid3 needs-fab" id="fabUnitGrid"></div>
-        <div class="grid1 needs-fab">
-          <div class="panel">
-            <h3>Fabric by execution unit</h3>
-            <div class="hint" id="fabUnitTableHint"></div>
-            <div class="table-wrap table-zoom"><table id="fabUnitTable" class="report"></table></div>
-          </div>
+        <div class="panel needs-plan">
+          <h3>Weekly KPI, by garments unit</h3>
+          <div class="hint">Same rules, grouped by unit</div>
+          <div class="table-wrap short"><table id="kpiUnitTable"></table></div>
         </div>
+        <div class="panel needs-plan">
+          <h3>Bookings behind plan</h3>
+          <div class="hint" id="deficitHint">Largest shortfalls first. Click a heading to sort.</div>
+          <div class="table-wrap short"><table id="deficitTable"></table></div>
+        </div>
+
       </div>
     </div>
 
@@ -1244,6 +1167,14 @@ var els = {};
  "asOfHint","kpiBuyerTable","kpiUnitTable","deficitTable","deficitHint","deliveryEmpty","noPlanNote",
  "deliveryBody","kpiBuyerHint","statusTable","lockTable","trendChart","achievedChart"
 ].forEach(function(id){ els[id] = document.getElementById(id); });
+/* The weekly-KPI cards and its two tables were taken off the Load vs Actual
+   tab. What filled them is woven into the same function that still fills the
+   tables below, so rather than unpick that and risk the figures that are
+   still on screen, these three are given elements that live nowhere: the
+   writes land in them and nothing reaches the page. */
+["delKpis", "statusTable", "lockTable"].forEach(function(id){
+  if(!els[id]) els[id] = document.createElement("div");
+});
 
 /* ---------- helpers ---------- */
 function esc(v){
