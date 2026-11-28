@@ -33,6 +33,11 @@
     --rust:#C7511F;
     --rust-soft:#F7E9E2;
     --blue:#3B6FA8;
+    /* The white of a panel, and the whisper of grey on every other table row.
+       Named here so that a dark palette is a second set of values rather than
+       a second stylesheet. */
+    --card:#FFFFFF;
+    --card-alt:#FCFCFA;
   }
   *{box-sizing:border-box;}
   body{
@@ -49,7 +54,7 @@
      reader's to pin or unpin. */
   .topbar{
     display:flex;align-items:center;justify-content:space-between;
-    padding:14px 24px;background:#fff;border-bottom:3px solid var(--green);
+    padding:14px 24px;background:var(--card);border-bottom:3px solid var(--green);
     flex-wrap:wrap;gap:14px;
     position:sticky;top:0;z-index:40;
   }
@@ -77,7 +82,7 @@
   .dot.busy{background:var(--gold);}
   .acct{font-size:14px;font-weight:600;color:var(--green);max-width:260px;
         overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:0.01em;}
-  .signin-box{max-width:560px;margin:0 auto;text-align:left;background:#fff;border:1px solid var(--line);
+  .signin-box{max-width:560px;margin:0 auto;text-align:left;background:var(--card);border:1px solid var(--line);
               border-top:3px solid var(--gold);padding:22px 26px;font-size:12.5px;color:var(--ink-soft);}
   .signin-box h2{text-align:left;}
   .signin-box p{margin:8px 0 16px;}
@@ -109,7 +114,7 @@
 
   /* ---------- tabs ---------- */
   .tabbar{
-    display:flex;gap:2px;padding:0 24px;background:#fff;
+    display:flex;gap:2px;padding:0 24px;background:var(--card);
     border-bottom:1px solid var(--line);flex-wrap:wrap;
     position:sticky;top:var(--toph,52px);z-index:30;
   }
@@ -129,7 +134,7 @@
   main{max-width:1500px;margin:0 auto;padding:18px 24px 80px;}
 
   /* ---------- filters ---------- */
-  .filters{background:#fff;border:1px solid var(--line);border-top:2px solid var(--gold);padding:14px 16px;margin-bottom:18px;}
+  .filters{background:var(--card);border:1px solid var(--line);border-top:2px solid var(--gold);padding:14px 16px;margin-bottom:18px;}
   /* The title bar gives up some of its height once the page has moved,
      because by then it is a label rather than a headline. A sticky element
      has no "stuck" state in CSS, so the state comes from a scroll listener;
@@ -180,7 +185,7 @@
 
   /* ---------- kpi ---------- */
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:18px;}
-  .kpi{background:#fff;padding:14px 16px;border-top:2px solid transparent;}
+  .kpi{background:var(--card);padding:14px 16px;border-top:2px solid transparent;}
   /* ten tiles sit in two clean rows of five, six in one row, so no grey gaps show */
   .kpis.ten{grid-template-columns:repeat(5,1fr);}
   .kpis.six{grid-template-columns:repeat(6,1fr);}
@@ -200,7 +205,7 @@
   /* ---------- alerts ---------- */
   .alerts{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:10px;margin-bottom:18px;}
   .alert{
-    background:#fff;border:1px solid var(--line);border-left:4px solid var(--ink-soft);
+    background:var(--card);border:1px solid var(--line);border-left:4px solid var(--ink-soft);
     padding:12px 14px;cursor:pointer;text-align:left;font-family:inherit;color:inherit;
     border-radius:0;display:block;width:100%;
   }
@@ -217,7 +222,7 @@
   .alert .d{font-size:10.5px;color:var(--ink-soft);margin-top:3px;display:block;}
 
   /* ---------- panels ---------- */
-  .panel{border:1px solid var(--line);padding:18px;margin-bottom:18px;background:#fff;}
+  .panel{border:1px solid var(--line);padding:18px;margin-bottom:18px;background:var(--card);}
   .panel h3{font-size:15px;margin-bottom:3px;color:var(--green);}
   .panel .hint{font-size:11px;color:var(--ink-soft);margin-bottom:14px;}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
@@ -247,7 +252,7 @@
   th:hover{background:var(--green-mid);}
   th .arrow{opacity:0.85;font-size:10px;}
   td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;}
-  tbody tr:nth-child(even) td{background:#FCFCFA;}
+  tbody tr:nth-child(even) td{background:var(--card-alt);}
   tbody tr:hover td{background:var(--green-soft);}
   tfoot td{
     border-top:2px solid var(--gold);border-bottom:none;background:var(--gold-soft);
@@ -271,7 +276,7 @@
   .colgrid label.empty span{color:var(--ink-soft);font-style:italic;}
 
   .error{background:var(--rust-soft);color:var(--rust);border:1px solid var(--rust);padding:16px 18px;margin-bottom:18px;font-size:13px;}
-  .error code{background:#fff;padding:1px 5px;border:1px solid var(--rust);}
+  .error code{background:var(--card);padding:1px 5px;border:1px solid var(--rust);}
   .loading{text-align:center;padding:110px 20px;color:var(--ink-soft);}
   .loading h2{color:var(--green);font-size:20px;margin-bottom:8px;}
   .spinner{width:24px;height:24px;margin:0 auto 22px;border:3px solid var(--gold-soft);
@@ -283,9 +288,9 @@
   .granbar{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
   .granlabel{font-size:11.5px;color:var(--ink-soft);}
   .granhint{font-size:11px;color:var(--ink-soft);}
-  .seg{display:inline-flex;border:1px solid var(--line);border-radius:3px;overflow:hidden;background:#fff;}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--card);}
   .segbtn{
-    border:none;background:#fff;color:var(--ink-soft);padding:6px 16px;
+    border:none;background:var(--card);color:var(--ink-soft);padding:6px 16px;
     font-size:12px;border-radius:0;border-right:1px solid var(--line);
   }
   .segbtn:last-child{border-right:none;}
@@ -301,7 +306,7 @@
   /* Any panel or card opens full screen on a click, and closes on the
      backdrop, the button, or Escape. */
   /* ---- strip plan ---- */
-  .gantt{position:relative;overflow:auto;max-height:70vh;border:1px solid var(--line);background:#fff;}
+  .gantt{position:relative;overflow:auto;max-height:70vh;border:1px solid var(--line);background:var(--card);}
   /* width:max-content matters: a block inside a horizontally scrolling box is
      only as wide as the visible area by default, so the header's green would
      stop dead partway along the grid. */
@@ -314,13 +319,13 @@
   .g-tot.fab{top:0;}
   .g-tot.sew{top:26px;}
   .g-head{position:sticky;top:52px;z-index:3;background:var(--green);color:#fff;font-size:10.5px;}
-  .g-freeze{position:sticky;left:0;z-index:2;display:flex;flex:none;background:#fff;
+  .g-freeze{position:sticky;left:0;z-index:2;display:flex;flex:none;background:var(--card);
             border-right:2px solid var(--green);}
-  .g-rest{display:flex;flex:none;background:#fff;border-right:2px solid var(--line);}
+  .g-rest{display:flex;flex:none;background:var(--card);border-right:2px solid var(--line);}
   .g-head .g-freeze, .g-head .g-rest{background:var(--green);}
   .g-head .g-freeze{z-index:5;}
   .g-tot .g-freeze, .g-tot .g-rest{background:var(--paper);}
-  .g-row:nth-child(even) .g-rest{background-color:#FCFBF8;}
+  .g-row:nth-child(even) .g-rest{background-color:var(--card-alt);}
   .g-freeze .c, .g-rest .c{flex:none;padding:4px 7px;font-size:11px;white-space:nowrap;
              overflow:hidden;text-overflow:ellipsis;border-right:1px solid var(--line-soft);}
   .g-freeze .c.num, .g-rest .c.num{text-align:right;font-variant-numeric:tabular-nums;}
@@ -365,7 +370,7 @@
   .g-legend .sw.r{background:#F7BBA6;}
   /* ---- multi-select filter ---- */
   .ms{position:relative;}
-  .ms-btn{width:100%;text-align:left;background:#fff;border:1px solid var(--line);color:var(--ink);
+  .ms-btn{width:100%;text-align:left;background:var(--card);border:1px solid var(--line);color:var(--ink);
           font:inherit;font-size:12px;padding:6px 22px 6px 8px;cursor:pointer;white-space:nowrap;
           overflow:hidden;text-overflow:ellipsis;}
   .ms-btn:after{content:"";position:absolute;right:8px;top:14px;border:4px solid transparent;
@@ -373,7 +378,7 @@
   .ms.on .ms-btn{border-color:var(--green);box-shadow:0 0 0 2px rgba(0,96,64,0.12);}
   .ms-btn.has{font-weight:600;color:var(--green);}
   .ms-pop{display:none;position:absolute;z-index:60;top:100%;left:0;min-width:210px;max-width:320px;
-          background:#fff;border:1px solid var(--line);box-shadow:0 6px 18px rgba(0,0,0,0.12);padding:6px;}
+          background:var(--card);border:1px solid var(--line);box-shadow:0 6px 18px rgba(0,0,0,0.12);padding:6px;}
   .ms.open .ms-pop{display:block;}
   .ms-search{width:100%;font:inherit;font-size:11.5px;padding:4px 6px;border:1px solid var(--line);
              margin-bottom:5px;}
@@ -419,17 +424,17 @@
   .zoom-back{position:fixed;inset:0;background:rgba(26,26,26,0.55);z-index:2000;
              display:none;align-items:center;justify-content:center;padding:28px;}
   .zoom-back.on{display:flex;}
-  .zoom-card{background:#fff;border:1px solid var(--line);width:100%;height:100%;
+  .zoom-card{background:var(--card);border:1px solid var(--line);width:100%;height:100%;
              max-width:1700px;display:flex;flex-direction:column;padding:20px 22px 16px;position:relative;}
   .zoom-card.small{width:auto;height:auto;min-width:360px;max-width:520px;padding:26px 30px 24px;}
   .zoom-card h3{color:var(--green);font-size:17px;margin:0 6px 2px 0;}
   .zoom-card .hint{margin-bottom:10px;}
   .zoom-body{flex:1;position:relative;min-height:0;}
   .zoom-body canvas{position:absolute;inset:0;}
-  .zoom-close{position:absolute;top:12px;right:14px;border:1px solid var(--line);background:#fff;
+  .zoom-close{position:absolute;top:12px;right:14px;border:1px solid var(--line);background:var(--card);
               color:var(--ink);font-size:20px;line-height:1;width:32px;height:32px;cursor:pointer;}
   .zoom-close:hover{background:var(--green);color:#fff;border-color:var(--green);}
-  .zoom-share{position:absolute;top:12px;right:52px;border:1px solid var(--line);background:#fff;
+  .zoom-share{position:absolute;top:12px;right:52px;border:1px solid var(--line);background:var(--card);
               color:var(--ink);font-size:14px;line-height:1;height:32px;padding:0 11px;cursor:pointer;
               font-family:inherit;display:flex;align-items:center;gap:6px;}
   .zoom-share:hover{background:var(--green);color:#fff;border-color:var(--green);}
@@ -439,7 +444,7 @@
      way of the figure but part of anything printed or photographed. */
   .zoom-foot{display:flex;justify-content:flex-end;padding-top:8px;}
   .zoom-ref{font-size:11px;color:var(--ink-soft);letter-spacing:0.02em;font-style:italic;}
-  .share-pop{position:absolute;top:48px;right:14px;z-index:5;background:#fff;
+  .share-pop{position:absolute;top:48px;right:14px;z-index:5;background:var(--card);
              border:1px solid var(--line);box-shadow:0 8px 20px rgba(0,0,0,0.14);
              padding:6px;display:none;min-width:236px;}
   .share-pop.on{display:block;}
@@ -457,6 +462,46 @@
   .zoom-figure{padding:4px 0 2px;}
   .zoom-figure .big{font-size:44px;font-weight:600;color:var(--green);font-variant-numeric:tabular-nums;}
   .zoom-figure .cap{font-size:13px;color:var(--ink-soft);text-align:center;}
+
+  /* ---------- the same page after dark ----------
+     Paper becomes near-black, ink becomes near-white, and the lines that
+     separated them lighten instead of darkening. The greens, golds and rusts
+     are left where they are: they carry meaning -- locked, late, over
+     capacity -- and a reader should not have to learn them twice. The green
+     is lifted a little, because the deep one disappears into a dark page. */
+  :root[data-theme="dark"]{
+    --green:#3FA566;
+    --green-mid:#57B87A;
+    --green-light:#7FCF9B;
+    --green-soft:#17301F;
+    --gold:#F8B000;
+    --gold-mid:#FFC53D;
+    --gold-soft:#332607;
+    --paper:#15171A;
+    --card:#1D2024;
+    --card-alt:#22262B;
+    --ink:#E8E6E1;
+    --ink-soft:#9AA1AC;
+    --line:#333940;
+    --line-soft:#2A2F35;
+    --rust:#E8743F;
+    --rust-soft:#3A1E13;
+    --blue:#6FA6E0;
+  }
+  :root[data-theme="dark"] .hit-0{background:#5A2A1C;}
+  :root[data-theme="dark"] .hit-1{background:#5A4320;}
+  :root[data-theme="dark"] .hit-2{background:#4A4320;}
+  :root[data-theme="dark"] .hit-3{background:#1D3A2A;}
+  :root[data-theme="dark"] .g-val.over-yellow{background:#4A4320;}
+  :root[data-theme="dark"] .g-legend .sw.y{background:#4A4320;}
+  :root[data-theme="dark"] th{color:#0E1A14;}
+  :root[data-theme="dark"] .pill.fail,
+  :root[data-theme="dark"] .pill.overdue{background:#3A1E13;color:#F0A080;}
+  :root[data-theme="dark"] .pill.pending{background:#332607;color:#E8C46A;}
+  :root[data-theme="dark"] .pill.na{background:#2A2F35;color:var(--ink-soft);}
+  :root[data-theme="dark"] .g-bar.fab{background:#4BA3D3;}
+  :root[data-theme="dark"] img.logo{filter:brightness(0) invert(1) opacity(0.85);}
+  .themeBtn{font-size:13px;line-height:1;padding:0 10px;height:28px;}
 </style>
 </head>
 <body class="signed-out">
@@ -498,6 +543,7 @@
       <span id="freshness"></span>
     </span>
     <span id="accountLabel" class="acct"></span>
+    <button class="secondary tiny themeBtn" id="themeBtn" title="Light or dark">&#9790;</button>
     <button class="secondary tiny" id="csvBtn" hidden>Export CSV</button>
     <button class="secondary tiny" id="signOutBtn" hidden>Sign out</button>
     <button class="tiny" id="signInBtn">Sign in with Microsoft</button>
@@ -772,6 +818,11 @@
         <div class="table-wrap table-zoom"><table id="hitTable" class="report hit-table"></table></div>
       </div>
       <div class="panel">
+        <h3>Hit rate by buyer</h3>
+        <div class="hint" id="hitBuyerHint">Share of each milestone met on or before plan</div>
+        <div class="table-wrap table-zoom"><table id="hitBuyerTable" class="report hit-table"></table></div>
+      </div>
+      <div class="panel">
         <h3>Event by event</h3>
         <div class="hint">Every order on screen against every event the ERP reports. Plan comes from the EWO sheet, Complete from the ERP.</div>
         <div class="table-wrap"><table id="ottTable"></table></div>
@@ -896,23 +947,24 @@
         <div class="kpis six needs-sew" id="sewKpis"></div>
         <div class="grid1 needs-sew">
           <div class="panel">
-            <h3 data-grantitle7="Capacity, plan and actual per {g}">Capacity, plan and actual per day</h3>
+            <h3 data-grantitle7="Sewing: capacity, plan and actual per {g}">Sewing: capacity, plan and actual per day</h3>
             <div class="hint" id="sewCapHint"></div>
             <div class="chart-box wide"><canvas id="sewCapChart"></canvas></div>
           </div>
-        </div>
-        <div class="grid2 needs-sew">
           <div class="panel">
-            <h3 data-grantitle8="Efficiency and capacity use per {g}">Efficiency and capacity use per day</h3>
+            <h3 data-grantitle9="Fabric: capacity, plan and delivered per {g}">Fabric: capacity, plan and delivered per day</h3>
+            <div class="hint" id="sewFabHint"></div>
+            <div class="chart-box wide"><canvas id="sewFabChart"></canvas></div>
+          </div>
+          <div class="panel">
+            <h3 data-grantitle8="Sewing efficiency per {g}">Sewing efficiency per day</h3>
             <div class="hint" id="sewEffHint"></div>
             <div class="chart-box"><canvas id="sewEffChart"></canvas></div>
           </div>
-          <div class="panel">
-            <h3>Where the hours went</h3>
-            <div class="hint" id="sewSpendHint"></div>
-            <div class="chart-box"><canvas id="sewSpendChart"></canvas></div>
-          </div>
         </div>
+        <h3 class="section-head needs-sew">Sewing by execution unit</h3>
+        <div class="section-hint needs-sew" id="sewUnitGridHint"></div>
+        <div class="grid3 needs-sew" id="sewUnitGrid2"></div>
         <div class="grid1 needs-sew">
           <div class="panel">
             <h3>By execution unit</h3>
@@ -1145,14 +1197,14 @@ var generatedAt = null, lastSignature = null;
 var pollTimer = null, freshTimer = null, sourceLabel = "";
 
 var els = {};
-["statusDot","statusText","freshness","refreshBtn","csvBtn","loadingState","dashboard",
+["statusDot","statusText","freshness","refreshBtn","csvBtn","loadingState","dashboard","themeBtn",
  "signInBtn","signInBtn2","signinTitle","signinText","signinDetail","signOutBtn","accountLabel","signinBox","spinner","loadingTitle","loadingText",
  "errorBox","filterGrid","searchInput","dateFieldWrap","dateFrom","dateTo","resetBtn",
  "zoomBack","zoomClose","zoomTitle","zoomHint","zoomBody","liveWrap",
  "zoomShare","sharePop","shareSheet","shareRule","shareCopyImg","shareSaveImg","shareNote",
  "fabLoadHint",
  "ottKpis","ottSourceNote","ottEventMs","ottDeptMs","ottStatusFilter","ottTableHint","ottTable",
- "hitTable","hitHint",
+ "hitTable","hitHint","hitBuyerTable","hitBuyerHint",
  "ottPrev","ottNext","ottPageInfo",
  "ganttScroll","ganttHint","zoomIn","zoomOut","gotoToday","gRowsPer","gPrev","gNext","gPageInfo","gFlag",
  "freezeTop","attnColChooser","attnColWrap",
@@ -1161,8 +1213,8 @@ var els = {};
  "filterSummary","activeChips","kpiRow","alertRow","attnTable","attnTableTitle","attnTableHint",
  "pivotTable","dataTable","groupBy","colChooser","prevPage","nextPage","pageInfo","pageSize",
  "detailHint","tabBar","attnCount","capKpis","delKpis","asOfDate","asOfReset",
- "sewHint","sewMissing","sewKpis","sewCapHint","sewEffHint","sewSpendHint",
- "sewUnitTable","sewUnitTableHint",
+ "sewHint","sewMissing","sewKpis","sewCapHint","sewEffHint","sewFabHint",
+ "sewUnitGrid2","sewUnitGridHint","sewUnitTable","sewUnitTableHint",
  "asOfHint","kpiBuyerTable","kpiUnitTable","deficitTable","deficitHint","deliveryEmpty","noPlanNote",
  "deliveryBody","kpiBuyerHint","statusTable","lockTable","trendChart","achievedChart"
 ].forEach(function(id){ els[id] = document.getElementById(id); });
@@ -3734,8 +3786,8 @@ var HIT_COL_MIN = 48, HIT_COL_MAX = 190;
    really bites: one event alone does not deserve the whole panel. The lower
    one is a floor against nonsense, deliberately below anything the all-events
    view would ask for, so that view still fits its panel exactly as before. */
-function hitColWidth(){
-  var wrap = els.hitTable.parentNode;
+function hitColWidth(table){
+  var wrap = (table || els.hitTable).parentNode;
   var avail = wrap ? wrap.clientWidth : 0;
   var seen = {}, n = 0;
   ottVisibleLines(true).forEach(function(l){
@@ -3751,6 +3803,14 @@ function hitColWidth(){
    handed in have already been cut to the orders, the events, the responsible
    team, the status and the date range, so this only has to count them. */
 function renderHitTable(lines){
+  hitTableFor(lines, "Execution Unit", "Unit", els.hitTable, els.hitHint);
+  hitTableFor(lines, "Buyer", "Buyer", els.hitBuyerTable, els.hitBuyerHint);
+}
+
+/* One table, one row per whatever is being asked about: the unit that did the
+   work, or the buyer it was for. The columns, the shading and the widths are
+   the same either way; only the heading on the left changes. */
+function hitTableFor(lines, dim, dimLabel, table, hintEl){
   var win = dateWindow();
   /* The chosen events, or everything that survived the other filters when the
      picker says All. Either way in lifecycle order, so the columns read left
@@ -3768,7 +3828,7 @@ function renderHitTable(lines){
   lines.forEach(function(l){
     if(totals[l.event] == null) return;
     if(l.status !== "Pass" && l.status !== "Fail" && l.status !== "Overdue") return;
-    var u = txt(l.order, "Execution Unit") || "(blank)";
+    var u = txt(l.order, dim) || "(blank)";
     if(!byUnit[u]){
       byUnit[u] = {};
       names.forEach(function(n){ byUnit[u][n] = { pass: 0, n: 0 }; });
@@ -3794,7 +3854,7 @@ function renderHitTable(lines){
      whether one event is chosen or fourteen, so the words no longer buy a
      wider column, they only cost three lines of header. The panel's own
      title already says what the numbers are. */
-  var head = '<thead><tr><th>Unit</th>'
+  var head = '<thead><tr><th>' + esc(dimLabel) + '</th>'
     + names.map(function(n){ return '<th class="num">' + esc(hitHeading(n)) + '</th>'; }).join("")
     + '</tr><tr><th>' + (win ? "Due in range" : "Judged") + '</th>'
     + names.map(function(n){ return '<th class="num">' + fmtInt(totals[n].n) + '</th>'; }).join("")
@@ -3806,18 +3866,18 @@ function renderHitTable(lines){
     + names.map(function(n){ return cell(totals[n]); }).join("") + '</tr></tfoot>';
 
   var ok = units.length && names.length;
-  els.hitTable.innerHTML = ok ? head + body + foot
+  table.innerHTML = ok ? head + body + foot
     : '<tbody><tr><td class="empty-note">No milestone falls due in this range.</td></tr></tbody>';
   if(ok){
-    var colW = hitColWidth();
-    els.hitTable.style.setProperty("--hitcol", colW + "px");
-    els.hitTable.style.width = (HIT_UNIT_W + names.length * colW) + "px";
+    var colW = hitColWidth(table);
+    table.style.setProperty("--hitcol", colW + "px");
+    table.style.width = (HIT_UNIT_W + names.length * colW) + "px";
   }else{
-    els.hitTable.style.removeProperty("--hitcol");
-    els.hitTable.style.width = "";
+    table.style.removeProperty("--hitcol");
+    table.style.width = "";
   }
 
-  els.hitHint.textContent = "Met on or before plan, for the "
+  hintEl.textContent = "Met on or before plan, by " + dimLabel.toLowerCase() + ", for the "
     + fmtInt(names.length) + (ottEventSel.length ? " chosen" : "") + " event"
     + (names.length === 1 ? "" : "s")
     + (win ? " due " + planWindowText(win) : " at any date")
@@ -3904,18 +3964,24 @@ function renderOttTab(){
   els.ottSourceNote.innerHTML = notes.join("<br/><br/>");
   els.ottSourceNote.style.display = notes.length ? "" : "none";
 
-  var pages = Math.max(1, Math.ceil(lines.length / OTT_PAGE_SIZE));
+  /* A line with no plan date has nothing to be measured against, and a page
+     of them buries the lines that have. They are still counted in the tally
+     above, where "N/A" is the honest word for them. */
+  var tableLines = lines.filter(function(l){ return l.plan != null; });
+  var pages = Math.max(1, Math.ceil(tableLines.length / OTT_PAGE_SIZE));
   if(ottPage >= pages) ottPage = pages - 1;
   if(ottPage < 0) ottPage = 0;
-  var slice = lines.slice(ottPage * OTT_PAGE_SIZE, (ottPage + 1) * OTT_PAGE_SIZE);
+  var slice = tableLines.slice(ottPage * OTT_PAGE_SIZE, (ottPage + 1) * OTT_PAGE_SIZE);
 
   var tblWin = dateWindow();
-  els.ottTableHint.textContent = fmtInt(lines.length) + " event lines"
-    + (tblWin ? " planned " + planWindowText(tblWin) : "")
+  els.ottTableHint.textContent = fmtInt(tableLines.length) + " event lines with a plan date"
+    + (lines.length > tableLines.length
+        ? ", " + fmtInt(lines.length - tableLines.length) + " more with none" : "")
+    + (tblWin ? ", planned " + planWindowText(tblWin) : "")
     + (TNA.length ? " from " + fmtInt(TNA.length) + " records" : "")
     + (tnaSource === "sheet" ? " in the OTT sheet" : (tnaAt ? ", read from the ERP " + ago(tnaAt) : ""));
   els.ottPageInfo.textContent = "Page " + (ottPage + 1) + " of " + pages
-    + (lines.length ? " · lines " + fmtInt(ottPage * OTT_PAGE_SIZE + 1) + " to "
+    + (tableLines.length ? " · lines " + fmtInt(ottPage * OTT_PAGE_SIZE + 1) + " to "
        + fmtInt(ottPage * OTT_PAGE_SIZE + slice.length) : "");
   els.ottPrev.disabled = ottPage === 0;
   els.ottNext.disabled = ottPage >= pages - 1;
@@ -3940,7 +4006,7 @@ function renderOttTab(){
       + '<td><span class="pill ' + cls[l.status] + '">' + esc(l.status) + '</span></td></tr>';
   }).join("") + '</tbody>';
 
-  els.ottTable.innerHTML = lines.length ? head + body
+  els.ottTable.innerHTML = tableLines.length ? head + body
     : '<tbody><tr><td class="empty-note">No event lines for the orders on screen.</td></tr></tbody>';
 }
 
@@ -4008,7 +4074,7 @@ function renderKpis(){
 var PALETTE = ["#006040","#F8B000","#0A7A54","#D99700","#3FA566","#C7511F",
                "#3B6FA8","#8A6D1F","#6B7280","#A85CC1"];
 var MONO = { family: "IBM Plex Mono", size: 11 };
-var GRID = { color: "#F0EEE7" };
+var GRID = { color: "#F0EEE7" };          // replaced when the theme is applied
 function destroyChart(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
 
 function groupSum(rowsIn, dim, measure){
@@ -5026,6 +5092,111 @@ function sewOnScreen(){
 function hrs(min){ return min / 60; }
 function pct(a, b){ return b > 0 ? Math.round(1000 * a / b) / 10 : 0; }
 
+/* The days a chart covers: everything the floor recorded, and the plan for
+   those same days. Without a chosen range the plan runs months past the last
+   day anyone has worked, and a chart that drew all of it would be mostly
+   empty air, so it is cut to the record. */
+function chartKeys(actual, planSr, win, g){
+  var lo = null, hi = null;
+  Object.keys(actual).forEach(function(k){
+    var n = Number(k);
+    if(lo == null || n < lo) lo = n;
+    if(hi == null || n > hi) hi = n;
+  });
+  var set = {};
+  Object.keys(actual).forEach(function(k){ set[Number(k)] = true; });
+  (planSr.keys || []).forEach(function(k){
+    if(win || lo == null || (k >= lo && k <= hi)) set[k] = true;
+  });
+  return Object.keys(set).map(Number).sort(function(a, b){ return a - b; });
+}
+
+function seriesAt(sr){
+  var at = {};
+  (sr.keys || []).forEach(function(k, i){ at[k] = (sr.series.All || [])[i] || 0; });
+  return at;
+}
+
+/* One chart, four things: what the floor could do, drawn as a shaded band
+   from the Capacity sheet; what the plan asked of it, split into the part
+   already done and the part still owed; and what it actually produced. The
+   bar answers "how much of the plan has been met"; the line answers "how much
+   came off the floor", which can run past the plan and should be free to show
+   it. */
+function capPlanActualChart(canvasId, keys, g, cap, plan, act, unitWord){
+  destroyChart(canvasId);
+  var el = document.getElementById(canvasId);
+  if(!el || !keys.length) return;
+  var done = keys.map(function(k, i){ return Math.min(plan[i] || 0, act[i] || 0); });   // a gap is nothing produced
+  var pend = keys.map(function(k, i){ return Math.max(0, (plan[i] || 0) - (act[i] || 0)); });
+  var sets = [];
+  if(cap){
+    sets.push({ label: "Capacity", data: cap.map(function(v){ return v > 0 ? v : null; }),
+      type: "line", borderColor: "#4A90D9", backgroundColor: "rgba(74,144,217,0.16)",
+      borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: 0, fill: "origin",
+      order: 4, spanGaps: false, stack: "cap" });
+  }
+  sets.push({ label: "Plan done", data: done, backgroundColor: "#006040", borderWidth: 0,
+              stack: "plan", order: 3 });
+  sets.push({ label: "Plan pending", data: pend, backgroundColor: "#F8B000", borderWidth: 0,
+              stack: "plan", order: 3 });
+  /* A day with no record has no actual, which is not the same as an actual of
+     nothing. Drawn as zero the line dived to the axis and back on every
+     closed day, and those dives read as collapses in output. */
+  sets.push({ label: "Actual", data: act, type: "line", borderColor: "#C7511F", borderWidth: 2,
+              backgroundColor: "#C7511F", pointRadius: 2, pointHoverRadius: 5, tension: 0,
+              order: 1, stack: "act", spanGaps: false });
+  charts[canvasId] = new Chart(el, {
+    type: "bar",
+    data: { labels: keys.map(function(k){ return bucketLabel(k, g); }), datasets: sets },
+    options: { responsive: true, maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: { legend: { position: "bottom", labels: { font: MONO, boxWidth: 12 } },
+        tooltip: { callbacks: { label: function(c){
+          return c.dataset.label + ": " + fmtInt(c.parsed.y) + " " + unitWord; } } } },
+      scales: { x: { stacked: true, ticks: { font: MONO, autoSkip: true,
+                       maxTicksLimit: g === "day" ? 14 : 18, maxRotation: g === "day" ? 60 : 0 },
+                     grid: { display: false } },
+                y: { stacked: true, beginAtZero: true, ticks: { font: MONO }, grid: GRID } } }
+  });
+}
+
+/* Fresh deliveries only: a return or a replacement is not this week's output,
+   and counting it would credit the mill twice for the same kilograms. */
+function freshDeliveryBuckets(g, win){
+  var join = orderJoin(), out = {};
+  DELIV.forEach(function(r){
+    if(dt_(r, "DeliveryType").toLowerCase().indexOf("fresh") === -1) return;
+    var x = dd(r, "DeliveryDate");
+    if(x == null) return;
+    if(win && win.from != null && x < win.from) return;
+    if(win && win.to != null && x > win.to) return;
+    if(join && !join(dn(r, "ExportOrderNo"), dt_(r, "Buyer"), dt_(r, "BeneficieryUnit"))) return;
+    var k = bucketKey(x, g);
+    out[k] = (out[k] || 0) + dn(r, "DeliveryQtyKg");
+  });
+  return out;
+}
+
+/* Every unit worth a chart: the ones the Capacity sheet knows, the ones the
+   sewing sheet recorded, and the ones the orders on screen belong to. A unit
+   with capacity and no work is exactly the thing a planner wants to see. */
+function sewUnits(rows){
+  var seen = {}, out = [];
+  function add(n){
+    var v = String(n == null ? "" : n).trim();
+    if(!v) return;
+    var k = unitKey(v);
+    if(seen[k]) return;
+    seen[k] = true;
+    out.push(v);
+  }
+  (CAPACITY.units || []).forEach(add);
+  rows.forEach(function(s){ add(s.unit); });
+  filtered.forEach(function(r){ add(txt(r, "Execution Unit")); });
+  return out.sort();
+}
+
 function renderSewFloor(){
   var has = SEW.length > 0;
   document.querySelectorAll("#page-delivery .needs-sew").forEach(function(el){
@@ -5039,9 +5210,11 @@ function renderSewFloor(){
       + (DELIVERY_SHEETS.length
           ? " Sheets found: <strong>" + DELIVERY_SHEETS.map(esc).join(", ") + "</strong>."
           : "");
-    ["sewCapChart", "sewEffChart", "sewSpendChart"].forEach(destroyChart);
+    ["sewCapChart", "sewFabChart", "sewEffChart"].forEach(destroyChart);
+    Object.keys(charts).forEach(function(id){ if(id.indexOf("sewU_") === 0) destroyChart(id); });
     els.sewKpis.innerHTML = "";
     els.sewUnitTable.innerHTML = "";
+    els.sewUnitGrid2.innerHTML = "";
     return;
   }
 
@@ -5049,14 +5222,17 @@ function renderSewFloor(){
   var rows = sewOnScreen();
 
   var word = g === "day" ? "day" : (g === "week" ? "week" : "month");
-  document.querySelectorAll("[data-grantitle7],[data-grantitle8]").forEach(function(h){
-    var a = h.getAttribute("data-grantitle7") || h.getAttribute("data-grantitle8");
+  document.querySelectorAll("[data-grantitle7],[data-grantitle8],[data-grantitle9]").forEach(function(h){
+    var a = h.getAttribute("data-grantitle7") || h.getAttribute("data-grantitle8")
+         || h.getAttribute("data-grantitle9");
     h.textContent = a.replace("{g}", word);
   });
 
   if(!rows.length){
-    ["sewCapChart", "sewEffChart", "sewSpendChart"].forEach(destroyChart);
+    ["sewCapChart", "sewFabChart", "sewEffChart"].forEach(destroyChart);
+    Object.keys(charts).forEach(function(id){ if(id.indexOf("sewU_") === 0) destroyChart(id); });
     els.sewKpis.innerHTML = "";
+    els.sewUnitGrid2.innerHTML = "";
     els.sewUnitTable.innerHTML = '<tbody><tr><td class="empty-note">'
       + 'No sewing day falls inside this filter.</td></tr></tbody>';
     els.sewHint.textContent = "The sewing sheet has " + fmtInt(SEW.length)
@@ -5078,82 +5254,42 @@ function renderSewFloor(){
     if(hi == null || s.d > hi) hi = s.d;
   });
 
-  /* What was planned for the same days, taken from the EWO sheet the same way
-     the Capacity vs Load tab takes it: an order's hours spread evenly across
-     its sewing window. Already in hours. */
+  // ---- sewing: capacity, plan, actual ----
   var planSr = spreadSeries(filtered, "Adjusted sew start", "Adjusted sew end", "FR hour", g, null, win);
-  var planAt = {};
-  planSr.keys.forEach(function(k, i){ planAt[k] = (planSr.series.All || [])[i] || 0; });
+  var planAt = seriesAt(planSr);
+  var actAt = {};
+  Object.keys(prod).forEach(function(k){ actAt[k] = hrs(prod[k]); });
+  var keys = chartKeys(actAt, planSr, win, g);
+  var wantKeys = wantedUnitKeys(filtered);
+  var capSeries = capacitySeries(keys, g, wantKeys);
+  capPlanActualChart("sewCapChart", keys, g, capSeries,
+    keys.map(function(k){ return planAt[k] || 0; }),
+    keys.map(function(k){ return actAt[k] == null ? null : actAt[k]; }), "hours");
 
-  /* The days on screen: everything the floor recorded, and the plan for those
-     same days. Without a chosen range the plan runs months past the last day
-     anyone has worked, and a chart that drew all of it would be mostly empty
-     air, so it is cut to the record. */
-  var keyset = {};
-  Object.keys(avail).forEach(function(k){ keyset[k] = true; });
-  Object.keys(planAt).forEach(function(k){
-    var n = Number(k);
-    if(win || (n >= bucketKey(lo, g) && n <= bucketKey(hi, g))) keyset[k] = true;
-  });
-  var keys = Object.keys(keyset).map(Number).sort(function(a, b){ return a - b; });
+  // ---- fabric: capacity, plan, fresh deliveries ----
+  var fabPlanSr = spreadSeries(filtered, "Adjusted Fabric Start", "Adjusted Fabric End", "InHouse", g, null, win);
+  var fabPlanAt = seriesAt(fabPlanSr);
+  var fabAct = freshDeliveryBuckets(g, win);
+  var fabKeys = chartKeys(fabAct, fabPlanSr, win, g);
+  capPlanActualChart("sewFabChart", fabKeys, g, fabricCapacitySeries(fabKeys, g),
+    fabKeys.map(function(k){ return fabPlanAt[k] || 0; }),
+    fabKeys.map(function(k){ return fabAct[k] == null ? null : fabAct[k]; }), "kg");
 
-  var capH = keys.map(function(k){ return hrs(avail[k] || 0); });
-  var planH = keys.map(function(k){ return planAt[k] || 0; });
-  var actH = keys.map(function(k){ return hrs(prod[k] || 0); });
-
-  destroyChart("sewCapChart");
-  var capEl = document.getElementById("sewCapChart");
-  if(capEl && keys.length){
-    charts.sewCapChart = new Chart(capEl, {
-      type: "bar",
-      data: {
-        labels: keys.map(function(k){ return bucketLabel(k, g); }),
-        datasets: [
-          { label: "Capacity", data: capH, backgroundColor: "rgba(74,144,217,0.35)",
-            borderColor: "#4A90D9", borderWidth: 1, order: 3 },
-          { label: "Plan", data: planH, backgroundColor: "#F8B000", borderWidth: 0, order: 2 },
-          { label: "Actual", data: actH, type: "line", borderColor: "#006040", borderWidth: 2,
-            backgroundColor: "#006040", pointRadius: 2, pointHoverRadius: 5, tension: 0, order: 1 }
-        ]
-      },
-      options: { responsive: true, maintainAspectRatio: false,
-        interaction: { mode: "index", intersect: false },
-        plugins: { legend: { position: "bottom", labels: { font: MONO, boxWidth: 12 } },
-          tooltip: { callbacks: { label: function(c){
-            return c.dataset.label + ": " + fmtInt(c.parsed.y) + " hours"; } } } },
-        scales: { x: { ticks: { font: MONO, autoSkip: true, maxTicksLimit: g === "day" ? 14 : 18,
-                                maxRotation: g === "day" ? 60 : 0 }, grid: { display: false } },
-                  y: { beginAtZero: true, ticks: { font: MONO }, grid: GRID } } }
-    });
-  }
-
-  // ---- efficiency and capacity use ----
-  /* A day the floor did not work has no efficiency, which is not the same as
-     an efficiency of nothing. Plotted as zero the line dived to the axis and
-     back on every weekly holiday, and those dives read as collapses. */
-  var effSeries = keys.map(function(k){ return avail[k] ? pct(prod[k] || 0, util[k] || 0) : null; });
-  var useSeries = keys.map(function(k){ return avail[k] ? pct(util[k] || 0, avail[k] || 0) : null; });
+  // ---- efficiency: what was earned against what was available ----
+  var effSeries = keys.map(function(k){ return avail[k] ? pct(prod[k] || 0, avail[k]) : null; });
   destroyChart("sewEffChart");
   var effEl = document.getElementById("sewEffChart");
   if(effEl && keys.length){
     charts.sewEffChart = new Chart(effEl, {
       type: "line",
-      data: {
-        labels: keys.map(function(k){ return bucketLabel(k, g); }),
-        datasets: [
-          { label: "Efficiency", data: effSeries, borderColor: "#006040", backgroundColor: "rgba(0,96,64,0.10)",
-            borderWidth: 2, pointRadius: 2, pointHoverRadius: 5, tension: 0.15, fill: true,
-            spanGaps: false },
-          { label: "Capacity use", data: useSeries, borderColor: "#C7511F", backgroundColor: "transparent",
-            borderWidth: 2, pointRadius: 2, pointHoverRadius: 5, tension: 0.15, borderDash: [5, 4],
-            spanGaps: false }
-        ]
-      },
+      data: { labels: keys.map(function(k){ return bucketLabel(k, g); }),
+        datasets: [{ label: "Efficiency", data: effSeries, borderColor: "#006040",
+          backgroundColor: "rgba(0,96,64,0.10)", borderWidth: 2, pointRadius: 2,
+          pointHoverRadius: 5, tension: 0.15, fill: true, spanGaps: false }] },
       options: { responsive: true, maintainAspectRatio: false,
         interaction: { mode: "index", intersect: false },
-        plugins: { legend: { position: "bottom", labels: { font: MONO, boxWidth: 12 } },
-          tooltip: { callbacks: { label: function(c){
-            return c.dataset.label + ": " + c.parsed.y + "%"; } } } },
+        plugins: { legend: { display: false },
+          tooltip: { callbacks: { label: function(c){ return "Efficiency: " + c.parsed.y + "%"; } } } },
         scales: { x: { ticks: { font: MONO, autoSkip: true, maxTicksLimit: g === "day" ? 14 : 18,
                                 maxRotation: g === "day" ? 60 : 0 }, grid: { display: false } },
                   y: { beginAtZero: true, ticks: { font: MONO, callback: function(v){ return v + "%"; } },
@@ -5161,126 +5297,140 @@ function renderSewFloor(){
     });
   }
 
-  // ---- where the minutes went, by unit ----
+  // ---- the same chart, one per unit ----
   var byUnit = {};
   rows.forEach(function(s){
     var u = byUnit[s.unit] || (byUnit[s.unit] = { avail: 0, util: 0, prod: 0, lost: 0, pcs: 0,
-                                                  days: {}, people: 0, rows: 0 });
+                                                  days: {}, sewers: 0, helpers: 0, rows: 0 });
     u.avail += s.availMin; u.util += s.utilMin; u.prod += s.prodMin;
-    u.lost += s.lostMin; u.pcs += s.pcs; u.people += s.people; u.rows++;
+    u.lost += s.lostMin; u.pcs += s.pcs; u.rows++;
+    u.sewers += s.sewers; u.helpers += s.people - s.sewers;
     u.days[s.d] = true;
   });
-  var units = Object.keys(byUnit).sort(function(a, b){ return byUnit[b].avail - byUnit[a].avail; });
 
-  /* The plan, per unit, so the table can set a unit's own plan beside its own
-     output rather than against a floor-wide total. */
-  var planByUnit = {};
-  units.forEach(function(u){
-    var mine = filtered.filter(function(r){ return (txt(r, "Execution Unit") || "(blank)") === u; });
+  var units = sewUnits(rows);
+  Object.keys(charts).forEach(function(id){ if(id.indexOf("sewU_") === 0) destroyChart(id); });
+  var unitPlan = {}, unitAct = {}, unitCap = {};
+  units.forEach(function(u, i){
+    var mine = filtered.filter(function(r){ return unitKey(txt(r, "Execution Unit")) === unitKey(u); });
     var sr = spreadSeries(mine, "Adjusted sew start", "Adjusted sew end", "FR hour", g, null, win);
-    var t = 0;
-    (sr.series.All || []).forEach(function(v, i){
-      var k = sr.keys[i];
-      if(keyset[k]) t += v || 0;
+    var at = seriesAt(sr);
+    var a = {};
+    rows.forEach(function(s){
+      if(unitKey(s.unit) !== unitKey(u)) return;
+      var k = bucketKey(s.d, g);
+      a[k] = (a[k] || 0) + hrs(s.prodMin);
     });
-    planByUnit[u] = t;
+    unitPlan[u] = keys.reduce(function(t, k){ return t + (at[k] || 0); }, 0);
+    unitAct[u] = keys.reduce(function(t, k){ return t + (a[k] || 0); }, 0);
+    var kk = CAPACITY.unitKeys[unitKey(u)] ? [unitKey(u)] : null;
+    var cs = kk ? capacitySeries(keys, g, kk) : null;
+    unitCap[u] = cs ? cs.reduce(function(t, v){ return t + v; }, 0) : 0;
   });
 
-  destroyChart("sewSpendChart");
-  var spEl = document.getElementById("sewSpendChart");
-  if(spEl && units.length){
-    charts.sewSpendChart = new Chart(spEl, {
-      type: "bar",
-      data: {
-        labels: units,
-        datasets: [
-          { label: "Earned", data: units.map(function(u){ return hrs(byUnit[u].prod); }),
-            backgroundColor: "#006040", borderWidth: 0 },
-          { label: "Lost", data: units.map(function(u){ return hrs(byUnit[u].lost); }),
-            backgroundColor: "#C7511F", borderWidth: 0 },
-          { label: "Neither", data: units.map(function(u){
-              return Math.max(0, hrs(byUnit[u].avail - byUnit[u].prod - byUnit[u].lost)); }),
-            backgroundColor: "#E3E1D9", borderWidth: 0 }
-        ]
-      },
-      options: { responsive: true, maintainAspectRatio: false, indexAxis: "y",
-        interaction: { mode: "index", intersect: false },
-        plugins: { legend: { position: "bottom", labels: { font: MONO, boxWidth: 12 } },
-          tooltip: { callbacks: { label: function(c){
-            return c.dataset.label + ": " + fmtInt(c.parsed.x) + " hours"; } } } },
-        scales: { x: { stacked: true, beginAtZero: true, ticks: { font: MONO }, grid: GRID },
-                  y: { stacked: true, ticks: { font: MONO }, grid: { display: false } } } }
+  els.sewUnitGrid2.innerHTML = units.map(function(u, i){
+    return '<div class="panel"><h3>' + esc(u) + '</h3>'
+      + '<div class="hint">' + fmtInt(unitCap[u]) + ' capacity · ' + fmtInt(unitPlan[u])
+      + ' plan · ' + fmtInt(unitAct[u]) + ' actual, hours</div>'
+      + '<div class="chart-box"><canvas id="sewU_' + i + '"></canvas></div></div>';
+  }).join("");
+
+  units.forEach(function(u, i){
+    var mine = filtered.filter(function(r){ return unitKey(txt(r, "Execution Unit")) === unitKey(u); });
+    var at = seriesAt(spreadSeries(mine, "Adjusted sew start", "Adjusted sew end", "FR hour", g, null, win));
+    var a = {};
+    rows.forEach(function(s){
+      if(unitKey(s.unit) !== unitKey(u)) return;
+      var k = bucketKey(s.d, g);
+      a[k] = (a[k] || 0) + hrs(s.prodMin);
     });
-  }
+    var kk = CAPACITY.unitKeys[unitKey(u)] ? [unitKey(u)] : null;
+    capPlanActualChart("sewU_" + i, keys, g, kk ? capacitySeries(keys, g, kk) : null,
+      keys.map(function(k){ return at[k] || 0; }),
+      keys.map(function(k){ return a[k] == null ? null : a[k]; }), "hours");
+  });
 
   // ---- the unit table ----
   var head = '<thead><tr><th>Unit</th><th class="num">Days</th><th class="num">Capacity</th>'
-    + '<th class="num">Plan</th><th class="num">Actual</th><th class="num">Efficiency</th>'
-    + '<th class="num">Capacity use</th><th class="num">Lost</th><th class="num">Pieces</th>'
-    + '<th class="num">Avg people</th></tr></thead>';
-  function unitRow(u){
-    var v = byUnit[u];
-    var days = Object.keys(v.days).length;
-    return '<tr><td>' + esc(u) + '</td>'
+    + '<th class="num">Available</th><th class="num">Plan</th><th class="num">Actual</th>'
+    + '<th class="num">Efficiency</th><th class="num">Capacity use</th><th class="num">Lost</th>'
+    + '<th class="num">Pieces</th><th class="num">Avg sewers</th><th class="num">Avg helpers</th>'
+    + '<th class="num">Pcs per worker</th></tr></thead>';
+  function cells(label, v, capH, planH, actH){
+    var days = v ? Object.keys(v.days).length : 0;
+    var people = v && v.rows ? (v.sewers + v.helpers) / v.rows : 0;
+    var workers = v && v.rows ? v.sewers + v.helpers : 0;
+    return '<td>' + esc(label) + '</td>'
       + '<td class="num">' + fmtInt(days) + '</td>'
-      + '<td class="num">' + fmtInt(hrs(v.avail)) + '</td>'
-      + '<td class="num">' + fmtInt(planByUnit[u] || 0) + '</td>'
-      + '<td class="num">' + fmtInt(hrs(v.prod)) + '</td>'
-      + '<td class="num">' + pct(v.prod, v.util) + '%</td>'
-      + '<td class="num">' + pct(v.util, v.avail) + '%</td>'
-      + '<td class="num">' + fmtInt(hrs(v.lost)) + '</td>'
-      + '<td class="num">' + fmtInt(v.pcs) + '</td>'
-      + '<td class="num">' + (v.rows ? fmtInt(v.people / v.rows) : 0) + '</td></tr>';
+      + '<td class="num">' + fmtInt(capH) + '</td>'
+      + '<td class="num">' + fmtInt(v ? hrs(v.avail) : 0) + '</td>'
+      + '<td class="num">' + fmtInt(planH) + '</td>'
+      + '<td class="num">' + fmtInt(actH) + '</td>'
+      + '<td class="num">' + (v ? pct(v.prod, v.avail) : 0) + '%</td>'
+      + '<td class="num">' + (v ? pct(hrs(v.avail), capH) : 0) + '%</td>'
+      + '<td class="num">' + fmtInt(v ? hrs(v.lost) : 0) + '</td>'
+      + '<td class="num">' + fmtInt(v ? v.pcs : 0) + '</td>'
+      + '<td class="num">' + (v && v.rows ? fmtInt(v.sewers / v.rows) : 0) + '</td>'
+      + '<td class="num">' + (v && v.rows ? fmtInt(v.helpers / v.rows) : 0) + '</td>'
+      + '<td class="num">' + (workers ? fmt1(v.pcs / workers) : "0") + '</td>';
   }
-  var tot = { avail: 0, util: 0, prod: 0, lost: 0, pcs: 0, people: 0, rows: 0, plan: 0, days: {} };
+  var body = units.map(function(u){
+    return '<tr>' + cells(u, byUnit[u], unitCap[u], unitPlan[u], unitAct[u]) + '</tr>';
+  }).join("");
+  var tot = { avail: 0, util: 0, prod: 0, lost: 0, pcs: 0, sewers: 0, helpers: 0, rows: 0, days: {} };
+  var totCap = 0, totPlan = 0, totAct = 0;
   units.forEach(function(u){
     var v = byUnit[u];
+    totCap += unitCap[u]; totPlan += unitPlan[u]; totAct += unitAct[u];
+    if(!v) return;
     tot.avail += v.avail; tot.util += v.util; tot.prod += v.prod; tot.lost += v.lost;
-    tot.pcs += v.pcs; tot.people += v.people; tot.rows += v.rows;
-    tot.plan += planByUnit[u] || 0;
+    tot.pcs += v.pcs; tot.sewers += v.sewers; tot.helpers += v.helpers; tot.rows += v.rows;
     Object.keys(v.days).forEach(function(d){ tot.days[d] = true; });
   });
-  var foot = '<tfoot><tr class="tot"><td>All units</td>'
-    + '<td class="num">' + fmtInt(Object.keys(tot.days).length) + '</td>'
-    + '<td class="num">' + fmtInt(hrs(tot.avail)) + '</td>'
-    + '<td class="num">' + fmtInt(tot.plan) + '</td>'
-    + '<td class="num">' + fmtInt(hrs(tot.prod)) + '</td>'
-    + '<td class="num">' + pct(tot.prod, tot.util) + '%</td>'
-    + '<td class="num">' + pct(tot.util, tot.avail) + '%</td>'
-    + '<td class="num">' + fmtInt(hrs(tot.lost)) + '</td>'
-    + '<td class="num">' + fmtInt(tot.pcs) + '</td>'
-    + '<td class="num">' + (tot.rows ? fmtInt(tot.people / tot.rows) : 0) + '</td></tr></tfoot>';
-  els.sewUnitTable.innerHTML = head + '<tbody>' + units.map(unitRow).join("") + '</tbody>' + foot;
+  /* "Listed", not "all": this table carries every unit the Capacity sheet
+     knows, while the tile above counts only the units the orders on screen
+     belong to. Two different questions, and the labels have to say so. */
+  var foot = '<tfoot><tr class="tot">' + cells("All units listed", tot, totCap, totPlan, totAct)
+    + '</tr></tfoot>';
+  els.sewUnitTable.innerHTML = head + '<tbody>' + body + '</tbody>' + foot;
 
   // ---- the tiles ----
+  var capTotal = capSeries ? capSeries.reduce(function(a, v){ return a + v; }, 0) : 0;
   var planTotal = keys.reduce(function(a, k){ return a + (planAt[k] || 0); }, 0);
   var tiles = [
-    ["Sewing capacity", fmtInt(hrs(tot.avail)), "hours available over "
+    ["Sewing capacity", fmtInt(capTotal), CAPACITY.days
+      ? "hours from the Capacity sheet, for the units these orders belong to"
+      : "no Capacity sheet in the EWO workbook"],
+    ["Planned load", fmtInt(planTotal), "hours the EWO plan asks for over the same days"],
+    ["Actual production", fmtInt(hrs(tot.prod)), fmtInt(tot.pcs) + " pieces, "
       + fmtInt(Object.keys(tot.days).length) + " working days"],
-    ["Planned load", fmtInt(planTotal), "hours from the EWO plan for the same days"],
-    ["Actual production", fmtInt(hrs(tot.prod)), fmtInt(tot.pcs) + " pieces earned "
-      + fmtInt(hrs(tot.prod)) + " hours"],
-    ["Efficiency", pct(tot.prod, tot.util) + "%", "earned against the minutes actually used"],
-    ["Capacity use", pct(tot.util, tot.avail) + "%", "minutes used against minutes available"],
-    ["Lost time", fmtInt(hrs(tot.lost)), tot.avail ? pct(tot.lost, tot.avail) + "% of capacity" : "none recorded"]
+    ["Efficiency", pct(tot.prod, tot.avail) + "%", "produced hours against available hours"],
+    ["Capacity use", capTotal ? pct(hrs(tot.avail), capTotal) + "%" : "n/a",
+      "available hours against the Capacity sheet"],
+    ["Lost time", fmtInt(hrs(tot.lost)), tot.avail ? pct(tot.lost, tot.avail) + "% of available" : "none recorded"]
   ];
   els.sewKpis.innerHTML = tiles.map(function(t){
     return '<div class="kpi"><div class="label">' + esc(t[0]) + '</div><div class="value">' + esc(t[1])
       + '</div><div class="foot">' + esc(t[2]) + '</div></div>'; }).join("");
 
   els.sewHint.textContent = "From the sew sheet: " + fmtInt(rows.length) + " line-days across "
-    + fmtInt(units.length) + " unit" + (units.length === 1 ? "" : "s") + ", "
-    + fmtDate(lo) + " to " + fmtDate(hi) + ". Hours throughout; the sheet's minutes divided by 60.";
-  els.sewCapHint.textContent = "The blue band is what the floor had, the gold bars what the EWO plan"
-    + " asked of it, and the green line what it earned. A gold bar above the band is a plan the floor"
-    + " could not have met.";
-  els.sewEffHint.textContent = "Efficiency is earned minutes against the minutes actually used;"
-    + " capacity use is the minutes used against the minutes available. Low use with high efficiency"
-    + " means idle lines, not slow ones.";
-  els.sewSpendHint.textContent = "Every available hour each unit had, split into what it earned, what"
-    + " it lost to recorded downtime, and what it did neither with.";
-  els.sewUnitTableHint.textContent = "Each unit's own plan beside its own output. Capacity, plan,"
-    + " actual and lost are hours.";
+    + fmtInt(Object.keys(byUnit).length) + " unit" + (Object.keys(byUnit).length === 1 ? "" : "s")
+    + ", " + fmtDate(lo) + " to " + fmtDate(hi)
+    + ". Hours throughout; the sheet's minutes divided by 60.";
+  els.sewCapHint.textContent = "The blue band is the Capacity sheet in the EWO workbook. The bar is the"
+    + " EWO plan for each day, green for the part the floor has produced and gold for the part still"
+    + " owed. The line is what actually came off the floor, which can run past the plan.";
+  els.sewFabHint.textContent = "The same four readings for fabric: the Capacity sheet's knitting"
+    + " capacity, the InHouse plan split into delivered and still owed, and the line of fresh"
+    + " deliveries from the Fab_Delivery sheet. Returns and replacements are left out.";
+  els.sewEffHint.textContent = "Produced hours against available hours, from the sew sheet."
+    + " A day nobody worked has no efficiency and leaves a gap rather than a dive to zero.";
+  els.sewUnitGridHint.textContent = "The same four readings for every unit the Capacity sheet, the"
+    + " sewing record or the orders on screen know about. A unit with a band and no bars has"
+    + " capacity nobody has planned into.";
+  els.sewUnitTableHint.textContent = "Capacity is the Capacity sheet; available is the manpower the"
+    + " sewing sheet recorded; efficiency is produced against available; capacity use is available"
+    + " against capacity. Hours unless the column says otherwise.";
 }
 
 /* ============================================================
@@ -6386,6 +6536,55 @@ window.addEventListener("resize", function(){
   clearTimeout(window.__rs);
   window.__rs = setTimeout(function(){ renderTab(activeTab); }, 250);
 });
+
+/* ============================================================
+   Light or dark
+
+   The choice is the reader's and it is kept in this browser, not against the
+   account: it is about the room they are sitting in, not about who they are.
+   A page opened before any choice follows whatever the machine itself asks
+   for, and stops following once a choice is made.
+
+   The charts are redrawn on a switch rather than restyled, because Chart.js
+   bakes the text and grid colours in when it builds.
+   ============================================================ */
+var THEME_KEY = "ewo-theme";
+
+function systemDark(){
+  try{ return window.matchMedia("(prefers-color-scheme: dark)").matches; }
+  catch(e){ return false; }
+}
+function currentTheme(){
+  var saved = null;
+  try{ saved = localStorage.getItem(THEME_KEY); }catch(e){}
+  if(saved === "dark" || saved === "light") return saved;
+  return systemDark() ? "dark" : "light";
+}
+function applyTheme(mode, redraw){
+  document.documentElement.setAttribute("data-theme", mode);
+  els.themeBtn.innerHTML = mode === "dark" ? "&#9728;" : "&#9790;";
+  els.themeBtn.title = mode === "dark" ? "Switch to light" : "Switch to dark";
+  var css = getComputedStyle(document.documentElement);
+  var ink = css.getPropertyValue("--ink-soft").trim() || "#6B7280";
+  var line = css.getPropertyValue("--line-soft").trim() || "#F0EEE7";
+  if(window.Chart){
+    Chart.defaults.color = ink;
+    Chart.defaults.borderColor = line;
+  }
+  GRID = { color: line };
+  if(redraw){
+    /* Every chart on screen was built with the old colours in it. */
+    renderAll();
+    measureSticky();
+  }
+}
+function toggleTheme(){
+  var next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+  try{ localStorage.setItem(THEME_KEY, next); }catch(e){}
+  applyTheme(next, true);
+}
+els.themeBtn.addEventListener("click", toggleTheme);
+applyTheme(currentTheme(), false);
 
 /* ============================================================
    Startup
